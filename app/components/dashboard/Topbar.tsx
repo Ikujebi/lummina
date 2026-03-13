@@ -12,10 +12,10 @@ export default function Topbar({
   onToggleSidebar,
 }: Props) {
   return (
-    <header className="fixed top-0 left-0 right-0 h-20 bg-white border-b flex justify-between items-center px-6 md:px-10 z-50">
+    <header className="fixed top-0 left-0 right-0 h-20 bg-white  flex justify-between items-center px-6 md:px-10 z-50">
       <div className="flex items-center gap-3 font-semibold text-xl text-[#5F021F]">
         <span className="w-6 h-6 bg-[#FFA500] rounded-full" />
-        LexTrust
+        Lummina
       </div>
 
       <div className="flex items-center gap-6">
