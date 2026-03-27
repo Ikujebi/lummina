@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Sidebar from "@/app/components/dashboard/Sidebar";
 
@@ -13,7 +13,10 @@ type Term = {
   example: string;
 };
 
-const terms: Term[] = [
+// ----------------------------
+// Hardcoded placeholder terms
+// ----------------------------
+const placeholderTerms: Term[] = [
   { id: "inheritance", title: "Inheritance", emoji: "📦", shortDesc: "Set of assets you receive.", detailDesc: "Set of assets, rights, and obligations transferred to your heirs when you pass away.", example: "If a parent dies, their children inherit the family home as part of the inheritance." },
   { id: "will", title: "Will", emoji: "📄", shortDesc: "Document specifying how you leave your assets.", detailDesc: "Legal document defining how your assets are distributed and who will execute your wishes.", example: "A will allows you to leave a specific percentage of your assets to each child and appoint a guardian." },
   { id: "notary", title: "Notary Office", emoji: "🏛️", shortDesc: "Place where legal acts are certified.", detailDesc: "Public office where a notary certifies legal acts such as wills or powers of attorney.", example: "To validate a will, go to the notary, sign the document, and register it with the notary." },
@@ -24,10 +27,43 @@ const terms: Term[] = [
 export default function GlossaryPage() {
   const [selectedTerm, setSelectedTerm] = useState("inheritance");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [terms, setTerms] = useState<Term[]>(placeholderTerms);
+  const [loading, setLoading] = useState(false);
+
+  // ----------------------------
+  // Fetch external data when search changes
+  // ----------------------------
+  useEffect(() => {
+    if (!search.trim()) {
+      setTerms(placeholderTerms);
+      return;
+    }
+
+    setLoading(true);
+
+    async function fetchTerms() {
+      try {
+        const res = await fetch(`/api/glossary/search?query=${encodeURIComponent(search)}`);
+        if (!res.ok) throw new Error("Failed to fetch glossary terms");
+
+        const data: Term[] = await res.json();
+
+        // Merge placeholder + external results (or replace if you want)
+        setTerms(data.length ? data : placeholderTerms);
+      } catch (err) {
+        console.error(err);
+        setTerms(placeholderTerms); // fallback
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchTerms();
+  }, [search]);
 
   return (
     <div className="flex min-h-screen font-inter text-[#5F021F] bg-[#F7e7ce] relative">
-      
       {/* Overlay for mobile */}
       {sidebarOpen && (
         <div
@@ -69,9 +105,7 @@ export default function GlossaryPage() {
                 <path d="M10.5 13.5l2.2 2.2 4.8-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </span>
-            <Link href="/" className="ml-1">
-              LexTrust
-            </Link>
+            <Link href="/" className="ml-1">LexTrust</Link>
           </div>
 
           <label className="relative flex-1 flex items-center bg-gray-100 rounded-xl px-4 py-2 ml-4">
@@ -80,6 +114,8 @@ export default function GlossaryPage() {
               type="search"
               placeholder="Search legal term…"
               className="w-full bg-transparent pl-10 text-sm focus:outline-none"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
           </label>
         </header>
@@ -90,6 +126,7 @@ export default function GlossaryPage() {
           {/* Terms list */}
           <section className="bg-white rounded-xl p-6 shadow-sm flex flex-col">
             <h2 className="text-lg font-semibold mb-4">Terms A-Z</h2>
+            {loading && <p className="text-gray-500">Searching…</p>}
             {terms.map(term => (
               <button
                 key={term.id}

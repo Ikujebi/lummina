@@ -1,0 +1,342 @@
+// ----------------------------
+// Datasource & Generator
+// ----------------------------
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ----------------------------
+// Enums
+// ----------------------------
+enum Role {
+  ADMIN
+  LAWYER
+  CLIENT
+}
+
+enum MatterStatus {
+  OPEN
+  IN_PROGRESS
+  PENDING
+  CLOSED
+}
+
+enum DocumentStatus {
+  DRAFT
+  FINAL
+  SIGNED
+}
+
+enum NotificationType {
+  INFO
+  WARNING
+  DEADLINE
+  MESSAGE
+}
+
+// ----------------------------
+// Models
+// ----------------------------
+
+model User {
+  id        String   @id @default(uuid())
+  name      String?
+  email     String   @unique
+  password  String
+  role      Role
+  twoFactor Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions        Session[]
+  auditLogs       AuditLog[]
+  messages        Message[]
+  notifications   Notification[]
+  appointments    Appointment[]
+  lawyerMatters   Matter[]         @relation("LawyerMatters")
+  timeEntries     TimeEntry[]
+  passwordResets  PasswordReset[]
+  twoFactorTokens TwoFactorToken[]
+
+  clients Client[] // ✅ User ↔ Client relation
+}
+
+model Client {
+  id        String   @id @default(uuid())
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  matters Matter[]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Invitation {
+  id        String   @id @default(uuid())
+  email     String
+  role      Role
+  token     String   @unique
+  expiresAt DateTime
+  accepted  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model PasswordReset {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model TwoFactorToken {
+  id        String   @id @default(uuid())
+  userId    String
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model Matter {
+  id          String       @id @default(uuid())
+  title       String
+  description String?
+  status      MatterStatus
+  clientId    String
+  lawyerId    String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id])
+  lawyer User   @relation("LawyerMatters", fields: [lawyerId], references: [id])
+
+  documents    Document[]
+  tasks        Task[]
+  keyDates     KeyDate[]
+  messages     Message[]
+  activities   MatterActivity[]
+  appointments Appointment[]
+  timeEntries  TimeEntry[]
+
+  @@index([clientId])
+  @@index([lawyerId])
+}
+
+model MatterActivity {
+  id        String   @id @default(uuid())
+  matterId  String
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
+
+  matter Matter @relation(fields: [matterId], references: [id])
+
+  @@index([matterId])
+}
+
+model Document {
+  id         String         @id @default(uuid())
+  name       String
+  fileUrl    String
+  status     DocumentStatus
+  matterId   String
+  uploadedBy String
+  folderPath String?
+  previewUrl String?
+  externalId String?
+  createdAt  DateTime       @default(now())
+
+  matter     Matter            @relation(fields: [matterId], references: [id])
+  versions   DocumentVersion[]
+  signatures Signature[]
+
+  @@index([matterId])
+}
+
+model DocumentVersion {
+  id         String   @id @default(uuid())
+  documentId String
+  fileUrl    String
+  version    Int
+  createdAt  DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id])
+
+  @@index([documentId])
+}
+
+model Signature {
+  id         String    @id @default(uuid())
+  documentId String
+  signedBy   String
+  signedAt   DateTime?
+  provider   String
+
+  document Document @relation(fields: [documentId], references: [id])
+
+  @@index([documentId])
+}
+
+model Task {
+  id        String    @id @default(uuid())
+  title     String
+  completed Boolean   @default(false)
+  dueDate   DateTime?
+  matterId  String
+
+  matter Matter @relation(fields: [matterId], references: [id])
+
+  @@index([matterId])
+}
+
+model KeyDate {
+  id       String   @id @default(uuid())
+  title    String
+  date     DateTime
+  matterId String
+
+  matter Matter @relation(fields: [matterId], references: [id])
+
+  @@index([matterId])
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  content   String
+  senderId  String
+  matterId  String
+  createdAt DateTime @default(now())
+  archived  Boolean  @default(false)
+
+  sender      User                @relation(fields: [senderId], references: [id])
+  matter      Matter              @relation(fields: [matterId], references: [id])
+  attachments MessageAttachment[]
+
+  @@index([senderId])
+  @@index([matterId])
+}
+
+model MessageAttachment {
+  id        String @id @default(uuid())
+  messageId String
+  fileUrl   String
+
+  message Message @relation(fields: [messageId], references: [id])
+
+  @@index([messageId])
+}
+
+model Appointment {
+  id                 String   @id @default(uuid())
+  title              String
+  startTime          DateTime
+  endTime            DateTime
+  matterId           String
+  createdBy          String
+  externalCalendarId String?
+  videoLink          String?
+
+  matter Matter @relation(fields: [matterId], references: [id])
+  user   User   @relation(fields: [createdBy], references: [id])
+
+  @@index([matterId])
+  @@index([createdBy])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  type      NotificationType
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  action    String
+  entity    String?
+  entityId  String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model TimeEntry {
+  id        String   @id @default(uuid())
+  userId    String
+  matterId  String
+  hours     Float
+  note      String?
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  matter Matter @relation(fields: [matterId], references: [id])
+
+  @@index([userId])
+  @@index([matterId])
+}
+
+// Optional Email logs
+model EmailLog {
+  id      String   @id @default(uuid())
+  to      String
+  subject String
+  body    String
+  sentAt  DateTime @default(now())
+  status  String
+}
+
+// ----------------------------
+// Glossary for Legal Terms
+// ----------------------------
+model GlossaryCategory {
+  id   String @id @default(uuid())
+  name String
+
+  terms GlossaryTerm[]
+}
+
+model GlossaryTerm {
+  id         String @id @default(uuid())
+  term       String
+  definition String
+  categoryId String
+
+  category GlossaryCategory @relation(fields: [categoryId], references: [id])
+}
