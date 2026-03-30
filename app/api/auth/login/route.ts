@@ -13,7 +13,7 @@ export async function POST(req: Request) {
       password === process.env.ADMIN_PASSWORD
     ) {
       const token = signToken({
-        userId: "admin",
+        id: "admin",
         email,
         role: "ADMIN",
       });
@@ -55,10 +55,10 @@ export async function POST(req: Request) {
     }
 
     const token = signToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-    });
+  id: user.id,
+  email: user.email,
+  role: user.role,
+});
 
     const response = NextResponse.json({
       role: user.role,

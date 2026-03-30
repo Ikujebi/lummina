@@ -1,38 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "../lib/jwt";
+import { verifyToken, TokenPayload } from "@/lib/jwt";
 
-// Define the shape of your decoded token
-interface DecodedToken {
-  role: "ADMIN" | "LAWYER" | "CLIENT";
- 
-}
+const roleRoutes: Record<TokenPayload["role"], string> = {
+  ADMIN: "/admin",
+  LAWYER: "/lawyer",
+  CLIENT: "/client",
+};
 
 export function middleware(req: NextRequest) {
   const token = req.cookies.get("token")?.value;
+  const path = req.nextUrl.pathname;
 
   if (!token) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    return NextResponse.redirect(new URL("/", req.url));
   }
 
   try {
-    const decoded = verifyToken(token) as DecodedToken;
-    const path = req.nextUrl.pathname;
+    const decoded: TokenPayload = verifyToken(token);
+    const allowedRoute = roleRoutes[decoded.role];
 
-    if (path.startsWith("/admin") && decoded.role !== "ADMIN") {
-      return NextResponse.redirect(new URL("/", req.url));
-    }
-
-    if (path.startsWith("/lawyer") && decoded.role !== "LAWYER") {
-      return NextResponse.redirect(new URL("/", req.url));
-    }
-
-    if (path.startsWith("/client") && decoded.role !== "CLIENT") {
-      return NextResponse.redirect(new URL("/", req.url));
+    if (!path.startsWith(allowedRoute)) {
+      return NextResponse.redirect(new URL(allowedRoute, req.url));
     }
 
     return NextResponse.next();
-  } catch (err) {
-    return NextResponse.redirect(new URL("/login", req.url));
+  } catch {
+    return NextResponse.redirect(new URL("/", req.url));
   }
 }
 
