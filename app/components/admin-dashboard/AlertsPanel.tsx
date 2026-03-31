@@ -1,39 +1,20 @@
-"use client";
-
-interface Alert {
-  title: string;
-  meta: string;
-  actionText: string;
-}
+import { Alert } from "@/types/admin";
 
 export default function AlertsPanel({ alerts }: { alerts: Alert[] }) {
   return (
-    <section className="bg-[#FFF4E0] rounded-2xl p-6 shadow-sm border border-[#5F021F]/10">
-      <h2 className="text-lg font-semibold text-[#5F021F] mb-4">
-        Alerts & Notifications
-      </h2>
-
-      <div className="flex flex-col gap-4">
-        {alerts.map((alert, index) => (
-          <div
-            key={index}
-            className="flex justify-between items-center bg-white p-4 rounded-xl border"
-          >
+    <section className="bg-[#FFF4E0] rounded-2xl p-6 shadow">
+      <h2 className="font-semibold mb-4">Alerts</h2>
+      <ul className="flex flex-col gap-3">
+        {alerts.map((alert, idx) => (
+          <li key={idx} className="flex justify-between items-center bg-[#FFE8B2] p-3 rounded-xl">
             <div>
-              <p className="font-semibold text-[#5F021F]">
-                {alert.title}
-              </p>
-              <p className="text-sm text-[#5F021F]/70">
-                {alert.meta}
-              </p>
+              <p className="font-semibold">{alert.title}</p>
+              <p className="text-xs text-[#5F021F]/70">{alert.meta}</p>
             </div>
-
-            <button className="bg-[#FFA500] text-[#5F021F] px-4 py-2 rounded-lg font-semibold">
-              {alert.actionText}
-            </button>
-          </div>
+            <button className="text-sm font-semibold text-[#5F021F]">{alert.actionText}</button>
+          </li>
         ))}
-      </div>
+      </ul>
     </section>
   );
 }

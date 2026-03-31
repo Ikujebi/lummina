@@ -1,17 +1,9 @@
-"use client";
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: "ADMIN" | "LAWYER" | "CLIENT";
-}
+import { User } from "@/types/admin";
 
 export default function UsersTable({ users }: { users: User[] }) {
   return (
     <section className="bg-[#FFF4E0] rounded-2xl p-6 shadow">
       <h2 className="font-semibold mb-4">Users</h2>
-
       <table className="w-full">
         <thead>
           <tr>
@@ -20,7 +12,6 @@ export default function UsersTable({ users }: { users: User[] }) {
             <th>Role</th>
           </tr>
         </thead>
-
         <tbody>
           {users.map((user) => (
             <tr key={user.id}>

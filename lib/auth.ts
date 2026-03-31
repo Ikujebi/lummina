@@ -12,7 +12,7 @@ export async function getCurrentUser() {
     const decoded = verifyToken(token) as TokenPayload;
 
     const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
+      where: { id: decoded.id },
     });
 
     return user;
