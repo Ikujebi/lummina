@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import heroIllustration from "@/public/img/careers.jpg";
+import { useSearchParams } from "next/navigation";
 
 const steps = [
   { number: 1, label: "Log in", status: "complete" },
@@ -14,8 +15,10 @@ const steps = [
 ];
 
 export default function RegisterPage() {
-  const [role, setRole] = useState<"client" | "lawyer">("client");
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token") ?? undefined;
 
+  const [role, setRole] = useState<"client" | "lawyer">("client");
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -24,9 +27,27 @@ export default function RegisterPage() {
     confirmPassword: "",
     address: "",
   });
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Prefill email & role from token if available
+  useEffect(() => {
+    if (token) {
+      fetch(`/api/invitations/${token}`)
+        .then((res) => res.json())
+        .then((invitation) => {
+          if (invitation.email) {
+            setForm((prev) => ({ ...prev, email: invitation.email }));
+          }
+          if (invitation.role === "client" || invitation.role === "lawyer") {
+            setRole(invitation.role);
+          }
+        })
+        .catch(() => {
+          // Ignore errors, token will be validated on submit
+        });
+    }
+  }, [token]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -47,15 +68,15 @@ export default function RegisterPage() {
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: form.name,
           email: form.email,
           password: form.password,
           phone: form.phone,
           address: form.address,
+          role,
+          token, // send token for backend verification
         }),
       });
 
@@ -68,13 +89,9 @@ export default function RegisterPage() {
       // Redirect to login
       window.location.href = "/login";
     } catch (err: unknown) {
-  if (err instanceof Error) {
-    setError(err.message);
-  } else {
-    setError("Something went wrong");
-  }
-}
-   finally {
+      if (err instanceof Error) setError(err.message);
+      else setError("Something went wrong");
+    } finally {
       setLoading(false);
     }
   };
@@ -82,7 +99,6 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-[#F7E7CE]/50 flex flex-col">
       <main className="flex-1 grid gap-12 justify-center items-center grid-cols-1 lg:grid-cols-[minmax(320px,560px)_minmax(320px,520px)] p-6 lg:p-16">
-        
         {/* Registration Card */}
         <section className="bg-[#FFF7E0] rounded-[20px] shadow-2xl p-6 md:p-12 border border-[#FFD580]/50">
           <header className="text-center mb-8">
@@ -105,6 +121,7 @@ export default function RegisterPage() {
                 role === "client" ? "text-[#FFA500]" : "text-[#5F021F]/80"
               }`}
               onClick={() => setRole("client")}
+              disabled={!!token} // lock role if token exists
             >
               🧑‍💼 Client
             </button>
@@ -114,6 +131,7 @@ export default function RegisterPage() {
                 role === "lawyer" ? "text-[#FFA500]" : "text-[#5F021F]/80"
               }`}
               onClick={() => setRole("lawyer")}
+              disabled={!!token} // lock role if token exists
             >
               ⚖️ Lawyer
             </button>
@@ -127,12 +145,9 @@ export default function RegisterPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="grid gap-6">
-            
             {/* Full Name */}
             <div className="grid gap-2">
-              <label className="text-sm text-[#5F021F]/90">
-                Full Name
-              </label>
+              <label className="text-sm text-[#5F021F]/90">Full Name</label>
               <input
                 name="name"
                 value={form.name}
@@ -144,9 +159,7 @@ export default function RegisterPage() {
 
             {/* Email */}
             <div className="grid gap-2">
-              <label className="text-sm text-[#5F021F]/90">
-                Email Address
-              </label>
+              <label className="text-sm text-[#5F021F]/90">Email Address</label>
               <input
                 name="email"
                 type="email"
@@ -154,14 +167,13 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 required
                 className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm"
+                disabled={!!token} // lock email if prefilled from token
               />
             </div>
 
             {/* Phone */}
             <div className="grid gap-2">
-              <label className="text-sm text-[#5F021F]/90">
-                Phone Number
-              </label>
+              <label className="text-sm text-[#5F021F]/90">Phone Number</label>
               <input
                 name="phone"
                 value={form.phone}
@@ -173,9 +185,7 @@ export default function RegisterPage() {
             {/* Passwords */}
             <div className="grid md:grid-cols-2 gap-3">
               <div className="grid gap-2">
-                <label className="text-sm text-[#5F021F]/90">
-                  Password
-                </label>
+                <label className="text-sm text-[#5F021F]/90">Password</label>
                 <input
                   name="password"
                   type="password"
@@ -185,11 +195,8 @@ export default function RegisterPage() {
                   className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm"
                 />
               </div>
-
               <div className="grid gap-2">
-                <label className="text-sm text-[#5F021F]/90">
-                  Confirm Password
-                </label>
+                <label className="text-sm text-[#5F021F]/90">Confirm Password</label>
                 <input
                   name="confirmPassword"
                   type="password"
@@ -203,9 +210,7 @@ export default function RegisterPage() {
 
             {/* Location */}
             <div className="grid gap-2">
-              <label className="text-sm text-[#5F021F]/90">
-                State / City
-              </label>
+              <label className="text-sm text-[#5F021F]/90">State / City</label>
               <select
                 name="address"
                 value={form.address}
@@ -224,9 +229,7 @@ export default function RegisterPage() {
 
             {/* Error */}
             {error && (
-              <p className="text-red-600 text-sm text-center">
-                {error}
-              </p>
+              <p className="text-red-600 text-sm text-center">{error}</p>
             )}
 
             {/* Submit */}
@@ -254,10 +257,7 @@ export default function RegisterPage() {
 
       {/* Stepper */}
       <nav className="max-w-[1120px] w-[90%] mx-auto my-8 bg-[#FFF7E0] rounded-xl shadow-md p-6 grid gap-4 border border-[#FFD580]/40">
-        <p className="uppercase text-sm font-semibold text-[#5F021F]">
-          Step Guide
-        </p>
-
+        <p className="uppercase text-sm font-semibold text-[#5F021F]">Step Guide</p>
         <ol className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 list-none">
           {steps.map((step) => (
             <li
@@ -267,9 +267,7 @@ export default function RegisterPage() {
               <span className="w-8 h-8 rounded-full grid place-items-center font-semibold text-sm bg-[#FFD580]/50">
                 {step.number}
               </span>
-              <span className="text-sm font-semibold text-[#5F021F]">
-                {step.label}
-              </span>
+              <span className="text-sm font-semibold text-[#5F021F]">{step.label}</span>
             </li>
           ))}
         </ol>
