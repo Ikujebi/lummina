@@ -15,3 +15,5 @@ if (user.role !== "ADMIN") {
 
   return user;
 }
+
+export {};
