@@ -69,7 +69,9 @@ export default function AdminDashboard() {
       Array.isArray(data) ? setWidgets(data) : setWidgets(widgetsData)
     );
     fetchData("/api/admin/alerts", alertsData).then(setAlerts);
-    fetchData("/api/admin/users", usersData).then(setUsers);
+    fetchData("/api/admin/users", { success: true, users: usersData }).then((data) => {
+  setUsers(Array.isArray(data.users) ? data.users : usersData);
+});
   }, []);
 
   const filteredUsers = users.filter(
