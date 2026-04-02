@@ -1,36 +1,47 @@
-// // app/api/create-admin/route.ts
-// import { NextResponse } from "next/server";
-// import { prisma } from "@/lib/prisma";
-// import { hashPassword } from "@/lib/hash";
+import { prisma } from "@/lib/prisma";
+import { hash } from "bcryptjs";
+import { NextResponse } from "next/server";
 
-// export async function POST() {
-//   try {
-//     const email = process.env.ADMIN_EMAIL || "admin@lummina.com";
-//     const password = process.env.ADMIN_PASSWORD || "Ayanfe@2013";
+export async function POST() {
+  try {
+    const email = "admin@lummina.com";
+    const password = "Admin123!";
+    const name = "Admin";
 
-//     // Hash the password
-//     const hashedPassword = await hashPassword(password);
+    const existing = await prisma.user.findUnique({
+      where: { email },
+    });
 
-//     // Check if admin already exists
-//     const existingAdmin = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      return NextResponse.json({
+        message: "Admin already exists",
+      });
+    }
 
-//     if (existingAdmin) {
-//       return NextResponse.json({ message: "Admin already exists" });
-//     }
+    const hashedPassword = await hash(password, 12);
 
-//     // Create the admin user
-//     await prisma.user.create({
-//       data: {
-//         name: "Admin",
-//         email,
-//         password: hashedPassword,
-//         role: "ADMIN",
-//       },
-//     });
+    const admin = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        role: "ADMIN",
+      },
+    });
 
-//     return NextResponse.json({ message: "Admin user created ✅" });
-//   } catch (err) {
-//     console.error(err);
-//     return NextResponse.json({ error: "Failed to create admin" }, { status: 500 });
-//   }
-// }
+    return NextResponse.json({
+      message: "Admin created",
+      admin: {
+        id: admin.id,
+        email: admin.email,
+        role: admin.role,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: "Failed to create admin" },
+      { status: 500 }
+    );
+  }
+}
