@@ -44,6 +44,7 @@ export async function GET() {
 
     return NextResponse.json(invitations);
   } catch (err) {
+    console.error(err);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -69,7 +70,7 @@ export async function POST(req: Request) {
       },
     });
 
-    const invitationLink = `${process.env.NEXT_PUBLIC_BASE_URL}/invite/${token}`;
+  const invitationLink = `${process.env.NEXT_PUBLIC_BASE_URL}/register?token=${token}`;
 
     await transporter.sendMail({
       from: `"Lummina Law" <${process.env.SMTP_USER}>`,
