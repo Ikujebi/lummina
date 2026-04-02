@@ -1,42 +1,94 @@
 // app/api/admin/users/route.ts
 import { prisma } from "@/lib/prisma";
 import { hash } from "bcryptjs";
+import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/requireAdmin";
 
+/**
+ * Require Admin
+ */
+
+
+/**
+ * GET - Get all users
+ */
 export async function GET() {
   try {
+    await requireAdmin();
+
     const users = await prisma.user.findMany({
-      select: { id: true, name: true, email: true, role: true, createdAt: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true,
+      },
       orderBy: { createdAt: "desc" },
     });
-    return new Response(JSON.stringify({ success: true, users }), { status: 200 });
+
+    return NextResponse.json({ success: true, users });
   } catch (err) {
     console.error(err);
-    return new Response(JSON.stringify({ success: false, error: "Failed to fetch users" }), { status: 500 });
+    return NextResponse.json(
+      { success: false, error: "Unauthorized" },
+      { status: 401 }
+    );
   }
 }
 
-export async function POST(req: Request) {
+/**
+ * POST - Create new user
+ */
+export async function POST(req: NextRequest) {
   try {
+    await requireAdmin();
+
     const { name, email, password, role } = await req.json();
 
     if (!["LAWYER", "ADMIN", "CLIENT"].includes(role)) {
-      return new Response(JSON.stringify({ success: false, error: "Invalid role" }), { status: 400 });
+      return NextResponse.json(
+        { success: false, error: "Invalid role" },
+        { status: 400 }
+      );
     }
 
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const existing = await prisma.user.findUnique({
+      where: { email },
+    });
+
     if (existing) {
-      return new Response(JSON.stringify({ success: false, error: "User already exists" }), { status: 400 });
+      return NextResponse.json(
+        { success: false, error: "User already exists" },
+        { status: 400 }
+      );
     }
 
     const hashedPassword = await hash(password, 12);
 
     const user = await prisma.user.create({
-      data: { name, email, password: hashedPassword, role },
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        role,
+      },
     });
 
-    return new Response(JSON.stringify({ success: true, user: { id: user.id, name: user.name, email: user.email, role: user.role } }), { status: 201 });
+    return NextResponse.json({
+      success: true,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
   } catch (err) {
     console.error(err);
-    return new Response(JSON.stringify({ success: false, error: "Failed to create user" }), { status: 500 });
+    return NextResponse.json(
+      { success: false, error: "Failed to create user" },
+      { status: 500 }
+    );
   }
 }
