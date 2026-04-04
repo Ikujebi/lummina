@@ -11,13 +11,16 @@ export async function GET() {
     take: 20,
   });
 
-  return Response.json(
-    logs.map((log) => ({
-      id: log.id,
-      action: log.action,
-      entity: log.entity,
-      user: log.user?.name || log.user?.email,
-      createdAt: log.createdAt,
-    }))
-  );
+  // Use inferred types without importing from @prisma/client
+  const transformedLogs = logs.map((log) => ({
+    id: log.id,
+    action: log.action,
+    entity: log.entity,
+    user: log.user?.name || log.user?.email || null,
+    createdAt: log.createdAt,
+  }));
+
+  return new Response(JSON.stringify(transformedLogs), {
+    headers: { "Content-Type": "application/json" },
+  });
 }

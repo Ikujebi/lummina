@@ -1,250 +1,356 @@
+generator client {
+  provider = "prisma-client-js"
+}
 
+datasource db {
+  provider = "postgresql"
+}
 
--- ============================================
--- ENUMS
--- ============================================
+// ============================================
+// ENUMS
+// ============================================
+enum Role {
+  ADMIN
+  LAWYER
+  CLIENT
+}
 
-CREATE TYPE "Role" AS ENUM ('ADMIN', 'LAWYER', 'CLIENT');
-CREATE TYPE "MatterStatus" AS ENUM ('OPEN', 'IN_PROGRESS', 'PENDING', 'CLOSED');
-CREATE TYPE "DocumentStatus" AS ENUM ('DRAFT', 'FINAL', 'SIGNED');
-CREATE TYPE "NotificationType" AS ENUM ('INFO', 'WARNING', 'DEADLINE', 'MESSAGE');
+enum MatterStatus {
+  OPEN
+  IN_PROGRESS
+  PENDING
+  CLOSED
+}
 
--- ============================================
--- TABLES
--- ============================================
+enum DocumentStatus {
+  DRAFT
+  FINAL
+  SIGNED
+}
 
-CREATE TABLE "User" (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT,
-    email TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    role "Role" NOT NULL,
-    "twoFactor" BOOLEAN DEFAULT FALSE,
-    "profilePicture" TEXT, 
-    "createdAt" TIMESTAMPTZ DEFAULT NOW(),
-    "updatedAt" TIMESTAMPTZ DEFAULT NOW()
-);
+enum NotificationType {
+  INFO
+  WARNING
+  DEADLINE
+  MESSAGE
+}
 
-CREATE TABLE "Client" (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL,
-    email TEXT UNIQUE,
-    phone TEXT,
-    address TEXT,
-    "createdAt" TIMESTAMPTZ DEFAULT NOW(),
-    "userId" UUID NOT NULL REFERENCES "User"(id)
-);
+// ============================================
+// MODELS
+// ============================================
 
-CREATE TABLE "Session" (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "userId" UUID NOT NULL REFERENCES "User"(id),
-    "expiresAt" TIMESTAMPTZ NOT NULL,
-    "createdAt" TIMESTAMPTZ DEFAULT NOW()
-);
+model User {
+  id             String   @id @default(uuid())
+  name           String?
+  email          String   @unique
+  password       String
+  role           Role
+  twoFactor      Boolean  @default(false)
+  profilePicture String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now())
 
-CREATE TABLE "Invitation" (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    email TEXT NOT NULL,
-    role "Role" NOT NULL,
-    token TEXT UNIQUE NOT NULL,
-    "expiresAt" TIMESTAMPTZ NOT NULL,
-    accepted BOOLEAN DEFAULT FALSE,
-    "createdAt" TIMESTAMPTZ DEFAULT NOW()
-);
+  clients             Client[]
+  sessions            Session[]
+  invitations         Invitation[]
+  passwordResets      PasswordReset[]
+  twoFactorTokens     TwoFactorToken[]
+  mattersAsLawyer     Matter[]
+  documents           Document[]
+  signatures          Signature[]
+  messagesSent        Message[]
+  appointmentsCreated Appointment[]
+  notifications       Notification[]
+  auditLogs           AuditLog[]
+  timeEntries         TimeEntry[]
 
-CREATE TABLE "PasswordReset" (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "userId" UUID NOT NULL REFERENCES "User"(id),
-    token TEXT UNIQUE NOT NULL,
-    "expiresAt" TIMESTAMPTZ NOT NULL,
-    used BOOLEAN DEFAULT FALSE,
-    "createdAt" TIMESTAMPTZ DEFAULT NOW()
-);
-CREATE INDEX "PasswordReset_userId_index" ON "PasswordReset" ("userId");
+  @@map("User")
+}
 
-CREATE TABLE "TwoFactorToken" (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "userId" UUID NOT NULL REFERENCES "User"(id),
-    code TEXT NOT NULL,
-    "expiresAt" TIMESTAMPTZ NOT NULL,
-    used BOOLEAN DEFAULT FALSE,
-    "createdAt" TIMESTAMPTZ DEFAULT NOW()
-);
-CREATE INDEX "TwoFactorToken_userId_index" ON "TwoFactorToken" ("userId");
+model Invitation {
+  id        String   @id @default(uuid())
+  email     String
+  role      Role
+  token     String   @unique
+  expiresAt DateTime
+  accepted  Boolean  @default(false)
+  createdAt DateTime @default(now())
 
-CREATE TABLE "Matter" (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    title TEXT NOT NULL,
-    description TEXT,
-    status "MatterStatus" NOT NULL,
-    "clientId" UUID NOT NULL REFERENCES "Client"(id),
-    "lawyerId" UUID NOT NULL REFERENCES "User"(id),
-    "createdAt" TIMESTAMPTZ DEFAULT NOW(),
-    "updatedAt" TIMESTAMPTZ DEFAULT NOW()
-);
-CREATE INDEX "Matter_clientId_index" ON "Matter" ("clientId");
-CREATE INDEX "Matter_lawyerId_index" ON "Matter" ("lawyerId");
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 
-CREATE TABLE "MatterActivity" (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "matterId" UUID NOT NULL REFERENCES "Matter"(id),
-    action TEXT NOT NULL,
-    details TEXT,
-    "createdAt" TIMESTAMPTZ DEFAULT NOW()
-);
-CREATE INDEX "MatterActivity_matterId_index" ON "MatterActivity" ("matterId");
+  @@index([userId])
+  @@map("Invitation")
+}
 
-CREATE TABLE "Document" (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL,
-    "fileUrl" TEXT NOT NULL,
-    status "DocumentStatus" NOT NULL,
-    "matterId" UUID NOT NULL REFERENCES "Matter"(id),
-    "uploadedBy" UUID NOT NULL REFERENCES "User"(id),
-    "folderPath" TEXT,
-    "previewUrl" TEXT,
-    "externalId" TEXT,
-    "createdAt" TIMESTAMPTZ DEFAULT NOW()
-);
-CREATE INDEX "Document_matterId_index" ON "Document" ("matterId");
+model Client {
+  id        String   @id @default(uuid())
+  name      String
+  email     String?  @unique
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
 
-CREATE TABLE "DocumentVersion" (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "documentId" UUID NOT NULL REFERENCES "Document"(id),
-    "fileUrl" TEXT NOT NULL,
-    version INT NOT NULL,
-    "createdAt" TIMESTAMPTZ DEFAULT NOW()
-);
-CREATE INDEX "DocumentVersion_documentId_index" ON "DocumentVersion" ("documentId");
+  matters Matter[]
 
-CREATE TABLE "Signature" (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "documentId" UUID NOT NULL REFERENCES "Document"(id),
-    "signedBy" UUID NOT NULL REFERENCES "User"(id),
-    "signedAt" TIMESTAMPTZ,
-    provider TEXT NOT NULL
-);
-CREATE INDEX "Signature_documentId_index" ON "Signature" ("documentId");
+  @@map("Client")
+}
 
-CREATE TABLE "Task" (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    title TEXT NOT NULL,
-    completed BOOLEAN DEFAULT FALSE,
-    "dueDate" TIMESTAMPTZ,
-    "matterId" UUID NOT NULL REFERENCES "Matter"(id)
-);
-CREATE INDEX "Task_matterId_index" ON "Task" ("matterId");
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 
-CREATE TABLE "KeyDate" (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    title TEXT NOT NULL,
-    date TIMESTAMPTZ NOT NULL,
-    "matterId" UUID NOT NULL REFERENCES "Matter"(id)
-);
-CREATE INDEX "KeyDate_matterId_index" ON "KeyDate" ("matterId");
+  @@map("Session")
+}
 
-CREATE TABLE "Message" (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    content TEXT NOT NULL,
-    "senderId" UUID NOT NULL REFERENCES "User"(id),
-    "matterId" UUID NOT NULL REFERENCES "Matter"(id),
-    "createdAt" TIMESTAMPTZ DEFAULT NOW(),
-    archived BOOLEAN DEFAULT FALSE
-);
-CREATE INDEX "Message_senderId_index" ON "Message" ("senderId");
-CREATE INDEX "Message_matterId_index" ON "Message" ("matterId");
+model PasswordReset {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
 
-CREATE TABLE "MessageAttachment" (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "messageId" UUID NOT NULL REFERENCES "Message"(id),
-    "fileUrl" TEXT NOT NULL
-);
-CREATE INDEX "MessageAttachment_messageId_index" ON "MessageAttachment" ("messageId");
+  @@index([userId])
+  @@map("PasswordReset")
+}
 
-CREATE TABLE "Appointment" (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    title TEXT NOT NULL,
-    "startTime" TIMESTAMPTZ NOT NULL,
-    "endTime" TIMESTAMPTZ NOT NULL,
-    "matterId" UUID NOT NULL REFERENCES "Matter"(id),
-    "createdBy" UUID NOT NULL REFERENCES "User"(id),
-    "externalCalendarId" TEXT,
-    "videoLink" TEXT
-);
-CREATE INDEX "Appointment_matterId_index" ON "Appointment" ("matterId");
-CREATE INDEX "Appointment_createdBy_index" ON "Appointment" ("createdBy");
+model TwoFactorToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
 
-CREATE TABLE "Notification" (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "userId" UUID NOT NULL REFERENCES "User"(id),
-    title TEXT NOT NULL,
-    message TEXT NOT NULL,
-    type "NotificationType" NOT NULL,
-    read BOOLEAN DEFAULT FALSE,
-    "createdAt" TIMESTAMPTZ DEFAULT NOW()
-);
-CREATE INDEX "Notification_userId_index" ON "Notification" ("userId");
+  @@index([userId])
+  @@map("TwoFactorToken")
+}
 
-CREATE TABLE "AuditLog" (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "userId" UUID NOT NULL REFERENCES "User"(id),
-    action TEXT NOT NULL,
-    entity TEXT,
-    "entityId" UUID,
-    "createdAt" TIMESTAMPTZ DEFAULT NOW()
-);
-CREATE INDEX "AuditLog_userId_index" ON "AuditLog" ("userId");
+model Matter {
+  id          String       @id @default(uuid())
+  title       String
+  description String?
+  status      MatterStatus
+  clientId    String
+  client      Client       @relation(fields: [clientId], references: [id])
+  lawyerId    String
+  lawyer      User         @relation(fields: [lawyerId], references: [id])
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @default(now())
 
-CREATE TABLE "TimeEntry" (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "userId" UUID NOT NULL REFERENCES "User"(id),
-    "matterId" UUID NOT NULL REFERENCES "Matter"(id),
-    hours FLOAT NOT NULL,
-    note TEXT,
-    "createdAt" TIMESTAMPTZ DEFAULT NOW()
-);
-CREATE INDEX "TimeEntry_userId_index" ON "TimeEntry" ("userId");
-CREATE INDEX "TimeEntry_matterId_index" ON "TimeEntry" ("matterId");
+  activities   MatterActivity[]
+  documents    Document[]
+  tasks        Task[]
+  keyDates     KeyDate[]
+  messages     Message[]
+  appointments Appointment[]
+  timeEntries  TimeEntry[]
 
-CREATE TABLE "EmailLog" (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    recipient TEXT NOT NULL,
-    subject TEXT NOT NULL,
-    body TEXT NOT NULL,
-    "sentAt" TIMESTAMPTZ DEFAULT NOW(),
-    status TEXT NOT NULL
-);
+  @@index([clientId])
+  @@index([lawyerId])
+  @@map("Matter")
+}
 
-CREATE TABLE "GlossaryCategory" (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL
-);
+model MatterActivity {
+  id        String   @id @default(uuid())
+  matterId  String
+  matter    Matter   @relation(fields: [matterId], references: [id])
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
 
-CREATE TABLE "GlossaryTerm" (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    term TEXT NOT NULL,
-    definition TEXT NOT NULL,
-    "categoryId" UUID NOT NULL REFERENCES "GlossaryCategory"(id)
-);
+  @@index([matterId])
+  @@map("MatterActivity")
+}
 
--- ============================================
--- UPDATED AT TRIGGER
--- ============================================
+model Document {
+  id         String         @id @default(uuid())
+  name       String
+  fileUrl    String
+  status     DocumentStatus
+  matterId   String
+  matter     Matter         @relation(fields: [matterId], references: [id])
+  uploadedBy String
+  uploader   User           @relation(fields: [uploadedBy], references: [id])
+  folderPath String?
+  previewUrl String?
+  externalId String?
+  createdAt  DateTime       @default(now())
 
-CREATE OR REPLACE FUNCTION update_updatedat_column()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW."updatedAt" = NOW();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+  versions   DocumentVersion[]
+  signatures Signature[]
 
-CREATE TRIGGER user_updatedat_trigger
-BEFORE UPDATE ON "User"
-FOR EACH ROW
-EXECUTE FUNCTION update_updatedat_column();
+  @@index([matterId])
+  @@map("Document")
+}
 
-CREATE TRIGGER matter_updatedat_trigger
-BEFORE UPDATE ON "Matter"
-FOR EACH ROW
-EXECUTE FUNCTION update_updatedat_column();
+model DocumentVersion {
+  id         String   @id @default(uuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id])
+  fileUrl    String
+  version    Int
+  createdAt  DateTime @default(now())
+
+  @@index([documentId])
+  @@map("DocumentVersion")
+}
+
+model Signature {
+  id         String    @id @default(uuid())
+  documentId String
+  document   Document  @relation(fields: [documentId], references: [id])
+  signedBy   String
+  user       User      @relation(fields: [signedBy], references: [id])
+  signedAt   DateTime?
+  provider   String
+
+  @@index([documentId])
+  @@map("Signature")
+}
+
+model Task {
+  id        String    @id @default(uuid())
+  title     String
+  completed Boolean   @default(false)
+  dueDate   DateTime?
+  matterId  String
+  matter    Matter    @relation(fields: [matterId], references: [id])
+
+  @@index([matterId])
+  @@map("Task")
+}
+
+model KeyDate {
+  id       String   @id @default(uuid())
+  title    String
+  date     DateTime
+  matterId String
+  matter   Matter   @relation(fields: [matterId], references: [id])
+
+  @@index([matterId])
+  @@map("KeyDate")
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  content   String
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id])
+  matterId  String
+  matter    Matter   @relation(fields: [matterId], references: [id])
+  createdAt DateTime @default(now())
+  archived  Boolean  @default(false)
+
+  attachments MessageAttachment[]
+
+  @@index([senderId])
+  @@index([matterId])
+  @@map("Message")
+}
+
+model MessageAttachment {
+  id        String  @id @default(uuid())
+  messageId String
+  message   Message @relation(fields: [messageId], references: [id])
+  fileUrl   String
+
+  @@index([messageId])
+  @@map("MessageAttachment")
+}
+
+model Appointment {
+  id                 String   @id @default(uuid())
+  title              String
+  startTime          DateTime
+  endTime            DateTime
+  matterId           String
+  matter             Matter   @relation(fields: [matterId], references: [id])
+  createdBy          String
+  creator            User     @relation(fields: [createdBy], references: [id])
+  externalCalendarId String?
+  videoLink          String?
+
+  @@index([matterId])
+  @@index([createdBy])
+  @@map("Appointment")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  type      NotificationType
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+  @@map("Notification")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  action    String
+  entity    String?
+  entityId  String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("AuditLog")
+}
+
+model TimeEntry {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  matterId  String
+  matter    Matter   @relation(fields: [matterId], references: [id])
+  hours     Float
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([matterId])
+  @@map("TimeEntry")
+}
+
+model EmailLog {
+  id        String   @id @default(uuid())
+  recipient String
+  subject   String
+  body      String
+  sentAt    DateTime @default(now())
+  status    String
+
+  @@map("EmailLog")
+}
+
+model GlossaryCategory {
+  id    String         @id @default(uuid())
+  name  String
+  terms GlossaryTerm[]
+
+  @@map("GlossaryCategory")
+}
+
+model GlossaryTerm {
+  id         String           @id @default(uuid())
+  term       String
+  definition String
+  categoryId String
+  category   GlossaryCategory @relation(fields: [categoryId], references: [id])
+
+  @@map("GlossaryTerm")
+}
