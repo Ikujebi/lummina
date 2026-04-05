@@ -1,7 +1,14 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 export async function GET() {
-  const logs = await prisma.auditLog.findMany({
+  const logs: Prisma.AuditLogGetPayload<{
+    include: {
+      user: {
+        select: { name: true; email: true };
+      };
+    };
+  }>[] = await prisma.auditLog.findMany({
     include: {
       user: {
         select: { name: true, email: true },
@@ -11,7 +18,6 @@ export async function GET() {
     take: 20,
   });
 
-  // Use inferred types without importing from @prisma/client
   const transformedLogs = logs.map((log) => ({
     id: log.id,
     action: log.action,
@@ -20,7 +26,5 @@ export async function GET() {
     createdAt: log.createdAt,
   }));
 
-  return new Response(JSON.stringify(transformedLogs), {
-    headers: { "Content-Type": "application/json" },
-  });
+  return Response.json(transformedLogs);
 }
