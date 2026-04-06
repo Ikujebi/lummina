@@ -8,7 +8,7 @@ export async function GET() {
       name: true,
       email: true,
       createdAt: true,
-      lawyerMatters: {
+      mattersAsLawyer: {
         select: { id: true },
       },
     },
@@ -16,8 +16,11 @@ export async function GET() {
 
   return Response.json(
     lawyers.map((l) => ({
-      ...l,
-      casesCount: l.lawyerMatters.length,
+      id: l.id,
+      name: l.name,
+      email: l.email,
+      createdAt: l.createdAt,
+      casesCount: l.mattersAsLawyer.length,
     }))
   );
 }

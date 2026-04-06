@@ -9,7 +9,7 @@ interface InvitationBody {
   id?: string;
   email?: string;
   role?: "ADMIN" | "LAWYER" | "CLIENT";
-  expiresAt?: string; // ISO string
+  expiresAt?: string;
 }
 
 // Nodemailer transporter
@@ -27,8 +27,7 @@ const transporter = nodemailer.createTransport({
 async function requireAdmin() {
   const user = await getCurrentUser();
   if (!user || user.role !== "ADMIN") {
-    const error = new Error("Unauthorized");
-    throw error;
+    throw new Error("Unauthorized");
   }
   return user;
 }
@@ -36,7 +35,7 @@ async function requireAdmin() {
 // --- GET: List all invitations (Admin only) ---
 export async function GET() {
   try {
-    await requireAdmin(); // Only admins can view invitations
+    await requireAdmin();
 
     const invitations = await prisma.invitation.findMany({
       orderBy: { createdAt: "desc" },
@@ -49,14 +48,19 @@ export async function GET() {
   }
 }
 
-// --- POST: Create a new invitation & send email (frontend form only) ---
+// --- POST: Create invitation & send email ---
 export async function POST(req: Request) {
   try {
-    const body: InvitationBody = (await req.json()) as InvitationBody;
+    const admin = await requireAdmin(); // ✅ get admin user
+
+    const body: InvitationBody = await req.json();
     const { email, role, expiresAt } = body;
 
     if (!email || !role || !expiresAt) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
     }
 
     const token = randomUUID();
@@ -67,10 +71,11 @@ export async function POST(req: Request) {
         role,
         token,
         expiresAt: new Date(expiresAt),
+        userId: admin.id, // ✅ FIXED
       },
     });
 
-  const invitationLink = `${process.env.NEXT_PUBLIC_BASE_URL}/register?token=${token}`;
+    const invitationLink = `${process.env.NEXT_PUBLIC_BASE_URL}/register?token=${token}`;
 
     await transporter.sendMail({
       from: `"Lummina Law" <${process.env.SMTP_USER}>`,
@@ -86,50 +91,76 @@ export async function POST(req: Request) {
       `,
     });
 
-    return NextResponse.json({ message: "Invitation created and email sent", invitation });
+    return NextResponse.json({
+      message: "Invitation created and email sent",
+      invitation,
+    });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: "Failed to create invitation" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to create invitation" },
+      { status: 500 }
+    );
   }
 }
 
-// --- PATCH: Update invitation (Admin only) ---
+// --- PATCH: Update invitation ---
 export async function PATCH(req: Request) {
   try {
     await requireAdmin();
 
-    const body: InvitationBody = (await req.json()) as InvitationBody;
+    const body: InvitationBody = await req.json();
     const { id, expiresAt } = body;
 
-    if (!id) return NextResponse.json({ error: "Missing invitation ID" }, { status: 400 });
+    if (!id)
+      return NextResponse.json(
+        { error: "Missing invitation ID" },
+        { status: 400 }
+      );
 
     const invitation = await prisma.invitation.update({
       where: { id },
-      data: { expiresAt: expiresAt ? new Date(expiresAt) : undefined },
+      data: {
+        expiresAt: expiresAt ? new Date(expiresAt) : undefined,
+      },
     });
 
-    return NextResponse.json({ message: "Invitation updated", invitation });
+    return NextResponse.json({
+      message: "Invitation updated",
+      invitation,
+    });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: "Failed to update invitation" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to update invitation" },
+      { status: 500 }
+    );
   }
 }
 
-// --- DELETE: Remove invitation (Admin only) ---
+// --- DELETE: Remove invitation ---
 export async function DELETE(req: Request) {
   try {
     await requireAdmin();
 
-    const body: { id?: string } = (await req.json()) as { id?: string };
-    const { id } = body;
+    const { id } = await req.json();
 
-    if (!id) return NextResponse.json({ error: "Missing invitation ID" }, { status: 400 });
+    if (!id)
+      return NextResponse.json(
+        { error: "Missing invitation ID" },
+        { status: 400 }
+      );
 
-    await prisma.invitation.delete({ where: { id } });
+    await prisma.invitation.delete({
+      where: { id },
+    });
 
     return NextResponse.json({ message: "Invitation deleted" });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: "Failed to delete invitation" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to delete invitation" },
+      { status: 500 }
+    );
   }
 }
