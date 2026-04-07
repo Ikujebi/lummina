@@ -6,16 +6,13 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import type { Client, Matter } from "@prisma/client";
 
-// --- Types ---
 interface ClientBody {
   name?: string;
   email?: string;
 }
 
-// --- Type for clients with their matters ---
 type ClientWithMatters = Client & { matters: Matter[] };
 
-// --- Helper: Require admin ---
 async function requireAdmin() {
   const user = await getCurrentUser();
   if (!user || user.role !== "ADMIN") {
@@ -24,7 +21,6 @@ async function requireAdmin() {
   return user;
 }
 
-// --- GET: List all clients with cases count ---
 export async function GET() {
   await requireAdmin();
 
@@ -42,10 +38,9 @@ export async function GET() {
   );
 }
 
-// --- POST: Create a new client ---
 export async function POST(req: Request) {
   try {
-    const admin = await requireAdmin(); // get admin user
+    const admin = await requireAdmin();
 
     const body: ClientBody = await req.json();
     const { name, email } = body;
@@ -57,7 +52,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Create the client
     const client = await prisma.client.create({
       data: {
         name,
