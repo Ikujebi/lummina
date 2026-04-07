@@ -180,7 +180,7 @@ export default function LawyersPage() {
 
       {/* Invite Lawyer Form */}
       {showInviteForm && (
-        <div className="flex flex-col gap-2 p-4 border rounded bg-[#F7E7CE] w-full sm:w-96">
+        <div className="flex flex-col gap-2 p-4 border rounded bg-[#F7E7CE] w-full sm:w-96 ">
           <input
             type="email"
             placeholder="Lawyer's Email"

@@ -71,3 +71,10 @@ export interface ReportSummary {
   statusBreakdown: MatterStatusBreakdown[];
   monthlyMatters: MonthlyMatter[];
 }
+export interface Case {
+  id: string;
+  title: string;
+  status: "OPEN" | "IN_PROGRESS" | "CLOSED";
+  lawyer: string;
+  client: string;
+}

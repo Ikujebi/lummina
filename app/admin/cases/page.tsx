@@ -1,20 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { Case } from "@/types/admin";
+import { Select, Tag, Modal, Form, Input, Button } from "antd";
 
-interface Case {
-  id: string;
-  title: string;
-  status: "OPEN" | "IN_PROGRESS" | "CLOSED";
-  lawyer: string;
-  client: string;
-}
+const { Option } = Select;
 
 export default function CasesPage() {
   const [cases, setCases] = useState<Case[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<Case["status"] | "ALL">("ALL");
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [form] = Form.useForm();
+
+  // Fetch cases
   useEffect(() => {
     async function fetchCases() {
       const res = await fetch("/api/admin/matters");
@@ -24,17 +25,53 @@ export default function CasesPage() {
     fetchCases();
   }, []);
 
-  const filteredCases = cases.filter(c => {
-    const matchesSearch = c.title.toLowerCase().includes(search.toLowerCase()) ||
-                          c.lawyer.toLowerCase().includes(search.toLowerCase()) ||
-                          c.client.toLowerCase().includes(search.toLowerCase());
+  const filteredCases = cases.filter((c) => {
+    const matchesSearch =
+      c.title.toLowerCase().includes(search.toLowerCase()) ||
+      c.lawyer.toLowerCase().includes(search.toLowerCase()) ||
+      c.client.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === "ALL" || c.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
+  // Map statuses to tag colors
+  const statusColors: Record<Case["status"] | "ALL", string> = {
+    ALL: "default",
+    OPEN: "green",
+    IN_PROGRESS: "orange",
+    CLOSED: "red",
+  };
+
+  // Handle creating a new case
+  const handleCreateCase = async (values: { title: string; lawyer: string; client: string; status: Case["status"] }) => {
+    try {
+      const res = await fetch("/api/admin/matters", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+
+      const newCase = await res.json();
+
+      setCases([newCase, ...cases]); // Add new case to the top
+      setIsModalOpen(false);
+      form.resetFields();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to create case");
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold text-[#5F021F]">Cases</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold text-[#5F021F]">Cases</h1>
+        <Button type="primary" 
+        onClick={() => setIsModalOpen(true)}
+        style={{ backgroundColor: "#5F021F", borderColor: "#5F021F" }}>
+          Create Case
+        </Button>
+      </div>
 
       {/* Search and Filter */}
       <div className="flex flex-col sm:flex-row gap-4">
@@ -46,16 +83,26 @@ export default function CasesPage() {
           className="px-4 py-2 rounded-xl border border-[#5F021F]/30 outline-none w-full sm:w-64"
         />
 
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as Case["status"] | "ALL")}
-          className="px-4 py-2 rounded-xl border border-[#5F021F]/30 outline-none w-full sm:w-48"
-        >
-          <option value="ALL">All Statuses</option>
-          <option value="OPEN">Open</option>
-          <option value="IN_PROGRESS">In Progress</option>
-          <option value="CLOSED">Closed</option>
-        </select>
+        {/* Ant Design Select */}
+        <Select
+  value={statusFilter}
+  onChange={(value: string) => setStatusFilter(value as Case["status"] | "ALL")}
+  placeholder="Select Status"
+  size="middle"
+  className="w-full sm:w-48 rounded-xl !bg-[#F7E7CE] !border !border-[#5F021F] text-sm sm:text-base"
+  classNames={{
+    popup: {
+      root: "rounded-xl shadow-lg !bg-[#F7E7CE]",
+    },
+  }}
+  optionLabelProp="label"
+  options={[
+    { value: "ALL", label: <Tag color="default">All Statuses</Tag> },
+    { value: "OPEN", label: <Tag color="green">Open</Tag> },
+    { value: "IN_PROGRESS", label: <Tag color="orange">In Progress</Tag> },
+    { value: "CLOSED", label: <Tag color="red">Closed</Tag> },
+  ]}
+/>
       </div>
 
       {/* Table */}
@@ -70,16 +117,22 @@ export default function CasesPage() {
             </tr>
           </thead>
           <tbody>
-            {filteredCases.map(c => (
+            {filteredCases.map((c) => (
               <tr key={c.id} className="hover:bg-[#FFE8B2]">
                 <td className="px-4 py-3 border">{c.title}</td>
                 <td className="px-4 py-3 border">{c.lawyer}</td>
                 <td className="px-4 py-3 border">{c.client}</td>
-                <td className={`px-4 py-3 border font-semibold ${
-                  c.status === "OPEN" ? "text-green-600" :
-                  c.status === "IN_PROGRESS" ? "text-orange-600" :
-                  "text-gray-600"
-                }`}>{c.status.replace("_", " ")}</td>
+                <td
+                  className={`px-4 py-3 border font-semibold ${
+                    c.status === "OPEN"
+                      ? "text-green-600"
+                      : c.status === "IN_PROGRESS"
+                      ? "text-orange-600"
+                      : "text-gray-600"
+                  }`}
+                >
+                  {c.status.replace("_", " ")}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -89,6 +142,60 @@ export default function CasesPage() {
           <p className="text-center p-4 text-[#5F021F]/70">No cases found.</p>
         )}
       </div>
+
+      {/* Create Case Modal */}
+      <Modal
+        title="Create New Case"
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        footer={null}
+      >
+        <Form form={form} layout="vertical" onFinish={handleCreateCase}>
+          <Form.Item
+            name="title"
+            label="Case Title"
+            rules={[{ required: true, message: "Please enter case title" }]}
+          >
+            <Input placeholder="Enter case title" />
+          </Form.Item>
+
+          <Form.Item
+            name="lawyer"
+            label="Lawyer"
+            rules={[{ required: true, message: "Please enter lawyer name" }]}
+          >
+            <Input placeholder="Enter lawyer name" />
+          </Form.Item>
+
+          <Form.Item
+            name="client"
+            label="Client"
+            rules={[{ required: true, message: "Please enter client name" }]}
+          >
+            <Input placeholder="Enter client name" />
+          </Form.Item>
+
+          <Form.Item
+            name="status"
+            label="Status"
+            rules={[{ required: true, message: "Please select case status" }]}
+          >
+            <Select placeholder="Select status">
+              <Option value="OPEN">Open</Option>
+              <Option value="IN_PROGRESS">In Progress</Option>
+              <Option value="CLOSED">Closed</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item>
+            <Button type="primary" 
+            htmlType="submit" block
+            style={{ backgroundColor: "#5F021F", borderColor: "#5F021F" }}>
+              Create Case
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }

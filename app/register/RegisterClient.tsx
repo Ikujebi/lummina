@@ -18,7 +18,7 @@ export default function RegisterPage() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? undefined;
 
-  const [role, setRole] = useState<"client" | "lawyer">("client");
+  const [role, setRole] = useState<"CLIENT" | "LAWYER">("CLIENT");
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -29,6 +29,7 @@ export default function RegisterPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [roleLoaded, setRoleLoaded] = useState(false); // track when role from token is loaded
 
   // Prefill email & role from token if available
   useEffect(() => {
@@ -39,18 +40,21 @@ export default function RegisterPage() {
           if (invitation.email) {
             setForm((prev) => ({ ...prev, email: invitation.email }));
           }
-          if (invitation.role === "client" || invitation.role === "lawyer") {
+          if (invitation.role === "CLIENT" || invitation.role === "LAWYER") {
             setRole(invitation.role);
           }
+          setRoleLoaded(true); // role has been set from token
         })
         .catch(() => {
-          // Ignore errors, token will be validated on submit
+          setRoleLoaded(true); // even if fetch fails, allow manual selection
         });
+    } else {
+      setRoleLoaded(true); // no token, normal registration
     }
   }, [token]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -118,27 +122,27 @@ export default function RegisterPage() {
             <button
               type="button"
               className={`py-3 text-sm font-semibold rounded-md ${
-                role === "client" ? "text-[#FFA500]" : "text-[#5F021F]/80"
+                role === "CLIENT" ? "text-[#FFA500]" : "text-[#5F021F]/80"
               }`}
-              onClick={() => setRole("client")}
-              disabled={!!token} // lock role if token exists
-            >
-              🧑‍💼 Client
-            </button>
-            <button
-              type="button"
-              className={`py-3 text-sm font-semibold ${
-                role === "lawyer" ? "text-[#FFA500]" : "text-[#5F021F]/80"
-              }`}
-              onClick={() => setRole("lawyer")}
+              onClick={() => setRole("CLIENT")}
               disabled={!!token} // lock role if token exists
             >
               ⚖️ Lawyer
             </button>
+            <button
+              type="button"
+              className={`py-3 text-sm font-semibold ${
+                role === "LAWYER" ? "text-[#FFA500]" : "text-[#5F021F]/80"
+              }`}
+              onClick={() => setRole("LAWYER")}
+              disabled={!!token} // lock role if token exists
+            >
+              🧑‍💼 Client
+            </button>
 
             <span
               className={`absolute top-1 left-1 w-[calc(50%-0.25rem)] h-[calc(100%-0.5rem)] bg-[#FFF7E0] rounded-md shadow-md transition-transform ${
-                role === "lawyer" ? "translate-x-full" : "translate-x-0"
+                role === "LAWYER" ? "translate-x-full" : "translate-x-0"
               }`}
             />
           </div>
@@ -196,7 +200,9 @@ export default function RegisterPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <label className="text-sm text-[#5F021F]/90">Confirm Password</label>
+                <label className="text-sm text-[#5F021F]/90">
+                  Confirm Password
+                </label>
                 <input
                   name="confirmPassword"
                   type="password"
@@ -235,7 +241,7 @@ export default function RegisterPage() {
             {/* Submit */}
             <button
               type="submit"
-              disabled={loading}
+              disabled={!!loading || (!!token && !roleLoaded)}
               className="w-full h-14 bg-[#FFA500] text-[#5F021F] font-semibold rounded-lg shadow-md mt-4 disabled:opacity-50"
             >
               {loading ? "Creating Account..." : "Create Account"}
@@ -247,8 +253,8 @@ export default function RegisterPage() {
         <div className="hidden lg:grid place-items-center">
           <div className="w-full max-w-[520px] rounded-lg shadow-lg overflow-hidden">
             <Image
-            width={520}
-            height={320}
+              width={520}
+              height={320}
               src={heroIllustration}
               alt="Registration Illustration"
               className="object-cover rounded-lg"
@@ -259,7 +265,9 @@ export default function RegisterPage() {
 
       {/* Stepper */}
       <nav className="max-w-[1120px] w-[90%] mx-auto my-8 bg-[#FFF7E0] rounded-xl shadow-md p-6 grid gap-4 border border-[#FFD580]/40">
-        <p className="uppercase text-sm font-semibold text-[#5F021F]">Step Guide</p>
+        <p className="uppercase text-sm font-semibold text-[#5F021F]">
+          Step Guide
+        </p>
         <ol className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 list-none">
           {steps.map((step) => (
             <li
@@ -269,7 +277,9 @@ export default function RegisterPage() {
               <span className="w-8 h-8 rounded-full grid place-items-center font-semibold text-sm bg-[#FFD580]/50">
                 {step.number}
               </span>
-              <span className="text-sm font-semibold text-[#5F021F]">{step.label}</span>
+              <span className="text-sm font-semibold text-[#5F021F]">
+                {step.label}
+              </span>
             </li>
           ))}
         </ol>

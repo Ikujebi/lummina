@@ -3,19 +3,33 @@
 import { useEffect, useState } from "react";
 import UsersTable from "../../components/admin-dashboard/UsersTable";
 
-interface User { id: string; name: string; email: string; role: "LAWYER" | "CLIENT" | "ADMIN"; }
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: "LAWYER" | "CLIENT" | "ADMIN";
+}
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<User[]>([]);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetch("/api/admin/users").then(res => res.json()).then((data: User[]) => {
-      setClients(data.filter(u => u.role === "CLIENT"));
-    });
+    fetch("/api/admin/users")
+      .then((res) => res.json())
+      .then((data) => {
+        // Make sure we have an array of User objects
+        const usersArray: User[] = Array.isArray(data) ? data : data.users ?? [];
+        setClients(usersArray.filter((u: User) => u.role === "CLIENT"));
+      })
+      .catch((err) => {
+        console.error("Failed to fetch users:", err);
+      });
   }, []);
 
-  const filteredClients = clients.filter(u => u.name.toLowerCase().includes(search.toLowerCase()));
+  const filteredClients = clients.filter((u: User) =>
+    u.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="flex flex-col gap-6">
