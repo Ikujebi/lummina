@@ -22,18 +22,18 @@ async function requireAdmin() {
 export async function GET() {
   await requireAdmin();
 
-  const clients = await prisma.client.findMany({
-    include: { matters: true },
-  });
+  const clients: (Client & { matters: Matter[] })[] = await prisma.client.findMany({
+  include: { matters: true },
+});
 
-  return NextResponse.json(
-    clients.map((c: Client & { matters: Matter[] }) => ({
-      id: c.id,
-      name: c.name,
-      email: c.email,
-      casesCount: c.matters.length,
-    }))
-  );
+ return NextResponse.json(
+  clients.map(c => ({
+    id: c.id,
+    name: c.name,
+    email: c.email,
+    casesCount: c.matters.length,
+  }))
+);
 }
 
 // --- POST: Create client ---
