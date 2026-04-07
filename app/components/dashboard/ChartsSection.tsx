@@ -12,38 +12,47 @@ export default function ChartsSection() {
   useEffect(() => {
     if (!casesChartRef.current) return;
 
-    const chart = new Chart(casesChartRef.current, {
-      type: "doughnut",
-      data: {
-        labels: ["Start", "Documentation", "Review", "Approval", "Completed"],
-        datasets: [
-          {
-            data: [3, 4, 2, 2, 1],
-            backgroundColor: [
-              "#5F021F",
-              "#FFA500",
-              "#F7e7ce",
-              "#d97706",
-              "#7c2d12",
-            ],
-            borderWidth: 0,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: "70%",
-        plugins: {
-          legend: {
-            position: "bottom",
-            labels: { color: "#5F021F", usePointStyle: true },
+    let chart: Chart | null = null;
+
+    const frame = requestAnimationFrame(() => {
+      if (!casesChartRef.current) return;
+
+      chart = new Chart(casesChartRef.current, {
+        type: "doughnut",
+        data: {
+          labels: ["Start", "Documentation", "Review", "Approval", "Completed"],
+          datasets: [
+            {
+              data: [3, 4, 2, 2, 1],
+              backgroundColor: [
+                "#5F021F",
+                "#FFA500",
+                "#F7e7ce",
+                "#d97706",
+                "#7c2d12",
+              ],
+              borderWidth: 0,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: "70%",
+          plugins: {
+            legend: {
+              position: "bottom",
+              labels: { color: "#5F021F", usePointStyle: true },
+            },
           },
         },
-      },
+      });
     });
 
-    return () => chart.destroy();
+    return () => {
+      cancelAnimationFrame(frame);
+      chart?.destroy();
+    };
   }, []);
 
   useEffect(() => {
@@ -94,9 +103,9 @@ export default function ChartsSection() {
   return (
     <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
 
-      <div className="bg-white p-6 rounded-2xl shadow h-[350px] flex flex-col justify-center">
+      <div className="bg-white p-6 rounded-2xl shadow h-[350px] flex flex-col justify-center min-h-0">
         <h2 className="font-semibold text-[#5F021F] mb-4">Case Snapshot</h2>
-        <div className="flex-1">
+        <div className="relative w-full h-[12.5rem] sm:h-[15rem] xl:h-[17.5rem]">
           <canvas ref={casesChartRef} />
         </div>
       </div>

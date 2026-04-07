@@ -50,13 +50,16 @@ export default function SignInPage() {
       }
 
       // ✅ Role-based redirect
-      if (data.role === "ADMIN") {
-        router.push("/admin/dashboard");
-      } else if (data.role === "LAWYER") {
-        router.push("/lawyer/dashboard");
-      } else {
-        router.push("/client/dashboard");
-      }
+     if (data.role === "ADMIN") {
+  localStorage.setItem("isLoggedIn", "true");
+  router.push("/admin/dashboard");
+} else if (data.role === "LAWYER") {
+  localStorage.setItem("isLoggedIn", "true");
+  router.push("/lawyer/dashboard");
+} else {
+  localStorage.setItem("isLoggedIn", "true");
+  router.push("/client/dashboard");
+}
 
     } catch (err: unknown) {
       if (err instanceof Error) {

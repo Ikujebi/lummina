@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { randomUUID } from "crypto";
 import nodemailer from "nodemailer";
+import { Prisma } from "@prisma/client"
 
 // --- Types ---
 interface InvitationBody {
@@ -71,8 +72,8 @@ export async function POST(req: Request) {
         role,
         token,
         expiresAt: new Date(expiresAt),
-        userId: admin.id, // ✅ FIXED
-      },
+          userId: admin.id,// ✅ FIXED
+      }as Prisma.InvitationUncheckedCreateInput, 
     });
 
     const invitationLink = `${process.env.NEXT_PUBLIC_BASE_URL}/register?token=${token}`;

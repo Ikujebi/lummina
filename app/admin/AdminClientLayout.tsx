@@ -1,26 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Sidebar from "../components/admin-dashboard/Sidebar";
 import Image from "next/image";
 import adminPhoto from "@/public/img/careers.jpg";
 
-export default function AdminSidebarWrapper({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AdminSidebarWrapper({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const router = useRouter();
+
+  // Only redirect after logout (triggered via localStorage)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      if (!localStorage.getItem("isLoggedIn")) {
+        router.replace("/");
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, [router]);
 
   return (
     <>
       {/* ================= TOP BAR ================= */}
       <header className="sticky top-0 z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between px-6 sm:px-8 py-4 bg-[#5F021F] shadow">
         <div className="flex items-center gap-3">
-          <button
-            className="lg:hidden text-[#F7E7CE] text-2xl"
-            onClick={() => setSidebarOpen(true)}
-          >
+          <button className="lg:hidden text-[#F7E7CE] text-2xl" onClick={() => setSidebarOpen(true)}>
             ☰
           </button>
 
@@ -30,13 +37,7 @@ export default function AdminSidebarWrapper({
         </div>
 
         <div className="flex items-center gap-3">
-          <Image
-            src={adminPhoto}
-            alt="Admin photo"
-            width={40}
-            height={40}
-            className="rounded-full"
-          />
+          <Image src={adminPhoto} alt="Admin photo" width={40} height={40} className="rounded-full" />
           <div className="text-[#F7E7CE]">
             <p className="font-semibold">Admin User</p>
             <p className="text-xs opacity-80">System Administrator</p>
