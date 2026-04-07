@@ -77,4 +77,5 @@ export interface Case {
   status: "OPEN" | "IN_PROGRESS" | "CLOSED";
   lawyer: string;
   client: string;
+  caseNumber: string;
 }

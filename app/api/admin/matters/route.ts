@@ -41,7 +41,7 @@ export async function GET() {
     return NextResponse.json(
       matters.map((m) => ({
         id: m.id,
-        caseNumber: m.caseNumber, // ✅ added
+        caseNumber: m.caseNumber, // ✅ included
         title: m.title,
         status: m.status,
         client: m.client.name,
@@ -64,36 +64,38 @@ export async function POST(req: Request) {
     // Generate case number
     const caseNumber = await generateCaseNumber();
 
-    // Create lawyer if not exist
-    let lawyerRecord = await prisma.user.findFirst({ where: { name: lawyer } });
-    if (!lawyerRecord) {
-      lawyerRecord = await prisma.user.create({
-        data: {
-          name: lawyer,
-          role: "LAWYER",
-          email: `${lawyer.replace(/\s+/g, "_").toLowerCase()}@example.com`,
-          password: "temporaryPassword123!",
-        },
-      });
-    }
+    // Generate emails for uniqueness
+    const lawyerEmail = `${lawyer.replace(/\s+/g, "_").toLowerCase()}@example.com`;
+    const clientEmail = `${client.replace(/\s+/g, "_").toLowerCase()}@example.com`;
 
-    // Create client if not exist
-    let clientRecord = await prisma.user.findFirst({ where: { name: client } });
-    if (!clientRecord) {
-      clientRecord = await prisma.user.create({
-        data: {
-          name: client,
-          role: "CLIENT",
-          email: `${client.replace(/\s+/g, "_").toLowerCase()}@example.com`,
-          password: "temporaryPassword123!",
-        },
-      });
-    }
+    // Upsert lawyer
+    const lawyerRecord = await prisma.user.upsert({
+      where: { email: lawyerEmail }, // unique identifier
+      update: {}, // no updates needed
+      create: {
+        name: lawyer,
+        role: "LAWYER",
+        email: lawyerEmail,
+        password: "temporaryPassword123!",
+      },
+    });
+
+    // Upsert client
+    const clientRecord = await prisma.user.upsert({
+      where: { email: clientEmail },
+      update: {},
+      create: {
+        name: client,
+        role: "CLIENT",
+        email: clientEmail,
+        password: "temporaryPassword123!",
+      },
+    });
 
     // Create the matter
     const matter = await prisma.matter.create({
       data: {
-        caseNumber, // ✅ added
+        caseNumber, // ✅ included
         title,
         status,
         lawyerId: lawyerRecord.id,
@@ -107,7 +109,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       id: matter.id,
-      caseNumber: matter.caseNumber, // ✅ added
+      caseNumber: matter.caseNumber, // ✅ included
       title: matter.title,
       status: matter.status,
       client: matter.client.name,
