@@ -1,3 +1,6 @@
+// app/api/admin/clients/route.ts
+"use server";
+
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
@@ -8,6 +11,9 @@ interface ClientBody {
   name?: string;
   email?: string;
 }
+
+// --- Type for clients with their matters ---
+type ClientWithMatters = Client & { matters: Matter[] };
 
 // --- Helper: Require admin ---
 async function requireAdmin() {
@@ -22,21 +28,21 @@ async function requireAdmin() {
 export async function GET() {
   await requireAdmin();
 
-  const clients: (Client & { matters: Matter[] })[] = await prisma.client.findMany({
-  include: { matters: true },
-});
+  const clients: ClientWithMatters[] = await prisma.client.findMany({
+    include: { matters: true },
+  });
 
- return NextResponse.json(
-  clients.map(c => ({
-    id: c.id,
-    name: c.name,
-    email: c.email,
-    casesCount: c.matters.length,
-  }))
-);
+  return NextResponse.json(
+    clients.map((c: ClientWithMatters) => ({
+      id: c.id,
+      name: c.name,
+      email: c.email,
+      casesCount: c.matters.length,
+    }))
+  );
 }
 
-// --- POST: Create client ---
+// --- POST: Create a new client ---
 export async function POST(req: Request) {
   try {
     const admin = await requireAdmin(); // get admin user
