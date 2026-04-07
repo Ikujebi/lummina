@@ -136,6 +136,7 @@ model TwoFactorToken {
 
 model Matter {
   id          String       @id @default(uuid())
+  caseNumber  String   @unique
   title       String
   description String?
   status      MatterStatus
