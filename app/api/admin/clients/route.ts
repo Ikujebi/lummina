@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 
+// Ensure the user is an admin
 async function requireAdmin() {
   const user = await getCurrentUser();
   if (!user || user.role !== "ADMIN") throw new Error("Unauthorized");
@@ -11,15 +12,25 @@ async function requireAdmin() {
 export async function GET() {
   await requireAdmin();
 
-  // Fetch clients with cases count directly from the database
-  const clients = await prisma.$queryRaw<
-    { id: string; name: string; email: string | null; casesCount: number }[]
-  >`
-    SELECT c.id, c.name, c.email, COUNT(m.id) as "casesCount"
-    FROM "Client" c
-    LEFT JOIN "Matter" m ON m."clientId" = c.id
-    GROUP BY c.id
-  `;
+  // Fetch clients with a count of their matters directly from the database
+  const clients = await prisma.client.findMany({
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      _count: {
+        select: { matters: true },
+      },
+    },
+  });
 
-  return NextResponse.json(clients);
+  // Return the response directly without needing any map parameter
+  const result = clients.map(client => ({
+    id: client.id,
+    name: client.name,
+    email: client.email,
+    casesCount: client._count.matters,
+  }));
+
+  return NextResponse.json(result);
 }
