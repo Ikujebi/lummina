@@ -12,24 +12,24 @@ async function requireAdmin() {
 export async function GET() {
   await requireAdmin();
 
-  // Fetch clients and count their matters directly in Prisma
+  // Fetch clients with a count of their matters directly from the database
   const clients = await prisma.client.findMany({
     select: {
       id: true,
       name: true,
       email: true,
-      matters: {
-        select: { id: true },
+      _count: {
+        select: { matters: true },
       },
     },
   });
 
-  // Compute the response without using a callback parameter
-  const result = clients.map(({ id, name, email, matters }) => ({
-    id,
-    name,
-    email,
-    casesCount: matters.length,
+  // Return the response directly without needing any map parameter
+  const result = clients.map(client => ({
+    id: client.id,
+    name: client.name,
+    email: client.email,
+    casesCount: client._count.matters,
   }));
 
   return NextResponse.json(result);
