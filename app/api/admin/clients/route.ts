@@ -1,9 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import type { Client, Matter } from "@prisma/client";
 
-// Helper to ensure user is admin
+// Ensure the user is an admin
 async function requireAdmin() {
   const user = await getCurrentUser();
   if (!user || user.role !== "ADMIN") throw new Error("Unauthorized");
@@ -11,20 +10,26 @@ async function requireAdmin() {
 }
 
 export async function GET() {
-  // Ensure only admins can access
   await requireAdmin();
 
-  // Fetch clients including their matters
+  // Fetch clients and count their matters directly in Prisma
   const clients = await prisma.client.findMany({
-    include: { matters: true },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      matters: {
+        select: { id: true },
+      },
+    },
   });
 
-  // Explicitly type 'c' here
-  const result = clients.map((c: Client & { matters: Matter[] }) => ({
-    id: c.id,
-    name: c.name,
-    email: c.email,
-    casesCount: c.matters.length,
+  // Compute the response without using a callback parameter
+  const result = clients.map(({ id, name, email, matters }) => ({
+    id,
+    name,
+    email,
+    casesCount: matters.length,
   }));
 
   return NextResponse.json(result);
