@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import heroIllustration from "@/public/img/careers.jpg";
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 
 type LoginResponse = {
   role?: "ADMIN" | "LAWYER" | "CLIENT";
@@ -17,8 +18,11 @@ export default function SignInPage() {
   const [form, setForm] = useState({
     email: "",
     password: "",
+    confirmPassword: "", // optional, useful for registration
   });
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -37,36 +41,27 @@ export default function SignInPage() {
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
 
       const data: LoginResponse = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.error ?? "Login failed");
-      }
+      if (!res.ok) throw new Error(data.error ?? "Login failed");
 
-      // ✅ Role-based redirect
-     if (data.role === "ADMIN") {
-  localStorage.setItem("isLoggedIn", "true");
-  router.push("/admin/dashboard");
-} else if (data.role === "LAWYER") {
-  localStorage.setItem("isLoggedIn", "true");
-  router.push("/lawyer/dashboard");
-} else {
-  localStorage.setItem("isLoggedIn", "true");
-  router.push("/client/dashboard");
-}
-
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
+      if (data.role === "ADMIN") {
+        localStorage.setItem("isLoggedIn", "true");
+        router.push("/admin/dashboard");
+      } else if (data.role === "LAWYER") {
+        localStorage.setItem("isLoggedIn", "true");
+        router.push("/lawyer/dashboard");
       } else {
-        setError("Something went wrong");
+        localStorage.setItem("isLoggedIn", "true");
+        router.push("/client/dashboard");
       }
+    } catch (err: unknown) {
+      if (err instanceof Error) setError(err.message);
+      else setError("Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -74,7 +69,6 @@ export default function SignInPage() {
 
   return (
     <main className="min-h-screen grid lg:grid-cols-[minmax(320px,1fr)_minmax(320px,1fr)] gap-8 lg:gap-12 p-6 lg:p-12 items-center justify-center bg-[#F7E7CE]">
-      
       {/* Sign-in Card */}
       <section className="bg-white/90 rounded-[1.25rem] shadow-2xl p-6 md:p-10 border border-[#FFD580]/30 w-full max-w-lg mx-auto lg:mx-0">
         <header className="text-center mb-6">
@@ -87,7 +81,6 @@ export default function SignInPage() {
         </header>
 
         <form onSubmit={handleSubmit} className="grid gap-4">
-          
           {/* Email */}
           <div className="grid gap-2">
             <label className="text-[#5F021F] text-sm">Email</label>
@@ -102,23 +95,55 @@ export default function SignInPage() {
           </div>
 
           {/* Password */}
-          <div className="grid gap-2">
+          <div className="grid gap-2 relative">
             <label className="text-[#5F021F] text-sm">Password</label>
             <input
               name="password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               value={form.password}
               onChange={handleChange}
               required
-              className="w-full h-14 px-4 border border-[#5F021F] rounded-lg"
+              className="w-full h-14 px-4 border border-[#5F021F] rounded-lg pr-12"
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            >
+              {showPassword ? (
+                <EyeSlashIcon className="h-5 w-5" />
+              ) : (
+                <EyeIcon className="h-5 w-5" />
+              )}
+            </button>
+          </div>
+
+          {/* Confirm Password (optional) */}
+          <div className="grid gap-2 relative">
+            <label className="text-[#5F021F] text-sm">Confirm Password</label>
+            <input
+              name="confirmPassword"
+              type={showConfirmPassword ? "text" : "password"}
+              value={form.confirmPassword}
+              onChange={handleChange}
+              className="w-full h-14 px-4 border border-[#5F021F] rounded-lg pr-12"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword((prev) => !prev)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            >
+              {showConfirmPassword ? (
+                <EyeSlashIcon className="h-5 w-5" />
+              ) : (
+                <EyeIcon className="h-5 w-5" />
+              )}
+            </button>
           </div>
 
           {/* Error */}
           {error && (
-            <p className="text-red-600 text-sm text-center">
-              {error}
-            </p>
+            <p className="text-red-600 text-sm text-center">{error}</p>
           )}
 
           {/* Button */}
