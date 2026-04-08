@@ -1,6 +1,9 @@
+// app/api/admin/users/[id]/route.ts
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/requireAdmin";
+import { logAudit } from "@/lib/audit";
+import { getCurrentUser } from "@/lib/auth";
 
 /**
  * GET - Get single user
@@ -25,19 +28,13 @@ export async function GET(
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
     }
 
-    return NextResponse.json(user);
+    return NextResponse.json({ success: true, user });
   } catch (error) {
     console.error(error);
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
-    );
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
 }
 
@@ -51,15 +48,10 @@ export async function PATCH(
   try {
     await requireAdmin();
     const { id } = await context.params;
-
-    const body = await req.json();
-    const { role } = body;
+    const { role } = await req.json();
 
     if (!role) {
-      return NextResponse.json(
-        { error: "Role is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: "Role is required" }, { status: 400 });
     }
 
     const updatedUser = await prisma.user.update({
@@ -67,13 +59,16 @@ export async function PATCH(
       data: { role },
     });
 
-    return NextResponse.json(updatedUser);
+    // ✅ Log audit
+    const currentUser = await getCurrentUser();
+    if (currentUser) {
+      await logAudit(currentUser.id, "UPDATE", "User", updatedUser.id);
+    }
+
+    return NextResponse.json({ success: true, user: updatedUser });
   } catch (error) {
     console.error(error);
-    return NextResponse.json(
-      { error: "Failed to update user" },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: "Failed to update user" }, { status: 500 });
   }
 }
 
@@ -88,18 +83,17 @@ export async function DELETE(
     await requireAdmin();
     const { id } = await context.params;
 
-    await prisma.user.delete({
-      where: { id },
-    });
+    await prisma.user.delete({ where: { id } });
 
-    return NextResponse.json({
-      message: "User deleted successfully",
-    });
+    // ✅ Log audit
+    const currentUser = await getCurrentUser();
+    if (currentUser) {
+      await logAudit(currentUser.id, "DELETE", "User", id);
+    }
+
+    return NextResponse.json({ success: true, message: "User deleted successfully" });
   } catch (error) {
     console.error(error);
-    return NextResponse.json(
-      { error: "Failed to delete user" },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: "Failed to delete user" }, { status: 500 });
   }
 }

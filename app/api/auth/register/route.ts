@@ -40,7 +40,7 @@ export async function POST(req: Request) {
 
     // Create User
     const user = await prisma.user.create({
-      data: { name, email, password: hashedPassword, role },
+      data: { name, email, password: hashedPassword, role, isApproved: false },
     });
 
     // If client, create Client record
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     if (role === "LAWYER") {
       await prisma.invitation.update({
         where: { token },
-        data: { accepted: true, userId: user.id },
+        data: { accepted: true, userId: user.id, isApproved: false },
       });
     }
 

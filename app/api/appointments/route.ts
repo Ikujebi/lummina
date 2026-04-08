@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { logAudit } from "@/lib/audit";
 
 interface AppointmentBody {
   id?: string;
@@ -10,44 +11,43 @@ interface AppointmentBody {
   matterId?: string;
 }
 
-// GET: List upcoming appointments for current user
+// ================= GET: List upcoming appointments =================
 export async function GET() {
   const user = await getCurrentUser();
   if (!user)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
 
-  const now = new Date();
+  try {
+    const now = new Date();
 
-  const appointments = await prisma.appointment.findMany({
-    where: {
-      createdBy: user.id,
-      endTime: { gte: now },
-    },
-    orderBy: { startTime: "asc" },
-    include: {
-      matter: true,
-      creator: true,
-    },
-  });
+    const appointments = await prisma.appointment.findMany({
+      where: {
+        createdBy: user.id,
+        endTime: { gte: now },
+      },
+      orderBy: { startTime: "asc" },
+      include: { matter: true, creator: true },
+    });
 
-  return NextResponse.json(appointments);
+    return NextResponse.json({ success: true, appointments });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ success: false, error: "Failed to fetch appointments" }, { status: 500 });
+  }
 }
 
-// POST: Create a new appointment
+// ================= POST: Create a new appointment =================
 export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
 
   try {
     const body: AppointmentBody = await req.json();
     const { title, startTime, endTime, matterId } = body;
 
     if (!title || !startTime || !endTime || !matterId) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: "Missing required fields" }, { status: 400 });
     }
 
     const appointment = await prisma.appointment.create({
@@ -58,52 +58,33 @@ export async function POST(req: Request) {
         matterId,
         createdBy: user.id,
       },
-      include: {
-        matter: true,
-        creator: true,
-      },
+      include: { matter: true, creator: true },
     });
 
-    return NextResponse.json(appointment);
+    // ✅ Optional: log creation
+    await logAudit(user.id, "CREATE", "Appointment", appointment.id);
+
+    return NextResponse.json({ success: true, appointment });
   } catch (err) {
     console.error(err);
-    return NextResponse.json(
-      { error: "Failed to create appointment" },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: "Failed to create appointment" }, { status: 500 });
   }
 }
 
-// PATCH: Update an existing appointment
+// ================= PATCH: Update an existing appointment =================
 export async function PATCH(req: Request) {
   const user = await getCurrentUser();
   if (!user)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
 
   try {
     const body: AppointmentBody = await req.json();
     const { id, title, startTime, endTime } = body;
 
-    if (!id)
-      return NextResponse.json(
-        { error: "Missing appointment ID" },
-        { status: 400 }
-      );
+    if (!id) return NextResponse.json({ success: false, error: "Missing appointment ID" }, { status: 400 });
 
-    // Check ownership first
-    const existing = await prisma.appointment.findFirst({
-      where: {
-        id,
-        createdBy: user.id,
-      },
-    });
-
-    if (!existing) {
-      return NextResponse.json(
-        { error: "Appointment not found" },
-        { status: 404 }
-      );
-    }
+    const existing = await prisma.appointment.findFirst({ where: { id, createdBy: user.id } });
+    if (!existing) return NextResponse.json({ success: false, error: "Appointment not found" }, { status: 404 });
 
     const appointment = await prisma.appointment.update({
       where: { id },
@@ -112,62 +93,40 @@ export async function PATCH(req: Request) {
         startTime: startTime ? new Date(startTime) : undefined,
         endTime: endTime ? new Date(endTime) : undefined,
       },
-      include: {
-        matter: true,
-        creator: true,
-      },
+      include: { matter: true, creator: true },
     });
 
-    return NextResponse.json(appointment);
+    // ✅ Optional: log update
+    await logAudit(user.id, "UPDATE", "Appointment", id);
+
+    return NextResponse.json({ success: true, appointment });
   } catch (err) {
     console.error(err);
-    return NextResponse.json(
-      { error: "Failed to update appointment" },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: "Failed to update appointment" }, { status: 500 });
   }
 }
 
-// DELETE: Remove an appointment
+// ================= DELETE: Remove an appointment =================
 export async function DELETE(req: Request) {
   const user = await getCurrentUser();
   if (!user)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
 
   try {
     const { id } = await req.json();
+    if (!id) return NextResponse.json({ success: false, error: "Missing appointment ID" }, { status: 400 });
 
-    if (!id)
-      return NextResponse.json(
-        { error: "Missing appointment ID" },
-        { status: 400 }
-      );
+    const existing = await prisma.appointment.findFirst({ where: { id, createdBy: user.id } });
+    if (!existing) return NextResponse.json({ success: false, error: "Appointment not found" }, { status: 404 });
 
-    // Check ownership first
-    const existing = await prisma.appointment.findFirst({
-      where: {
-        id,
-        createdBy: user.id,
-      },
-    });
+    await prisma.appointment.delete({ where: { id } });
 
-    if (!existing) {
-      return NextResponse.json(
-        { error: "Appointment not found" },
-        { status: 404 }
-      );
-    }
+    // ✅ Optional: log deletion
+    await logAudit(user.id, "DELETE", "Appointment", id);
 
-    await prisma.appointment.delete({
-      where: { id },
-    });
-
-    return NextResponse.json({ message: "Appointment deleted" });
+    return NextResponse.json({ success: true, message: "Appointment deleted" });
   } catch (err) {
     console.error(err);
-    return NextResponse.json(
-      { error: "Failed to delete appointment" },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: "Failed to delete appointment" }, { status: 500 });
   }
 }

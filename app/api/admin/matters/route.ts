@@ -1,24 +1,20 @@
+// app/api/admin/matters/route.ts
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { logAudit } from "@/lib/audit";
+import { getCurrentUser } from "@/lib/auth";
 
-// ✅ Case Number Generator
+// ================= CASE NUMBER GENERATOR =================
 async function generateCaseNumber() {
   const year = new Date().getFullYear();
   const prefix = `LUM-${year}`;
 
   const lastCase = await prisma.matter.findFirst({
-    where: {
-      caseNumber: {
-        startsWith: prefix,
-      },
-    },
-    orderBy: {
-      caseNumber: "desc",
-    },
+    where: { caseNumber: { startsWith: prefix } },
+    orderBy: { caseNumber: "desc" },
   });
 
   let nextNumber = 1;
-
   if (lastCase?.caseNumber) {
     const lastSequence = parseInt(lastCase.caseNumber.split("-")[2]);
     nextNumber = lastSequence + 1;
@@ -27,21 +23,18 @@ async function generateCaseNumber() {
   return `${prefix}-${String(nextNumber).padStart(4, "0")}`;
 }
 
-// ✅ GET ALL CASES
+// ================= GET ALL CASES =================
 export async function GET() {
   try {
     const matters = await prisma.matter.findMany({
-      include: {
-        client: true,
-        lawyer: true,
-      },
+      include: { client: true, lawyer: true },
       orderBy: { createdAt: "desc" },
     });
 
     return NextResponse.json(
       matters.map((m) => ({
         id: m.id,
-        caseNumber: m.caseNumber, // ✅ included
+        caseNumber: m.caseNumber,
         title: m.title,
         status: m.status,
         client: m.client.name,
@@ -55,61 +48,42 @@ export async function GET() {
   }
 }
 
-// ✅ CREATE NEW CASE
+// ================= CREATE CASE =================
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { title, lawyer, client, status } = body;
+    const { title, lawyerId, clientId, status } = body;
+
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Validate lawyer and client
+    const lawyer = await prisma.user.findUnique({ where: { id: lawyerId } });
+    if (!lawyer || lawyer.role !== "LAWYER") {
+      return NextResponse.json({ error: "Invalid lawyer ID" }, { status: 400 });
+    }
+    const client = await prisma.client.findUnique({ where: { id: clientId } });
+    if (!client) {
+      return NextResponse.json({ error: "Invalid client ID" }, { status: 400 });
+    }
 
     // Generate case number
     const caseNumber = await generateCaseNumber();
 
-    // Generate emails for uniqueness
-    const lawyerEmail = `${lawyer.replace(/\s+/g, "_").toLowerCase()}@example.com`;
-    const clientEmail = `${client.replace(/\s+/g, "_").toLowerCase()}@example.com`;
-
-    // Upsert lawyer
-    const lawyerRecord = await prisma.user.upsert({
-      where: { email: lawyerEmail }, // unique identifier
-      update: {}, // no updates needed
-      create: {
-        name: lawyer,
-        role: "LAWYER",
-        email: lawyerEmail,
-        password: "temporaryPassword123!",
-      },
-    });
-
-    // Upsert client
-    const clientRecord = await prisma.user.upsert({
-      where: { email: clientEmail },
-      update: {},
-      create: {
-        name: client,
-        role: "CLIENT",
-        email: clientEmail,
-        password: "temporaryPassword123!",
-      },
-    });
-
-    // Create the matter
+    // Create case
     const matter = await prisma.matter.create({
-      data: {
-        caseNumber, // ✅ included
-        title,
-        status,
-        lawyerId: lawyerRecord.id,
-        clientId: clientRecord.id,
-      },
-      include: {
-        client: true,
-        lawyer: true,
-      },
+      data: { caseNumber, title, status, lawyerId, clientId },
+      include: { client: true, lawyer: true },
     });
+
+    // Log audit
+    await logAudit(currentUser.id, "CREATE", "Case", matter.id);
 
     return NextResponse.json({
       id: matter.id,
-      caseNumber: matter.caseNumber, // ✅ included
+      caseNumber: matter.caseNumber,
       title: matter.title,
       status: matter.status,
       client: matter.client.name,
@@ -117,7 +91,70 @@ export async function POST(req: Request) {
       createdAt: matter.createdAt,
     });
   } catch (err) {
-    console.error(err);
+    console.error("Failed to create case:", err);
     return NextResponse.json({ error: "Failed to create case" }, { status: 500 });
+  }
+}
+
+// ================= UPDATE CASE =================
+export async function PUT(req: Request) {
+  try {
+    const body = await req.json();
+    const { id, title, lawyerId, clientId, status } = body;
+
+    const currentUser = await getCurrentUser();
+    if (!currentUser) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    // Validate matter exists
+    const matter = await prisma.matter.findUnique({ where: { id } });
+    if (!matter) return NextResponse.json({ error: "Case not found" }, { status: 404 });
+
+    // Validate lawyer and client if provided
+    if (lawyerId) {
+      const lawyer = await prisma.user.findUnique({ where: { id: lawyerId } });
+      if (!lawyer || lawyer.role !== "LAWYER") return NextResponse.json({ error: "Invalid lawyer ID" }, { status: 400 });
+    }
+    if (clientId) {
+      const client = await prisma.client.findUnique({ where: { id: clientId } });
+      if (!client) return NextResponse.json({ error: "Invalid client ID" }, { status: 400 });
+    }
+
+    const updatedMatter = await prisma.matter.update({
+      where: { id },
+      data: { title, status, lawyerId, clientId },
+      include: { client: true, lawyer: true },
+    });
+
+    // Log audit
+    await logAudit(currentUser.id, "UPDATE", "Case", updatedMatter.id);
+
+    return NextResponse.json(updatedMatter);
+  } catch (err) {
+    console.error("Failed to update case:", err);
+    return NextResponse.json({ error: "Failed to update case" }, { status: 500 });
+  }
+}
+
+// ================= DELETE CASE =================
+export async function DELETE(req: Request) {
+  try {
+    const body = await req.json();
+    const { id } = body;
+
+    const currentUser = await getCurrentUser();
+    if (!currentUser) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const matter = await prisma.matter.findUnique({ where: { id } });
+    if (!matter) return NextResponse.json({ error: "Case not found" }, { status: 404 });
+
+    await prisma.matter.delete({ where: { id } });
+
+    // Log audit
+    await logAudit(currentUser.id, "DELETE", "Case", id);
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("Failed to delete case:", err);
+    return NextResponse.json({ error: "Failed to delete case" }, { status: 500 });
   }
 }

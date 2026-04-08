@@ -2,6 +2,8 @@
 import { prisma } from "@/lib/prisma";
 import { hashPassword, comparePassword } from "@/lib/hash";
 import { NextRequest, NextResponse } from "next/server";
+import { logAudit } from "@/lib/audit";
+import { getCurrentUser } from "@/lib/auth"; // adjust if your auth helper is different
 
 // ================= GET admin profile =================
 export async function GET() {
@@ -29,6 +31,9 @@ export async function GET() {
 // ================= PATCH update profile info =================
 export async function PATCH(req: NextRequest) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+
     const { name, email, profilePicture } = await req.json();
 
     const admin = await prisma.user.findFirst({ where: { role: "ADMIN" } });
@@ -41,6 +46,9 @@ export async function PATCH(req: NextRequest) {
       data: { name, email, profilePicture },
     });
 
+    // ✅ Log audit
+    await logAudit(currentUser.id, "UPDATE", "AdminProfile", admin.id);
+
     return NextResponse.json({ success: true, admin: updated });
   } catch (err) {
     console.error("PATCH /admin/profile error:", err);
@@ -51,6 +59,9 @@ export async function PATCH(req: NextRequest) {
 // ================= PUT update password =================
 export async function PUT(req: NextRequest) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+
     const { currentPassword, newPassword } = await req.json();
 
     const admin = await prisma.user.findFirst({ where: { role: "ADMIN" } });
@@ -68,6 +79,9 @@ export async function PUT(req: NextRequest) {
       where: { id: admin.id },
       data: { password: hashedPassword },
     });
+
+    // ✅ Log audit
+    await logAudit(currentUser.id, "UPDATE_PASSWORD", "AdminProfile", admin.id);
 
     return NextResponse.json({ success: true });
   } catch (err) {

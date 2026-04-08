@@ -18,11 +18,11 @@ export default function SignInPage() {
   const [form, setForm] = useState({
     email: "",
     password: "",
-    confirmPassword: "", // optional, useful for registration
+     // optional, useful for registration
   });
 
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+ 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -95,51 +95,32 @@ export default function SignInPage() {
           </div>
 
           {/* Password */}
-          <div className="grid gap-2 relative">
-            <label className="text-[#5F021F] text-sm">Password</label>
-            <input
-              name="password"
-              type={showPassword ? "text" : "password"}
-              value={form.password}
-              onChange={handleChange}
-              required
-              className="w-full h-14 px-4 border border-[#5F021F] rounded-lg pr-12"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-            >
-              {showPassword ? (
-                <EyeSlashIcon className="h-5 w-5" />
-              ) : (
-                <EyeIcon className="h-5 w-5" />
-              )}
-            </button>
-          </div>
+         <div className="grid gap-2">
+  <label className="text-[#5F021F] text-sm">Password</label>
+  <div className="relative">
+    <input
+      name="password"
+      type={showPassword ? "text" : "password"}
+      value={form.password}
+      onChange={handleChange}
+      required
+      className="w-full h-14 px-4 border border-[#5F021F] rounded-lg pr-12"
+    />
+    <button
+      type="button"
+      onClick={() => setShowPassword((prev) => !prev)}
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+    >
+      {showPassword ? (
+        <EyeSlashIcon className="h-5 w-5" />
+      ) : (
+        <EyeIcon className="h-5 w-5" />
+      )}
+    </button>
+  </div>
+</div>
 
-          {/* Confirm Password (optional) */}
-          <div className="grid gap-2 relative">
-            <label className="text-[#5F021F] text-sm">Confirm Password</label>
-            <input
-              name="confirmPassword"
-              type={showConfirmPassword ? "text" : "password"}
-              value={form.confirmPassword}
-              onChange={handleChange}
-              className="w-full h-14 px-4 border border-[#5F021F] rounded-lg pr-12"
-            />
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword((prev) => !prev)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-            >
-              {showConfirmPassword ? (
-                <EyeSlashIcon className="h-5 w-5" />
-              ) : (
-                <EyeIcon className="h-5 w-5" />
-              )}
-            </button>
-          </div>
+          
 
           {/* Error */}
           {error && (

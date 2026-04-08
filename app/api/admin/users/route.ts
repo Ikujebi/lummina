@@ -3,17 +3,15 @@ import { prisma } from "@/lib/prisma";
 import { hash } from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/requireAdmin";
-
-/**
- * Require Admin
- */
-
+import { logAudit } from "@/lib/audit";
+import { getCurrentUser } from "@/lib/auth";
 
 /**
  * GET - Get all users
  */
 export async function GET() {
   try {
+    // Ensure requester is admin
     await requireAdmin();
 
     const users = await prisma.user.findMany({
@@ -42,6 +40,7 @@ export async function GET() {
  */
 export async function POST(req: NextRequest) {
   try {
+    // Ensure requester is admin
     await requireAdmin();
 
     const { name, email, password, role } = await req.json();
@@ -53,10 +52,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const existing = await prisma.user.findUnique({
-      where: { email },
-    });
-
+    const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       return NextResponse.json(
         { success: false, error: "User already exists" },
@@ -67,22 +63,18 @@ export async function POST(req: NextRequest) {
     const hashedPassword = await hash(password, 12);
 
     const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        role,
-      },
+      data: { name, email, password: hashedPassword, role },
     });
+
+    // ✅ Log creation in audit
+    const currentUser = await getCurrentUser();
+    if (currentUser) {
+      await logAudit(currentUser.id, "CREATE", "User", user.id);
+    }
 
     return NextResponse.json({
       success: true,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+      user: { id: user.id, name: user.name, email: user.email, role: user.role },
     });
   } catch (err) {
     console.error(err);

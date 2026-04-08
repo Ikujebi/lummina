@@ -49,7 +49,7 @@ model User {
   profilePicture String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @default(now())
-
+ isApproved Boolean @default(false)
   clients             Client[]
   sessions            Session[]
   invitations         Invitation[]
