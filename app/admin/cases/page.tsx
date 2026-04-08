@@ -1,41 +1,46 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Case } from "@/types/admin";
+import type { Case, Lawyer, Client } from "@/types/admin";
 import { Select, Tag, Modal, Form, Input, Button } from "antd";
-
-const { Option } = Select;
 
 export default function CasesPage() {
   const [cases, setCases] = useState<Case[]>([]);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<Case["status"] | "ALL">("ALL");
+  const [statusFilter, setStatusFilter] = useState<Case["status"] | "ALL">(
+    "ALL",
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [form] = Form.useForm();
 
-  // For lawyer/client selection
-  const [lawyers, setLawyers] = useState<{ name: string }[]>([]);
-  const [clients, setClients] = useState<{ name: string }[]>([]);
+  // ✅ Proper typing
+  const [lawyers, setLawyers] = useState<Lawyer[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
 
-  // Fetch cases and users
+  // Fetch cases + lawyers + clients
   useEffect(() => {
-    async function fetchCases() {
+    async function fetchData() {
       try {
-        const res = await fetch("/api/admin/matters");
-        const data: Case[] = await res.json();
-        setCases(data);
+        const [casesRes, lawyersRes, clientsRes] = await Promise.all([
+          fetch("/api/admin/matters"),
+          fetch("/api/admin/lawyers"),
+          fetch("/api/admin/clients"),
+        ]);
 
-        // Extract unique lawyers and clients
-        const lawyerSet = new Set(data.map((c) => c.lawyer));
-        const clientSet = new Set(data.map((c) => c.client));
-        setLawyers(Array.from(lawyerSet).map((name) => ({ name })));
-        setClients(Array.from(clientSet).map((name) => ({ name })));
+        const casesData: Case[] = await casesRes.json();
+        const lawyersData: Lawyer[] = await lawyersRes.json();
+        const clientsData: Client[] = await clientsRes.json();
+
+        setCases(casesData);
+        setLawyers(lawyersData);
+        setClients(clientsData);
       } catch (err) {
-        console.error("Failed to fetch cases:", err);
+        console.error("Failed to fetch data:", err);
       }
     }
-    fetchCases();
+
+    fetchData();
   }, []);
 
   // Filter cases
@@ -47,20 +52,14 @@ export default function CasesPage() {
       (c.caseNumber?.toLowerCase() ?? "").includes(search.toLowerCase());
 
     const matchesStatus = statusFilter === "ALL" || c.status === statusFilter;
+
     return matchesSearch && matchesStatus;
   });
 
-  const statusColors: Record<Case["status"] | "ALL", string> = {
-    ALL: "default",
-    OPEN: "green",
-    IN_PROGRESS: "orange",
-    CLOSED: "red",
-  };
-
   const handleCreateCase = async (values: {
     title: string;
-    lawyer: string;
-    client: string;
+    lawyer: string; // ✅ this will now be lawyerId
+    client: string; // ✅ clientId
     status: Case["status"];
   }) => {
     try {
@@ -103,18 +102,18 @@ export default function CasesPage() {
           onChange={(e) => setSearch(e.target.value)}
           className="px-4 py-2 rounded-xl border border-[#5F021F]/30 outline-none w-full sm:w-64"
         />
+
         <Select
           value={statusFilter}
-          onChange={(value: string) => setStatusFilter(value as Case["status"] | "ALL")}
-          placeholder="Select Status"
-          size="middle"
-          className="w-full sm:w-48 rounded-xl !bg-[#F7E7CE] !border !border-[#5F021F] text-sm sm:text-base"
-          classNames={{ popup: { root: "rounded-xl shadow-lg !bg-[#F7E7CE]" } }}
-          optionLabelProp="label"
+          onChange={(value) => setStatusFilter(value as Case["status"] | "ALL")}
+          className="w-full sm:w-48"
           options={[
-            { value: "ALL", label: <Tag color="default">All Statuses</Tag> },
+            { value: "ALL", label: <Tag>All</Tag> },
             { value: "OPEN", label: <Tag color="green">Open</Tag> },
-            { value: "IN_PROGRESS", label: <Tag color="orange">In Progress</Tag> },
+            {
+              value: "IN_PROGRESS",
+              label: <Tag color="orange">In Progress</Tag>,
+            },
             { value: "CLOSED", label: <Tag color="red">Closed</Tag> },
           ]}
         />
@@ -139,16 +138,10 @@ export default function CasesPage() {
                 <td className="px-4 py-3 border">{c.lawyer}</td>
                 <td className="px-4 py-3 border">{c.client}</td>
                 <td className="px-4 py-3 border">{c.caseNumber ?? "—"}</td>
-                <td
-                  className={`px-4 py-3 border font-semibold ${
-                    c.status === "OPEN"
-                      ? "text-green-600"
-                      : c.status === "IN_PROGRESS"
-                      ? "text-orange-600"
-                      : "text-gray-600"
-                  }`}
-                >
-                  {c.status.replace("_", " ")}
+                <td className="px-4 py-3 border font-semibold">
+                  {typeof c.status === "string"
+                    ? c.status.replace("_", " ")
+                    : "—"}
                 </td>
               </tr>
             ))}
@@ -171,47 +164,44 @@ export default function CasesPage() {
           <Form.Item
             name="title"
             label="Case Title"
-            rules={[{ required: true, message: "Please enter case title" }]}
+            rules={[{ required: true }]}
           >
-            <Input placeholder="Enter case title" />
+            <Input />
           </Form.Item>
 
-          {/* Lawyer Select */}
-          <Form.Item name="lawyer" label="Lawyer" rules={[{ required: true, message: "Please select a lawyer" }]}>
+          {/* ✅ Lawyer Select */}
+          <Form.Item name="lawyer" label="Lawyer" rules={[{ required: true }]}>
             <Select
               showSearch
-              placeholder="Select lawyer"
               optionFilterProp="label"
-              filterOption={(input, option) =>
-                (option?.label as string).toLowerCase().includes(input.toLowerCase())
-              }
-              options={lawyers.map((l) => ({ value: l.name, label: l.name }))}
+              options={lawyers.map((l) => ({
+                value: l.id,
+                label: l.name,
+              }))}
             />
           </Form.Item>
 
-          {/* Client Select */}
-          <Form.Item name="client" label="Client" rules={[{ required: true, message: "Please select a client" }]}>
+          {/* ✅ Client Select */}
+          <Form.Item name="client" label="Client" rules={[{ required: true }]}>
             <Select
               showSearch
-              placeholder="Select client"
               optionFilterProp="label"
-              filterOption={(input, option) =>
-                (option?.label as string).toLowerCase().includes(input.toLowerCase())
-              }
-              options={clients.map((c) => ({ value: c.name, label: c.name }))}
+              options={clients.map((c) => ({
+                value: c.id,
+                label: c.name,
+              }))}
             />
           </Form.Item>
 
-          <Form.Item
-            name="status"
-            label="Status"
-            rules={[{ required: true, message: "Please select case status" }]}
-          >
-            <Select placeholder="Select status">
-              <Option value="OPEN">Open</Option>
-              <Option value="IN_PROGRESS">In Progress</Option>
-              <Option value="CLOSED">Closed</Option>
-            </Select>
+          {/* Status */}
+          <Form.Item name="status" label="Status" rules={[{ required: true }]}>
+            <Select
+              options={[
+                { value: "OPEN", label: "Open" },
+                { value: "IN_PROGRESS", label: "In Progress" },
+                { value: "CLOSED", label: "Closed" },
+              ]}
+            />
           </Form.Item>
 
           <Form.Item>
