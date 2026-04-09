@@ -2,7 +2,7 @@ import { Widget } from "@/types/admin";
 
 export default function StatsWidgets({ widgets }: { widgets: Widget[] }) {
   return (
-    <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+    <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 w-full">
       {(widgets ?? []).map((widget, index) => (
         <div
           key={index}

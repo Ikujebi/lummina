@@ -2,7 +2,7 @@ import { Alert } from "@/types/admin";
 
 export default function AlertsPanel({ alerts }: { alerts: Alert[] }) {
   return (
-    <section className="bg-[#FFF4E0] rounded-2xl p-6 shadow">
+    <section className="bg-[#FFF4E0] rounded-2xl p-6 w-full">
       <h2 className="font-semibold mb-4">Alerts</h2>
       <ul className="flex flex-col gap-3">
         {alerts.map((alert, idx) => (

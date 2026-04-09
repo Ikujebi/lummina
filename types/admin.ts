@@ -17,6 +17,7 @@ export interface User {
   name: string;
   email: string;
   role: "ADMIN" | "LAWYER" | "CLIENT";
+   isApproved: boolean;
 }
 
 export interface Lawyer {

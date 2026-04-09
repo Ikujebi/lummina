@@ -83,7 +83,7 @@ export default function ReportsSection() {
 
   return (
     <Spin spinning={loading} description="Loading Analytics..." size="large">
-      <section className="bg-[#FFF4E0] rounded-2xl p-6 shadow-sm border border-[#5F021F]/10">
+      <section className="bg-[#FFF4E0] rounded-2xl p-6 shadow-sm border border-[#5F021F]/10 w-full">
         {/* Header & Filters */}
         <div className="flex flex-wrap justify-between items-center mb-4 gap-2">
           <h2 className="text-lg font-semibold text-[#5F021F]">

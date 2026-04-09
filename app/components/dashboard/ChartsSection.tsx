@@ -146,10 +146,10 @@ export default function ChartsSection({
   }, [lineData]);
 
   return (
-    <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+    <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
 
       {/* Doughnut */}
-      <div className="bg-white p-6 rounded-2xl shadow h-[350px]">
+      <div className="bg-white p-6 rounded-2xl shadow h-[350px] ">
         <h2 className="font-semibold text-[#5F021F] mb-4">Case Distribution</h2>
         <div className="relative w-full h-[200px]">
           <canvas ref={casesChartRef} />

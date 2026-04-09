@@ -8,6 +8,7 @@ interface User {
   name: string;
   email: string;
   role: "LAWYER" | "CLIENT" | "ADMIN";
+  isApproved: boolean;
 }
 
 export default function LawyersPage() {
@@ -112,31 +113,44 @@ export default function LawyersPage() {
   );
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-4 md:p-4">
       {/* Inline message */}
-      {message && (
-        <div className="p-3 bg-yellow-100 text-yellow-900 rounded">
-          {message}
-        </div>
-      )}
+     {message && (
+  <div className="
+  flex flex-col gap-2 
+  border rounded bg-[#F7E7CE] 
+  w-full           /* mobile takes full width */
+  max-w-[16rem]    /* max width on small screens */
+  md:max-w-[600px] /* desktop width */
+  mx-auto
+  p-4
+  text-sm sm:text-base
+  overflow-x-auto
+">
+  {message}
+</div>
+)}
 
-      <section className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-semibold text-[#5F021F]">Lawyers</h1>
-          <p className="text-sm text-[#5F021F]/70">
-            Manage all lawyers in the system, add new ones or send invitations.
+      {/* Header */}
+      <section className="flex flex-col sm:flex-row flex-wrap justify-between items-start sm:items-center gap-3 sm:gap-0">
+        <div className="w-full sm:max-w-[70%] break-words">
+          <h1 className="text-xl sm:text-2xl font-semibold text-[#5F021F]">
+            Lawyers
+          </h1>
+          <p className="text-xs md:text-sm text-[#5F021F]/70">
+            Manage all lawyers in the system, add new ones or send Invite.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 mt-2 sm:mt-0">
           <button
             onClick={() => setShowForm((prev) => !prev)}
-            className="text-3xl font-bold text-[#5F021F] hover:text-[#7a0230] transition"
+            className="text-2xl sm:text-3xl font-bold text-[#5F021F] hover:text-[#7a0230] transition"
           >
             +
           </button>
           <button
             onClick={() => setShowInviteForm((prev) => !prev)}
-            className="bg-[#021F5F]/90 text-white px-4 py-2 rounded hover:bg-[#03287a]"
+            className="bg-[#021F5F]/90 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded hover:bg-[#03287a] text-sm sm:text-base"
           >
             Invite Lawyer
           </button>
@@ -145,32 +159,32 @@ export default function LawyersPage() {
 
       {/* Add Lawyer Form */}
       {showForm && (
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
-          <div className="flex flex-col gap-2">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-end w-full overflow-x-auto">
+          <div className="flex flex-col gap-2 w-[54%] sm:w-auto">
             <input
               type="text"
               placeholder="Name"
               value={newLawyerName}
               onChange={(e) => setNewLawyerName(e.target.value)}
-              className="px-4 py-2 border rounded"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 border rounded text-sm sm:text-base w-full"
             />
             <input
               type="email"
               placeholder="Email"
               value={newLawyerEmail}
               onChange={(e) => setNewLawyerEmail(e.target.value)}
-              className="px-4 py-2 border rounded"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 border rounded text-sm sm:text-base w-full"
             />
             <input
               type="password"
               placeholder="Password"
               value={newLawyerPassword}
               onChange={(e) => setNewLawyerPassword(e.target.value)}
-              className="px-4 py-2 border rounded"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 border rounded text-sm sm:text-base w-full"
             />
             <button
               onClick={addLawyer}
-              className="bg-[#5F021F] text-white px-4 py-2 rounded hover:bg-[#7a0230]"
+              className="bg-[#5F021F] text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded hover:bg-[#7a0230] text-sm sm:text-base w-full sm:w-auto"
             >
               Add Lawyer
             </button>
@@ -180,24 +194,24 @@ export default function LawyersPage() {
 
       {/* Invite Lawyer Form */}
       {showInviteForm && (
-        <div className="flex flex-col gap-2 p-4 border rounded bg-[#F7E7CE] w-full sm:w-96 ">
+        <div className="flex flex-col gap-2 p-3 sm:p-4 border rounded bg-[#F7E7CE] w-full sm:w-96 overflow-x-auto">
           <input
             type="email"
             placeholder="Lawyer's Email"
             value={inviteEmail}
             onChange={(e) => setInviteEmail(e.target.value)}
-            className="px-3 py-2 border rounded"
+            className="px-2 sm:px-3 py-1.5 sm:py-2 border rounded text-sm sm:text-base w-full"
           />
-          <div className="flex gap-2 mt-2">
+          <div className="flex flex-col sm:flex-row gap-2 mt-2">
             <button
               onClick={inviteLawyer}
-              className="bg-[#5F021F] text-white px-4 py-2 rounded hover:bg-[#7a0230]"
+              className="bg-[#5F021F] text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded hover:bg-[#7a0230] text-sm sm:text-base w-full sm:w-auto"
             >
               Send Invite
             </button>
             <button
               onClick={() => setShowInviteForm(false)}
-              className="bg-gray-300 text-[#5F021F] px-4 py-2 rounded hover:bg-gray-400"
+              className="bg-gray-300 text-[#5F021F] px-3 sm:px-4 py-1.5 sm:py-2 rounded hover:bg-gray-400 text-sm sm:text-base w-full sm:w-auto"
             >
               Cancel
             </button>
@@ -211,11 +225,32 @@ export default function LawyersPage() {
         placeholder="Search lawyers..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="px-4 py-2 rounded-xl border border-[#5F021F]/30 outline-none w-full sm:w-64"
+        className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl border border-[#5F021F]/30 outline-none text-sm sm:text-base md:w-full w-64"
       />
 
       {/* Table */}
-      {loading ? <p>Loading lawyers...</p> : <UsersTable users={filteredLawyers} />}
+      {loading ? (
+        <p className="text-sm sm:text-base">Loading lawyers...</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <UsersTable
+            users={filteredLawyers}
+            onApprove={(id) =>
+              setLawyers((prev) =>
+                prev.map((u) => (u.id === id ? { ...u, isApproved: true } : u))
+              )
+            }
+            onSave={async (updatedUser) =>
+              setLawyers((prev) =>
+                prev.map((u) => (u.id === updatedUser.id ? updatedUser : u))
+              )
+            }
+            onDelete={async (id) =>
+              setLawyers((prev) => prev.filter((u) => u.id !== id))
+            }
+          />
+        </div>
+      )}
     </div>
   );
 }

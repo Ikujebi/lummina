@@ -1,61 +1,319 @@
+"use client";
+
+import React, { useState } from "react";
+import { Button, Input, Modal } from "antd";
 import { User } from "@/types/admin";
+import {
+  ExclamationCircleOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  CheckCircleOutlined,
+} from "@ant-design/icons";
+
+const { confirm } = Modal;
 
 interface UsersTableProps {
   users: User[];
+  onApprove: (userId: string) => void;
+  onSave: (user: User) => void;
+  onDelete: (userId: string) => void;
 }
 
-export default function UsersTable({ users }: UsersTableProps) {
-  return (
-    <section className="bg-[#FFF4E0] rounded-2xl p-4 sm:p-6 shadow">
-      <h2 className="font-semibold mb-4 text-left text-lg sm:text-xl text-[#5F021F]">
-        Users
-      </h2>
+interface TableProps {
+  users: User[];
+  editingKey: string | null;
+  editedUser: Partial<User>;
+  isEditing: (user: User) => boolean;
+  handleChange: <K extends keyof User>(field: K, value: User[K]) => void;
+  edit: (user: User) => void;
+  save: (id: string) => void;
+  cancel: () => void;
+  onApprove: (id: string) => void;
+  onDelete: (id: string) => void;
+}
 
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[300px] table-auto border-collapse sm:table-fixed">
-          {/* Desktop header */}
-          <thead className="bg-[#FFF4E0]/20 text-[#5F021F]/90 sticky top-0">
-            <tr className="hidden sm:table-row">
-              <th className="text-left pl-4 py-2 text-sm sm:text-base">Name</th>
-              <th className="text-left px-4 py-2 text-sm sm:text-base">
-                Email
-              </th>
-              <th className="text-left px-4 py-2 text-sm sm:text-base">Role</th>
+// --- Desktop Table Component ---
+const DesktopTable: React.FC<TableProps> = ({
+  users,
+ 
+  editedUser,
+  isEditing,
+  handleChange,
+  edit,
+  save,
+  cancel,
+  onApprove,
+  onDelete,
+}) => (
+  <div className="hidden md:block w-full overflow-x-auto">
+    <div className="min-w-[600px]">
+      <table className="w-full border border-[#FFF4E0] bg-[#FFF4E0]">
+        <thead>
+          <tr>
+            <th className="border p-2">Name</th>
+            <th className="border p-2">Email</th>
+            <th className="border p-2">Role</th>
+            <th className="border p-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {users.map((user) => (
+            <tr key={user.id} className="hover:bg-[#FFEAB3]">
+              <td className="border p-2">
+                {isEditing(user) ? (
+                  <Input
+                    value={editedUser.name}
+                    onChange={(e) => handleChange("name", e.target.value)}
+                    style={{ backgroundColor: "#FFF4E0" }}
+                  />
+                ) : (
+                  user.name
+                )}
+              </td>
+              <td className="border p-2">
+                {isEditing(user) ? (
+                  <Input
+                    value={editedUser.email}
+                    onChange={(e) => handleChange("email", e.target.value)}
+                    style={{ backgroundColor: "#FFF4E0" }}
+                  />
+                ) : (
+                  user.email
+                )}
+              </td>
+              <td className="border p-2">
+                {isEditing(user) ? (
+                  <Input
+                    value={editedUser.role}
+                    onChange={(e) =>
+                      handleChange("role", e.target.value as User["role"])
+                    }
+                    style={{ backgroundColor: "#FFF4E0" }}
+                  />
+                ) : (
+                  user.role
+                )}
+              </td>
+              <td className="border p-2">
+                {isEditing(user) ? (
+                  <div className="flex gap-2">
+                    <Button onClick={() => save(user.id)}>Save</Button>
+                    <Button onClick={cancel}>Cancel</Button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2 flex-wrap">
+                    {!user.isApproved && (
+                      <Button
+                        onClick={() => onApprove(user.id)}
+                        icon={<CheckCircleOutlined />}
+                        style={{ color: "green" }}
+                      >
+                        Approve
+                      </Button>
+                    )}
+                    <Button onClick={() => edit(user)} icon={<EditOutlined />}>
+                      Edit
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        confirm({
+                          title: "Are you sure you want to delete this user?",
+                          icon: (
+                            <ExclamationCircleOutlined
+                              style={{ color: "#FA8C16" }}
+                            />
+                          ),
+                          okText: "Yes",
+                          okType: "danger",
+                          cancelText: "No",
+                          width: "90%",
+                          style: {
+                            left: "5vw",
+                            top: "20vh",
+                            maxWidth: "90vw",
+                          },
+                          onOk() {
+                            onDelete(user.id);
+                          },
+                        });
+                      }}
+                      icon={<DeleteOutlined />}
+                      style={{ color: "red" }}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                )}
+              </td>
             </tr>
-          </thead>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+);
 
-          <tbody className="block sm:table-row-group">
-            {users.map((user, idx) => (
-             <tr
-  key={user.id}
-  className={`block sm:table-row mb-4 sm:mb-0 rounded-lg shadow ${
-    idx % 2 === 0 ? "bg-[#FFF7E0]" : "bg-[#FFF4E0]"
-  } sm:bg-transparent`}
->
-  {/* Mobile card view */}
-  <td className="block sm:table-cell pl-4 py-3 px-4 text-sm sm:text-base truncate max-w-[150px] mb-2 sm:mb-0">
-    <span className="sm:hidden font-semibold">Name: </span>
-    {user.name}
-  </td>
-  <td className="block sm:table-cell px-4 py-3 text-sm sm:text-base truncate max-w-[200px] mb-2 sm:mb-0">
-    <span className="sm:hidden font-semibold">Email: </span>
-    {user.email}
-  </td>
-  <td className="block sm:table-cell px-4 py-3 text-sm sm:text-base">
-    <span className="sm:hidden font-semibold">Role: </span>
-    {user.role}
-  </td>
-</tr>
-            ))}
-          </tbody>
-        </table>
+// --- Mobile Cards Component ---
+const MobileCards: React.FC<TableProps> = ({
+  users,
+ 
+  editedUser,
+  isEditing,
+  handleChange,
+  edit,
+  save,
+  cancel,
+  onApprove,
+  onDelete,
+}) => (
+  <div className="block md:hidden w-full max-w-[400px] mx-auto">
+    {users.map((user) => (
+      <div
+        key={user.id}
+        className="bg-[#FFF4E0] p-4 mb-3 rounded shadow"
+      >
+        <div className="mb-2">
+          <strong>Name:</strong>{" "}
+          {isEditing(user) ? (
+            <Input
+              value={editedUser.name}
+              onChange={(e) => handleChange("name", e.target.value)}
+            />
+          ) : (
+            user.name
+          )}
+        </div>
+        <div className="mb-2">
+          <strong>Email:</strong>{" "}
+          {isEditing(user) ? (
+            <Input
+              value={editedUser.email}
+              onChange={(e) => handleChange("email", e.target.value)}
+            />
+          ) : (
+            user.email
+          )}
+        </div>
+        <div className="mb-2">
+          <strong>Role:</strong>{" "}
+          {isEditing(user) ? (
+            <Input
+              value={editedUser.role}
+              onChange={(e) =>
+                handleChange("role", e.target.value as User["role"])
+              }
+            />
+          ) : (
+            user.role
+          )}
+        </div>
+        <div className="flex gap-2 flex-wrap mt-2">
+          {!user.isApproved && (
+            <Button
+              icon={<CheckCircleOutlined />}
+              onClick={() => onApprove(user.id)}
+              style={{ color: "green" }}
+            >
+              Approve
+            </Button>
+          )}
+          {isEditing(user) ? (
+            <>
+              <Button onClick={() => save(user.id)}>Save</Button>
+              <Button onClick={cancel}>Cancel</Button>
+            </>
+          ) : (
+            <>
+              <Button icon={<EditOutlined />} onClick={() => edit(user)}>
+                Edit
+              </Button>
+              <Button
+                icon={<DeleteOutlined />}
+                onClick={() =>
+                  confirm({
+                    title: "Are you sure you want to delete this user?",
+                    icon: <ExclamationCircleOutlined style={{ color: "#FA8C16" }} />,
+                    okText: "Yes",
+                    okType: "danger",
+                    cancelText: "No",
+                    width: "90%",
+                    style: { left: "5vw", top: "20vh", maxWidth: "90vw" },
+                    onOk() {
+                      onDelete(user.id);
+                    },
+                  })
+                }
+                style={{ color: "red" }}
+              >
+                Delete
+              </Button>
+            </>
+          )}
+        </div>
       </div>
+    ))}
+  </div>
+);
 
-      {users.length === 0 && (
-        <p className="text-center text-[#5F021F]/70 mt-4 text-sm sm:text-base">
-          No users found.
-        </p>
-      )}
-    </section>
+export default function UsersTable({
+  users,
+  onApprove,
+  onSave,
+  onDelete,
+}: UsersTableProps) {
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [editedUser, setEditedUser] = useState<Partial<User>>({});
+
+  const isEditing = (record: User) => record.id === editingKey;
+
+  const edit = (record: User) => {
+    setEditingKey(record.id);
+    setEditedUser({ ...record });
+  };
+
+  const save = (id: string) => {
+    if (editedUser) {
+      onSave({ ...editedUser, id } as User);
+      setEditingKey(null);
+      setEditedUser({});
+    }
+  };
+
+  const cancel = () => {
+    setEditingKey(null);
+    setEditedUser({});
+  };
+
+  const handleChange = <K extends keyof User>(field: K, value: User[K]) => {
+    setEditedUser((prev) => ({ ...prev, [field]: value }));
+  };
+
+  return (
+    <>
+      <DesktopTable
+        users={users}
+        editingKey={editingKey}
+        editedUser={editedUser}
+        isEditing={isEditing}
+        handleChange={handleChange}
+        edit={edit}
+        save={save}
+        cancel={cancel}
+        onApprove={onApprove}
+        onDelete={onDelete}
+      />
+      <MobileCards
+        users={users}
+        editingKey={editingKey}
+        editedUser={editedUser}
+        isEditing={isEditing}
+        handleChange={handleChange}
+        edit={edit}
+        save={save}
+        cancel={cancel}
+        onApprove={onApprove}
+        onDelete={onDelete}
+      />
+    </>
   );
 }
