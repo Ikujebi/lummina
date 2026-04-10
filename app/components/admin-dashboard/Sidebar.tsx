@@ -30,7 +30,6 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
     { label: "Cases", icon: "📁", href: "/admin/cases" },
     { label: "Reports", icon: "📄", href: "/admin/reports" },
     { label: "Documents", icon: "📄", href: "/admin/documents" },
-    { label: "Chat", icon: "💬", href: "/chat" },
     { label: "Notifications", icon: "🔔", href: "/admin/notifications" },
     { label: "Logout", icon: "🚪", action: handleLogout }, // Logout button
   ];

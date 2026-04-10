@@ -39,7 +39,10 @@ export async function POST(req: Request) {
       }
     );
 
-    return NextResponse.json({ url: result.secure_url });
+return NextResponse.json({
+  fileUrl: result.secure_url,
+  fileType: result.resource_type,
+});
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });
