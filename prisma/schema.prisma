@@ -40,16 +40,16 @@ enum NotificationType {
 // ============================================
 
 model User {
-  id             String   @id @default(uuid())
-  name           String?
-  email          String   @unique
-  password       String
-  role           Role
-  twoFactor      Boolean  @default(false)
-  profilePicture String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @default(now())
- isApproved Boolean @default(false)
+  id                  String           @id @default(uuid())
+  name                String?
+  email               String           @unique
+  password            String
+  role                Role
+  twoFactor           Boolean          @default(false)
+  profilePicture      String?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @default(now())
+  isApproved          Boolean          @default(false)
   clients             Client[]
   sessions            Session[]
   invitations         Invitation[]
@@ -63,6 +63,8 @@ model User {
   notifications       Notification[]
   auditLogs           AuditLog[]
   timeEntries         TimeEntry[]
+
+  messageReceipts MessageReceipt[]
 
   @@map("User")
 }
@@ -136,7 +138,7 @@ model TwoFactorToken {
 
 model Matter {
   id          String       @id @default(uuid())
-  caseNumber  String   @unique
+  caseNumber  String       @unique
   title       String
   description String?
   status      MatterStatus
@@ -251,7 +253,8 @@ model Message {
   createdAt DateTime @default(now())
   archived  Boolean  @default(false)
 
-  attachments MessageAttachment[]
+  attachments     MessageAttachment[]
+  messageReceipts MessageReceipt[]
 
   @@index([senderId])
   @@index([matterId])
@@ -354,4 +357,20 @@ model GlossaryTerm {
   category   GlossaryCategory @relation(fields: [categoryId], references: [id])
 
   @@map("GlossaryTerm")
+}
+
+model MessageReceipt {
+  id        String   @id @default(uuid()) @db.Uuid
+  messageId String   @db.Uuid
+  userId    String   @db.Uuid
+  status    String
+  createdAt DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@index([userId])
+  @@map("MessageReceipt")
 }

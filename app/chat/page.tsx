@@ -1,21 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Pusher from "pusher-js";
 import { Message } from "@/types/chat";
-import {  useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 export default function ChatPage() {
-  
   const searchParams = useSearchParams();
-  const matterId = searchParams.get("matterId") || ""; // dynamic from URL query
+  const matterId = searchParams.get("matterId") || "";
 
   const [input, setInput] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
 
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
   // =====================
-  // Fetch initial messages
+  // Fetch messages
   // =====================
   useEffect(() => {
     if (!matterId) return;
@@ -42,7 +44,7 @@ export default function ChatPage() {
     if (!matterId) return;
 
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
-      cluster: "eu",
+      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
     });
 
     const channel = pusher.subscribe(`matter-${matterId}`);
@@ -68,6 +70,17 @@ export default function ChatPage() {
   }, [matterId]);
 
   // =====================
+  // Auto resize textarea
+  // =====================
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "40px"; // reset
+      textareaRef.current.style.height =
+        textareaRef.current.scrollHeight + "px";
+    }
+  }, [input]);
+
+  // =====================
   // Upload file
   // =====================
   async function uploadFile(file: File) {
@@ -91,6 +104,7 @@ export default function ChatPage() {
     if (!input && !file) return;
 
     const attachmentUrls: string[] = [];
+
     if (file) {
       const url = await uploadFile(file);
       attachmentUrls.push(url);
@@ -99,8 +113,14 @@ export default function ChatPage() {
     try {
       const res = await fetch("/api/messages", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: input, matterId, attachments: attachmentUrls }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          content: input,
+          matterId,
+          attachments: attachmentUrls,
+        }),
       });
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -117,16 +137,29 @@ export default function ChatPage() {
   // =====================
   return (
     <div className="min-h-screen flex flex-col bg-[#F7e7ce] text-[#5F021F]">
+      
       {/* Header */}
-      <div className="p-4 bg-white shadow font-semibold">Chat Room</div>
+      <div className="p-4 bg-white shadow font-semibold">
+        Chat Room
+      </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg) => (
-          <div key={msg.id} className="bg-white p-3 rounded shadow max-w-[70%]">
+          <div
+            key={msg.id}
+            className="bg-white p-3 rounded shadow max-w-[70%]"
+          >
             <p>{msg.content}</p>
+
+            {/* Attachments */}
             {msg.attachments?.map((att, i) => (
-              <a key={i} href={att.fileUrl} target="_blank" className="text-blue-500 underline block mt-2">
+              <a
+                key={i}
+                href={att.fileUrl}
+                target="_blank"
+                className="text-blue-500 underline block mt-2"
+              >
                 View attachment
               </a>
             ))}
@@ -134,18 +167,60 @@ export default function ChatPage() {
         ))}
       </div>
 
+      {/* Selected file preview */}
+      {file && (
+        <div className="px-4 py-2 text-sm bg-[#FFF4E0] border-t flex items-center justify-between">
+          <span>📄 {file.name}</span>
+          <button
+            onClick={() => setFile(null)}
+            className="text-red-500 text-xs"
+          >
+            Remove
+          </button>
+        </div>
+      )}
+
       {/* Input */}
-      <form onSubmit={handleSend} className="p-4 bg-white flex items-center gap-2 border-t">
-        <input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+      <form
+        onSubmit={handleSend}
+        className="p-3 bg-white flex items-end gap-2 border-t"
+      >
+        {/* Hidden file input */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={(e) =>
+            setFile(e.target.files?.[0] || null)
+          }
+          className="hidden"
+        />
+
+        {/* File icon */}
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="p-2 text-xl hover:bg-gray-100 rounded"
+        >
+          📎
+        </button>
+
+        {/* Textarea */}
         <textarea
+          ref={textareaRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Type a message..."
-          className="flex-1 border p-2 rounded resize-none"
+          className="flex-1 border p-2 rounded resize-none overflow-hidden"
           rows={1}
+          style={{ minHeight: "40px", maxHeight: "120px" }}
         />
-        <button type="submit" className="bg-[#FFA500] text-white px-4 py-2 rounded">
-          Send
+
+        {/* Send */}
+        <button
+          type="submit"
+          className="p-2 bg-[#5F021F] text-white rounded"
+        >
+          📤
         </button>
       </form>
     </div>

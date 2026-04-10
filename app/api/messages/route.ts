@@ -10,6 +10,11 @@ interface MessageBody {
   attachments?: string[];
 }
 
+type AuthUser = {
+  id: string;
+  role: "ADMIN" | "LAWYER" | "CLIENT";
+};
+
 // =====================
 // Pusher setup
 // =====================
@@ -20,6 +25,30 @@ const pusher = new Pusher({
   cluster: process.env.PUSHER_CLUSTER!,
   useTLS: true,
 });
+
+// =====================
+// HELPER: AUTH CHECK
+// =====================
+async function assertMatterAccess(user: AuthUser, matterId: string) {
+  const matter = await prisma.matter.findUnique({
+    where: { id: matterId },
+  });
+
+  if (!matter) {
+    throw new Error("Matter not found");
+  }
+
+  const isAllowed =
+    user.role === "ADMIN" ||
+    user.id === matter.clientId ||
+    user.id === matter.lawyerId;
+
+  if (!isAllowed) {
+    throw new Error("Forbidden");
+  }
+
+  return matter;
+}
 
 // =====================
 // GET messages
@@ -38,16 +67,27 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Missing matterId" }, { status: 400 });
   }
 
-  const messages = await prisma.message.findMany({
-    where: { matterId },
-    include: {
-      sender: true,
-      attachments: true,
-    },
-    orderBy: { createdAt: "asc" },
-  });
+  try {
+    await assertMatterAccess(user, matterId);
 
-  return NextResponse.json(messages);
+    const messages = await prisma.message.findMany({
+      where: { matterId },
+      include: {
+        sender: true,
+        attachments: true,
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    return NextResponse.json(messages);
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err : new Error("Forbidden");
+
+    return NextResponse.json(
+      { error: error.message },
+      { status: error.message === "Forbidden" ? 403 : 404 }
+    );
+  }
 }
 
 // =====================
@@ -71,7 +111,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1. Create message + attachments
+    await assertMatterAccess(user, matterId);
+
     const message = await prisma.message.create({
       data: {
         content,
@@ -91,8 +132,7 @@ export async function POST(req: Request) {
       },
     });
 
-    // 2. ALSO store attachments in Document table (global access)
-    if (attachments && attachments.length > 0) {
+    if (attachments?.length) {
       await prisma.document.createMany({
         data: attachments.map((fileUrl) => ({
           name: fileUrl.split("/").pop() || "Chat File",
@@ -104,7 +144,6 @@ export async function POST(req: Request) {
       });
     }
 
-    // 3. Trigger realtime update
     try {
       await pusher.trigger(`matter-${matterId}`, "new-message", message);
     } catch (err) {
@@ -115,11 +154,14 @@ export async function POST(req: Request) {
       message: "Message sent",
       data: message,
     });
-  } catch (err) {
-    console.error(err);
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err : new Error("Failed to send message");
+
+    console.error(error);
+
     return NextResponse.json(
-      { error: "Failed to send message" },
-      { status: 500 }
+      { error: error.message },
+      { status: error.message === "Forbidden" ? 403 : 500 }
     );
   }
 }
@@ -145,34 +187,42 @@ export async function PATCH(req: Request) {
       );
     }
 
+    const existing = await prisma.message.findUnique({
+      where: { id },
+      select: { matterId: true },
+    });
+
+    if (!existing?.matterId) {
+      return NextResponse.json(
+        { error: "Message not found" },
+        { status: 404 }
+      );
+    }
+
+    await assertMatterAccess(user, existing.matterId);
+
     const message = await prisma.message.update({
       where: { id },
       data: { content },
       include: { sender: true, attachments: true },
     });
 
-    const updated = await prisma.message.findUnique({
-      where: { id },
-      select: { matterId: true },
-    });
-
-    if (updated?.matterId) {
-      await pusher.trigger(
-        `matter-${updated.matterId}`,
-        "update-message",
-        message
-      );
-    }
+    await pusher.trigger(
+      `matter-${existing.matterId}`,
+      "update-message",
+      message
+    );
 
     return NextResponse.json({
       message: "Message updated",
       data: message,
     });
-  } catch (err) {
-    console.error(err);
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err : new Error("Failed to update message");
+
     return NextResponse.json(
-      { error: "Failed to update message" },
-      { status: 500 }
+      { error: error.message },
+      { status: error.message === "Forbidden" ? 403 : 500 }
     );
   }
 }
@@ -197,32 +247,40 @@ export async function DELETE(req: Request) {
       );
     }
 
-    const existingMessage = await prisma.message.findUnique({
+    const existing = await prisma.message.findUnique({
       where: { id },
       select: { matterId: true },
     });
+
+    if (!existing?.matterId) {
+      return NextResponse.json(
+        { error: "Message not found" },
+        { status: 404 }
+      );
+    }
+
+    await assertMatterAccess(user, existing.matterId);
 
     await prisma.message.delete({
       where: { id },
     });
 
-    if (existingMessage?.matterId) {
-      await pusher.trigger(
-        `matter-${existingMessage.matterId}`,
-        "delete-message",
-        {
-          id,
-          matterId: existingMessage.matterId,
-        }
-      );
-    }
+    await pusher.trigger(
+      `matter-${existing.matterId}`,
+      "delete-message",
+      {
+        id,
+        matterId: existing.matterId,
+      }
+    );
 
     return NextResponse.json({ message: "Message deleted" });
-  } catch (err) {
-    console.error(err);
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err : new Error("Failed to delete message");
+
     return NextResponse.json(
-      { error: "Failed to delete message" },
-      { status: 500 }
+      { error: error.message },
+      { status: error.message === "Forbidden" ? 403 : 500 }
     );
   }
 }
