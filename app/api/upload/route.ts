@@ -27,6 +27,7 @@ export async function POST(req: Request) {
           {
             resource_type: "auto",
             folder: "chat_uploads",
+            type: "upload",
           },
           (error, result) => {
             if (error) return reject(error);
@@ -41,7 +42,7 @@ export async function POST(req: Request) {
 
 return NextResponse.json({
   fileUrl: result.secure_url,
-  fileType: result.resource_type,
+  fileType: result.mimetype || "application/octet-stream",
 });
   } catch (err) {
     console.error(err);

@@ -105,9 +105,9 @@ export default function MattersTable({ cases }: { cases: Case[] }) {
                 onClick={() =>
                   router.push(`/chat?matterId=${c.id}`)
                 }
-                className="mt-2 text-sm font-semibold text-[#5F021F] underline"
+                className="mt-2 text-sm font-semibold text-[#5F021F]  bg-[#FFD6A5] px-3 py-1 rounded"
               >
-                Open Chat
+                chat 💬
               </button>
             </div>
           ))}

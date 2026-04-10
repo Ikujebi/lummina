@@ -2,12 +2,13 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import Pusher from "pusher";
+import { Attachment } from "@/types/chat";
 
 interface MessageBody {
   id?: string;
   content?: string;
   matterId?: string;
-  attachments?: string[];
+  attachments?: Attachment[];
 }
 
 type AuthUser = {
@@ -22,39 +23,42 @@ const pusher = new Pusher({
   appId: process.env.PUSHER_APP_ID!,
   key: process.env.PUSHER_KEY!,
   secret: process.env.PUSHER_SECRET!,
-  cluster: process.env.PUSHER_CLUSTER!,
+  cluster: "eu",
   useTLS: true,
 });
 
 // =====================
-// HELPER: AUTH CHECK
+// ERROR HELPER
+// =====================
+function getErrorMessage(err: unknown) {
+  return err instanceof Error ? err.message : "Unknown error";
+}
+
+// =====================
+// AUTH CHECK
 // =====================
 async function assertMatterAccess(user: AuthUser, matterId: string) {
   const matter = await prisma.matter.findUnique({
     where: { id: matterId },
   });
 
-  if (!matter) {
-    throw new Error("Matter not found");
-  }
+  if (!matter) throw new Error("Matter not found");
 
   const isAllowed =
     user.role === "ADMIN" ||
     user.id === matter.clientId ||
     user.id === matter.lawyerId;
 
-  if (!isAllowed) {
-    throw new Error("Forbidden");
-  }
+  if (!isAllowed) throw new Error("Forbidden");
 
   return matter;
 }
 
 // =====================
-// GET messages
+// GET
 // =====================
 export async function GET(req: Request) {
-  const user = await getCurrentUser();
+  const user = (await getCurrentUser()) as AuthUser | null;
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -81,20 +85,18 @@ export async function GET(req: Request) {
 
     return NextResponse.json(messages);
   } catch (err: unknown) {
-    const error = err instanceof Error ? err : new Error("Forbidden");
-
     return NextResponse.json(
-      { error: error.message },
-      { status: error.message === "Forbidden" ? 403 : 404 }
+      { error: getErrorMessage(err) },
+      { status: 500 }
     );
   }
 }
 
 // =====================
-// POST message
+// POST MESSAGE
 // =====================
 export async function POST(req: Request) {
-  const user = await getCurrentUser();
+  const user = (await getCurrentUser()) as AuthUser | null;
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -102,11 +104,27 @@ export async function POST(req: Request) {
 
   try {
     const body: MessageBody = await req.json();
-    const { content, matterId, attachments } = body;
 
-    if (!content || !matterId) {
+    const content = body.content ?? "";
+    const matterId = body.matterId;
+
+    const attachments: Attachment[] = Array.isArray(body.attachments)
+      ? body.attachments.filter(
+          (a): a is Attachment =>
+            typeof a?.fileUrl === "string" && a.fileUrl.length > 0
+        )
+      : [];
+
+    if (typeof matterId !== "string") {
       return NextResponse.json(
-        { error: "Missing content or matterId" },
+        { error: "Invalid matterId" },
+        { status: 400 }
+      );
+    }
+
+    if (!content.trim() && attachments.length === 0) {
+      return NextResponse.json(
+        { error: "Message cannot be empty" },
         { status: 400 }
       );
     }
@@ -118,10 +136,10 @@ export async function POST(req: Request) {
         content,
         senderId: user.id,
         matterId,
-        attachments: attachments?.length
+        attachments: attachments.length
           ? {
-              create: attachments.map((fileUrl) => ({
-                fileUrl,
+              create: attachments.map((att) => ({
+                fileUrl: att.fileUrl,
               })),
             }
           : undefined,
@@ -132,45 +150,44 @@ export async function POST(req: Request) {
       },
     });
 
-    if (attachments?.length) {
-      await prisma.document.createMany({
-        data: attachments.map((fileUrl) => ({
-          name: fileUrl.split("/").pop() || "Chat File",
-          fileUrl,
-          status: "DRAFT",
-          matterId,
-          uploadedBy: user.id,
-        })),
-      });
-    }
+    // ==========================
+    // 🔥 FIX: SMALL PUSHER PAYLOAD
+    // ==========================
+    const safeMessageForPusher = {
+      id: message.id,
+      content: message.content,
+      matterId: message.matterId,
+      senderId: message.senderId,
+      createdAt: message.createdAt,
+      attachments: message.attachments.map((a) => ({
+        id: a.id,
+        fileUrl: a.fileUrl,
+      })),
+    };
 
-    try {
-      await pusher.trigger(`matter-${matterId}`, "new-message", message);
-    } catch (err) {
-      console.error("Pusher trigger error:", err);
-    }
+    await pusher.trigger(
+      `matter-${matterId}`,
+      "new-message",
+      safeMessageForPusher
+    );
 
     return NextResponse.json({
       message: "Message sent",
       data: message,
     });
   } catch (err: unknown) {
-    const error = err instanceof Error ? err : new Error("Failed to send message");
-
-    console.error(error);
-
     return NextResponse.json(
-      { error: error.message },
-      { status: error.message === "Forbidden" ? 403 : 500 }
+      { error: getErrorMessage(err) },
+      { status: 500 }
     );
   }
 }
 
 // =====================
-// PATCH message
+// PATCH MESSAGE
 // =====================
 export async function PATCH(req: Request) {
-  const user = await getCurrentUser();
+  const user = (await getCurrentUser()) as AuthUser | null;
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -180,11 +197,8 @@ export async function PATCH(req: Request) {
     const body: MessageBody = await req.json();
     const { id, content } = body;
 
-    if (!id || !content) {
-      return NextResponse.json(
-        { error: "Missing id or content" },
-        { status: 400 }
-      );
+    if (!id || typeof content !== "string") {
+      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
 
     const existing = await prisma.message.findUnique({
@@ -210,7 +224,11 @@ export async function PATCH(req: Request) {
     await pusher.trigger(
       `matter-${existing.matterId}`,
       "update-message",
-      message
+      {
+        id: message.id,
+        content: message.content,
+        matterId: message.matterId,
+      }
     );
 
     return NextResponse.json({
@@ -218,20 +236,18 @@ export async function PATCH(req: Request) {
       data: message,
     });
   } catch (err: unknown) {
-    const error = err instanceof Error ? err : new Error("Failed to update message");
-
     return NextResponse.json(
-      { error: error.message },
-      { status: error.message === "Forbidden" ? 403 : 500 }
+      { error: getErrorMessage(err) },
+      { status: 500 }
     );
   }
 }
 
 // =====================
-// DELETE message
+// DELETE MESSAGE
 // =====================
 export async function DELETE(req: Request) {
-  const user = await getCurrentUser();
+  const user = (await getCurrentUser()) as AuthUser | null;
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -239,13 +255,6 @@ export async function DELETE(req: Request) {
 
   try {
     const { id } = await req.json();
-
-    if (!id) {
-      return NextResponse.json(
-        { error: "Missing message ID" },
-        { status: 400 }
-      );
-    }
 
     const existing = await prisma.message.findUnique({
       where: { id },
@@ -276,11 +285,9 @@ export async function DELETE(req: Request) {
 
     return NextResponse.json({ message: "Message deleted" });
   } catch (err: unknown) {
-    const error = err instanceof Error ? err : new Error("Failed to delete message");
-
     return NextResponse.json(
-      { error: error.message },
-      { status: error.message === "Forbidden" ? 403 : 500 }
+      { error: getErrorMessage(err) },
+      { status: 500 }
     );
   }
 }

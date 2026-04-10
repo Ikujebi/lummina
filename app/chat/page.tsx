@@ -5,6 +5,7 @@ import Pusher from "pusher-js";
 import { Message, Attachment } from "@/types/chat";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/app/hooks/useAuth";
+import Image from "next/image";
 
 export default function ChatPage() {
   const searchParams = useSearchParams();
@@ -16,12 +17,16 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
+  // ✅ SCROLL REFS
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
   const userId = user?.id;
-  const role = user?.role;
 
   // =====================
   // AUTH GUARD
@@ -52,7 +57,12 @@ export default function ChatPage() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const data = await res.json();
-        setMessages(data);
+
+        const normalized: Message[] = Array.isArray(data)
+          ? data
+          : data?.data ?? [];
+
+        setMessages(normalized);
       } catch (err) {
         console.error("Failed to fetch messages:", err);
         setMessages([]);
@@ -69,13 +79,17 @@ export default function ChatPage() {
     if (!matterId) return;
 
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
+      cluster: "eu",
     });
 
     const channel = pusher.subscribe(`matter-${matterId}`);
 
     channel.bind("new-message", (message: Message) => {
-      setMessages((prev) => [...prev, message]);
+      setMessages((prev) => {
+        const exists = prev.some((m) => m.id === message.id);
+        if (exists) return prev;
+        return [...prev, message];
+      });
     });
 
     channel.bind("update-message", (updated: Message) => {
@@ -98,34 +112,56 @@ export default function ChatPage() {
   // AUTO RESIZE TEXTAREA
   // =====================
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "40px";
-      textareaRef.current.style.height =
-        textareaRef.current.scrollHeight + "px";
-    }
+    if (!textareaRef.current) return;
+
+    textareaRef.current.style.height = "40px";
+    textareaRef.current.style.height =
+      Math.min(textareaRef.current.scrollHeight, 120) + "px";
   }, [input]);
+
+  // =====================
+  // AUTO SCROLL TO BOTTOM (WHATSAPP STYLE)
+  // =====================
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+  }, [messages]);
 
   // =====================
   // UPLOAD FILE
   // =====================
   async function uploadFile(file: File): Promise<Attachment> {
-    const formData = new FormData();
-    formData.append("file", file);
+    setIsUploading(true);
+    setUploadError(null);
 
-    const res = await fetch("/api/messages/upload", {
-      method: "POST",
-      body: formData,
-    });
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
 
-    if (!res.ok) throw new Error("Upload failed");
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    return {
-      fileUrl: data.fileUrl,
-      fileType: data.fileType,
-      fileName: file.name,
-    };
+      if (!res.ok || !data.fileUrl) {
+        throw new Error(data?.error || "Upload failed");
+      }
+
+      return {
+        fileUrl: data.fileUrl,
+        fileType: data.fileType,
+        fileName: file.name,
+      };
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Upload failed";
+
+      setUploadError(message);
+      throw err;
+    } finally {
+      setIsUploading(false);
+    }
   }
 
   // =====================
@@ -135,14 +171,16 @@ export default function ChatPage() {
     e.preventDefault();
 
     if (!input && !file) return;
+    if (!userId || !matterId) return;
 
     try {
-      const attachments: Attachment[] = [];
+      let uploadedAttachment: Attachment | null = null;
 
       if (file) {
-        const uploaded = await uploadFile(file);
-        attachments.push(uploaded);
+        uploadedAttachment = await uploadFile(file);
       }
+
+      const attachments = uploadedAttachment ? [uploadedAttachment] : [];
 
       const res = await fetch("/api/messages", {
         method: "POST",
@@ -153,15 +191,28 @@ export default function ChatPage() {
           content: input,
           matterId,
           attachments,
-          senderId: userId,
-          senderRole: role,
         }),
       });
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to send message");
+      }
+
+      setMessages((prev) => {
+        const exists = prev.some((m) => m.id === data.data.id);
+        if (exists) return prev;
+        return [...prev, data.data];
+      });
 
       setInput("");
       setFile(null);
+      setUploadError(null);
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     } catch (err) {
       console.error("Failed to send message:", err);
     }
@@ -171,14 +222,22 @@ export default function ChatPage() {
   // UI
   // =====================
   return (
-    <div className="min-h-screen flex flex-col bg-[#F7e7ce] text-[#5F021F]">
+    <div className="h-screen flex flex-col bg-[#F7e7ce] text-[#5F021F] overflow-hidden">
 
+      {/* HEADER */}
       <div className="p-4 bg-white shadow font-semibold">
         Case Chat
       </div>
 
-      {/* MESSAGES */}
+      {uploadError && (
+        <div className="px-4 py-2 text-sm text-red-500">
+          {uploadError}
+        </div>
+      )}
+
+      {/* MESSAGES (SCROLL AREA) */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+
         {messages.map((msg) => (
           <div
             key={msg.id}
@@ -190,19 +249,62 @@ export default function ChatPage() {
           >
             <p>{msg.content}</p>
 
-            {/* ATTACHMENTS */}
-            {msg.attachments?.map((att, i) => (
-              <a
-                key={i}
-                href={att.fileUrl}
-                target="_blank"
-                className="text-blue-500 underline block mt-2"
-              >
-                {att.fileName ?? "View attachment"}
-              </a>
-            ))}
+           {msg.attachments?.map((att, i) => {
+  const type = att.fileType || "";
+  const isImage = type.startsWith("image");
+  const isPDF = type.includes("pdf");
+  const isDoc = type.includes("word") || type.includes("officedocument");
+
+  return (
+    <div key={i} className="mt-2">
+      {/* IMAGE */}
+      {isImage && (
+        <Image
+          src={att.fileUrl}
+          alt="attachment"
+          width={200}
+          height={200}
+          className="rounded-lg"
+        />
+      )}
+
+      {/* PDF */}
+      {isPDF && (
+        <iframe
+          src={att.fileUrl}
+          className="w-full h-[400px] rounded-lg border"
+        />
+      )}
+
+      {/* DOCX */}
+      {isDoc && (
+        <a
+          href={att.fileUrl}
+          target="_blank"
+          className="text-blue-600 underline"
+        >
+          📄 Download Document
+        </a>
+      )}
+
+      {/* OTHER FILES */}
+      {!isImage && !isPDF && !isDoc && (
+        <a
+          href={att.fileUrl}
+          target="_blank"
+          className="text-blue-600 underline"
+        >
+          Download File
+        </a>
+      )}
+    </div>
+  );
+})}
           </div>
         ))}
+
+        {/* 👇 IMPORTANT: scroll anchor */}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* INPUT */}
@@ -210,36 +312,49 @@ export default function ChatPage() {
         onSubmit={handleSend}
         className="p-3 bg-white flex items-end gap-2 border-t"
       >
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={(e) => setFile(e.target.files?.[0] || null)}
-          className="hidden"
-        />
+        <div className="relative flex items-end flex-1 bg-[#FFF4E0] rounded-2xl px-3 py-2 gap-2">
 
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="p-2 text-xl hover:bg-gray-100 rounded"
-        >
-          📎
-        </button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={(e) => {
+              const selected = e.target.files?.[0];
+              if (selected) setFile(selected);
+            }}
+            className="hidden"
+          />
 
-        <textarea
-          ref={textareaRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Type a message..."
-          className="flex-1 border p-2 rounded resize-none overflow-hidden"
-          rows={1}
-          style={{ minHeight: "40px", maxHeight: "120px" }}
-        />
+          {file && (
+            <div className="absolute bottom-14 left-2 bg-white shadow px-3 py-2 rounded-lg text-xs flex items-center gap-2">
+              📎 {file.name}
+              <button type="button" onClick={() => setFile(null)}>
+                ✕
+              </button>
+            </div>
+          )}
+
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Type a message..."
+            className="flex-1 bg-transparent outline-none resize-none max-h-[120px]"
+          />
+
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            📎
+          </button>
+        </div>
 
         <button
           type="submit"
-          className="p-2 bg-[#5F021F] text-white rounded"
+          disabled={isUploading}
+          className="bg-[#5F021F] text-white px-4 py-2 rounded-xl"
         >
-          📤
+          {isUploading ? "⏳" : "📤"}
         </button>
       </form>
     </div>
