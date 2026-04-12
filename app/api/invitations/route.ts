@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { randomUUID } from "crypto";
 import nodemailer from "nodemailer";
 import { Prisma } from "@prisma/client"
+import { Resend } from "resend"
 
 // --- Types ---
 interface InvitationBody {
@@ -23,7 +24,7 @@ const transporter = nodemailer.createTransport({
     pass: process.env.SMTP_PASS,
   },
 });
-
+const resend = new Resend(process.env.RESEND_API_KEY);
 // --- Helper: Require admin ---
 async function requireAdmin() {
   const user = await getCurrentUser();
@@ -78,7 +79,6 @@ export async function POST(req: Request) {
 
     const invitationLink = `${process.env.NEXT_PUBLIC_BASE_URL}/register?token=${token}`;
 
-    await transporter.sendMail({
       from: `"Lummina Law" <${process.env.SMTP_USER}>`,
       to: email,
       subject: "You're invited to Lummina Law",
@@ -90,8 +90,33 @@ export async function POST(req: Request) {
         <p>This link expires on ${new Date(expiresAt).toLocaleString()}.</p>
         <p>Thanks,<br/>Lummina Law Team</p>
       `,
-    });
+    }); */
 
+
+    await resend.emails.send({
+  from: "Lummina Law <onboarding@resend.dev>", // change later
+  to: email,
+  subject: "You're invited to Lummina Law",
+
+  text: `
+Lummina Law Invitation
+
+You have been invited to join as a ${role}.
+
+Accept your invitation:
+${invitationLink}
+
+This link expires on:
+${new Date(expiresAt).toLocaleString()}
+  `,  html: `
+    <p>Hello,</p>
+    <p>You have been invited to join Lummina Law as a <strong>${role}</strong>.</p>
+    <p>Click the link below to accept your invitation:</p>
+    <a href="${invitationLink}">${invitationLink}</a>
+    <p>This link expires on ${new Date(expiresAt).toLocaleString()}.</p>
+    <p>Thanks,<br/>Lummina Law Team</p>
+  `,
+});
     return NextResponse.json({
       message: "Invitation created and email sent",
       invitation,
