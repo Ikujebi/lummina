@@ -79,6 +79,7 @@ export async function POST(req: Request) {
 
     const invitationLink = `${process.env.NEXT_PUBLIC_BASE_URL}/register?token=${token}`;
 
+   /*  await transporter.sendMail({
       from: `"Lummina Law" <${process.env.SMTP_USER}>`,
       to: email,
       subject: "You're invited to Lummina Law",
