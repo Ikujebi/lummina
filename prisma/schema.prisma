@@ -266,7 +266,7 @@ model MessageAttachment {
   messageId String
   message   Message @relation(fields: [messageId], references: [id])
   fileUrl   String
-
+  fileType  String 
   @@index([messageId])
   @@map("MessageAttachment")
 }

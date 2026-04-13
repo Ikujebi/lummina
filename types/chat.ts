@@ -13,7 +13,7 @@ export interface Sender {
 export interface Message {
   id: string;
   content: string;
-  createdAt?: string;
+  createdAt?: string | Date | undefined;
    senderId: string;
   sender?: Sender;
   senderRole: string;

@@ -22,20 +22,20 @@ export default function ChatPage() {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-
-  // ✅ SCROLL REFS
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  const [selectedMedia, setSelectedMedia] = useState<{
+    url: string;
+    type: string;
+  } | null>(null);
 
   const userId = user?.id;
 
-  // =====================
-  // AUTH GUARD
-  // =====================
   useEffect(() => {
     if (loading) return;
 
     if (!user) {
-      router.push("/login");
+      router.push("/");
       return;
     }
 
@@ -45,26 +45,21 @@ export default function ChatPage() {
     }
   }, [user, loading, matterId, router]);
 
-  // =====================
-  // FETCH MESSAGES
-  // =====================
   useEffect(() => {
     if (!matterId) return;
 
     async function fetchMessages() {
       try {
         const res = await fetch(`/api/messages?matterId=${matterId}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
         const data = await res.json();
 
         const normalized: Message[] = Array.isArray(data)
           ? data
-          : data?.data ?? [];
+          : (data?.data ?? []);
 
         setMessages(normalized);
       } catch (err) {
-        console.error("Failed to fetch messages:", err);
+        console.error(err);
         setMessages([]);
       }
     }
@@ -72,9 +67,6 @@ export default function ChatPage() {
     fetchMessages();
   }, [matterId]);
 
-  // =====================
-  // PUSHER REALTIME
-  // =====================
   useEffect(() => {
     if (!matterId) return;
 
@@ -86,20 +78,19 @@ export default function ChatPage() {
 
     channel.bind("new-message", (message: Message) => {
       setMessages((prev) => {
-        const exists = prev.some((m) => m.id === message.id);
-        if (exists) return prev;
+        if (prev.some((m) => m.id === message.id)) return prev;
         return [...prev, message];
       });
     });
 
     channel.bind("update-message", (updated: Message) => {
       setMessages((prev) =>
-        prev.map((msg) => (msg.id === updated.id ? updated : msg))
+        prev.map((m) => (m.id === updated.id ? updated : m)),
       );
     });
 
     channel.bind("delete-message", ({ id }: { id: string }) => {
-      setMessages((prev) => prev.filter((msg) => msg.id !== id));
+      setMessages((prev) => prev.filter((m) => m.id !== id));
     });
 
     return () => {
@@ -108,9 +99,10 @@ export default function ChatPage() {
     };
   }, [matterId]);
 
-  // =====================
-  // AUTO RESIZE TEXTAREA
-  // =====================
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   useEffect(() => {
     if (!textareaRef.current) return;
 
@@ -119,54 +111,27 @@ export default function ChatPage() {
       Math.min(textareaRef.current.scrollHeight, 120) + "px";
   }, [input]);
 
-  // =====================
-  // AUTO SCROLL TO BOTTOM (WHATSAPP STYLE)
-  // =====================
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
-  }, [messages]);
+  function formatChatTime(date?: string | Date) {
+    if (!date) return "";
 
-  // =====================
-  // UPLOAD FILE
-  // =====================
-  async function uploadFile(file: File): Promise<Attachment> {
-    setIsUploading(true);
-    setUploadError(null);
+    const d = new Date(date);
+    const now = new Date();
 
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
+    const isToday = d.toDateString() === now.toDateString();
 
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
+    if (isToday) {
+      return d.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
       });
-
-      const data = await res.json();
-
-      if (!res.ok || !data.fileUrl) {
-        throw new Error(data?.error || "Upload failed");
-      }
-
-      return {
-        fileUrl: data.fileUrl,
-        fileType: data.fileType,
-        fileName: file.name,
-      };
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Upload failed";
-
-      setUploadError(message);
-      throw err;
-    } finally {
-      setIsUploading(false);
     }
+
+    return d.toLocaleDateString([], {
+      day: "2-digit",
+      month: "short",
+    });
   }
 
-  // =====================
-  // SEND MESSAGE
-  // =====================
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
 
@@ -177,158 +142,241 @@ export default function ChatPage() {
       let uploadedAttachment: Attachment | null = null;
 
       if (file) {
-        uploadedAttachment = await uploadFile(file);
-      }
+        setIsUploading(true);
+        setUploadError(null);
 
-      const attachments = uploadedAttachment ? [uploadedAttachment] : [];
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.fileUrl) {
+          throw new Error(data?.error || "Upload failed");
+        }
+
+        uploadedAttachment = {
+          fileUrl: data.fileUrl,
+          fileType: data.fileType,
+          fileName: file.name,
+        };
+      }
 
       const res = await fetch("/api/messages", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           content: input,
           matterId,
-          attachments,
+          attachments: uploadedAttachment ? [uploadedAttachment] : [],
         }),
       });
 
       const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data?.error || "Failed to send message");
-      }
-
-      setMessages((prev) => {
-        const exists = prev.some((m) => m.id === data.data.id);
-        if (exists) return prev;
-        return [...prev, data.data];
-      });
+      setMessages((prev) => [...prev, data.data]);
 
       setInput("");
       setFile(null);
-      setUploadError(null);
 
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+      if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (err) {
-      console.error("Failed to send message:", err);
+      console.error(err);
+      setUploadError(err instanceof Error ? err.message : "Upload failed");
+      return;
+    } finally {
+      setIsUploading(false);
     }
   }
+  const filePreviewUrl = file ? URL.createObjectURL(file) : null;
+  const filePreviewType = file?.type || "";
 
-  // =====================
-  // UI
-  // =====================
   return (
     <div className="h-screen flex flex-col bg-[#F7e7ce] text-[#5F021F] overflow-hidden">
-
-      {/* HEADER */}
-      <div className="p-4 bg-white shadow font-semibold">
-        Case Chat
-      </div>
+      <div className="p-4 bg-white shadow font-semibold">Case Chat</div>
 
       {uploadError && (
-        <div className="px-4 py-2 text-sm text-red-500">
+        <div className="mx-4 my-2 text-sm text-red-500 bg-red-50 p-2 rounded-lg">
           {uploadError}
         </div>
       )}
 
-      {/* MESSAGES (SCROLL AREA) */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.map((msg) => {
+          const isMe = msg.senderId === userId;
 
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`p-3 rounded shadow max-w-[70%] ${
-              msg.senderId === userId
-                ? "ml-auto bg-[#FFD6A5]"
-                : "mr-auto bg-white"
-            }`}
-          >
-            <p>{msg.content}</p>
+          return (
+            <div
+              key={msg.id}
+              className={`flex flex-col max-w-[75%] ${
+                isMe ? "ml-auto items-end" : "mr-auto items-start"
+              }`}
+            >
+              <div
+                className={`px-3 py-2 rounded-2xl shadow-sm ${
+                  isMe
+                    ? "bg-[#FFD6A5] rounded-br-none"
+                    : "bg-white rounded-bl-none"
+                }`}
+              >
+                {msg.content && (
+                  <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
+                )}
 
-           {msg.attachments?.map((att, i) => {
-  const type = att.fileType || "";
-  const isImage = type.startsWith("image");
-  const isPDF = type.includes("pdf");
-  const isDoc = type.includes("word") || type.includes("officedocument");
+                {(() => {
+                  const attachments = msg.attachments ?? [];
+                  if (attachments.length === 0) return null;
 
-  return (
-    <div key={i} className="mt-2">
-      {/* IMAGE */}
-      {isImage && (
-        <Image
-          src={att.fileUrl}
-          alt="attachment"
-          width={200}
-          height={200}
-          className="rounded-lg"
-        />
-      )}
+                  return (
+                    <div className="mt-2 flex flex-col gap-2">
+                      {attachments.map((att, i) => {
+                        const url = att.fileUrl.toLowerCase();
+                        const mime = (att.fileType || "").toLowerCase();
 
-      {/* PDF */}
-      {isPDF && (
-        <iframe
-          src={att.fileUrl}
-          className="w-full h-[400px] rounded-lg border"
-        />
-      )}
+                        const isImage =
+                          mime.startsWith("image") ||
+                          /\.(jpg|jpeg|png|gif|webp|heic)$/i.test(url);
 
-      {/* DOCX */}
-      {isDoc && (
-        <a
-          href={att.fileUrl}
-          target="_blank"
-          className="text-blue-600 underline"
-        >
-          📄 Download Document
-        </a>
-      )}
+                        const isVideo =
+                          mime.startsWith("video") ||
+                          /\.(mp4|mov|webm|avi)$/i.test(url);
 
-      {/* OTHER FILES */}
-      {!isImage && !isPDF && !isDoc && (
-        <a
-          href={att.fileUrl}
-          target="_blank"
-          className="text-blue-600 underline"
-        >
-          Download File
-        </a>
-      )}
-    </div>
-  );
-})}
-          </div>
-        ))}
+                        const isPDF =
+                          mime.includes("pdf") || url.endsWith(".pdf");
 
-        {/* 👇 IMPORTANT: scroll anchor */}
+                        const isDoc =
+                          mime.includes("word") ||
+                          mime.includes("officedocument") ||
+                          /\.(doc|docx)$/i.test(url);
+                        return (
+                          <div key={i}>
+                            {isImage && (
+                              <div
+                                className="cursor-pointer"
+                                onClick={() =>
+                                  setSelectedMedia({
+                                    url: att.fileUrl,
+                                    type: att.fileType ?? "",
+                                  })
+                                }
+                              >
+                                <Image
+                                  src={att.fileUrl}
+                                  alt="attachment"
+                                  width={250}
+                                  height={250}
+                                  className="rounded-xl object-cover"
+                                />
+                              </div>
+                            )}
+
+                            {isVideo && (
+                              <video
+                                src={att.fileUrl}
+                                className="rounded-xl max-w-[250px] cursor-pointer"
+                                onClick={() =>
+                                  setSelectedMedia({
+                                    url: att.fileUrl,
+                                    type: att.fileType ?? "",
+                                  })
+                                }
+                              />
+                            )}
+
+                            {isPDF && (
+                              <iframe
+                                src={att.fileUrl}
+                                className="w-full h-[250px] rounded-lg border"
+                              />
+                            )}
+
+                            {isDoc && (
+                              <a
+                                href={att.fileUrl}
+                                target="_blank"
+                                className="flex items-center gap-2 text-sm underline"
+                              >
+                                📄 {att.fileName || "Document"}
+                              </a>
+                            )}
+
+                            {!isImage && !isPDF && !isDoc && !isVideo && (
+                              <a
+                                href={att.fileUrl}
+                                target="_blank"
+                                className="text-sm text-blue-600 underline"
+                              >
+                                📎 Download file
+                              </a>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+
+              <div className="text-[10px] opacity-60 mt-1 px-1">
+                {formatChatTime(msg.createdAt)}
+              </div>
+            </div>
+          );
+        })}
+
         <div ref={messagesEndRef} />
       </div>
 
-      {/* INPUT */}
       <form
         onSubmit={handleSend}
         className="p-3 bg-white flex items-end gap-2 border-t"
       >
-        <div className="relative flex items-end flex-1 bg-[#FFF4E0] rounded-2xl px-3 py-2 gap-2">
-
+        <div className="flex-1 bg-[#FFF4E0] rounded-2xl px-3 py-2 flex items-end gap-2">
           <input
             type="file"
             ref={fileInputRef}
-            onChange={(e) => {
-              const selected = e.target.files?.[0];
-              if (selected) setFile(selected);
-            }}
-            className="hidden"
+            hidden
+            onChange={(e) => setFile(e.target.files?.[0] || null)}
           />
 
           {file && (
-            <div className="absolute bottom-14 left-2 bg-white shadow px-3 py-2 rounded-lg text-xs flex items-center gap-2">
-              📎 {file.name}
-              <button type="button" onClick={() => setFile(null)}>
-                ✕
+            <div className="mb-2 relative w-fit">
+              {filePreviewType.includes("image") && filePreviewUrl && (
+                <Image
+                  src={filePreviewUrl}
+                  alt="preview"
+                  width={120}
+                  height={120}
+                  className="rounded-lg object-cover"
+                />
+              )}
+
+              {filePreviewType.includes("video") && filePreviewUrl && (
+                <video
+                  src={filePreviewUrl}
+                  className="w-[120px] rounded-lg"
+                  controls
+                />
+              )}
+
+              {!filePreviewType.includes("image") &&
+                !filePreviewType.includes("video") && (
+                  <div className="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                    📎 {file.name}
+                  </div>
+                )}
+
+              {/* remove button */}
+              <button
+                type="button"
+                onClick={() => setFile(null)}
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs"
+              >
+                ×
               </button>
             </div>
           )}
@@ -341,10 +389,7 @@ export default function ChatPage() {
             className="flex-1 bg-transparent outline-none resize-none max-h-[120px]"
           />
 
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-          >
+          <button type="button" onClick={() => fileInputRef.current?.click()}>
             📎
           </button>
         </div>
@@ -352,11 +397,35 @@ export default function ChatPage() {
         <button
           type="submit"
           disabled={isUploading}
-          className="bg-[#5F021F] text-white px-4 py-2 rounded-xl"
+          className="bg-[#5F021F] text-white px-4 py-2 rounded-xl disabled:opacity-50"
         >
-          {isUploading ? "⏳" : "📤"}
+          {isUploading ? "Uploading..." : "📤"}
         </button>
       </form>
+
+      {selectedMedia && (
+        <div
+          className="fixed inset-0 bg-black/90 flex items-center justify-center z-50"
+          onClick={() => setSelectedMedia(null)}
+        >
+          {selectedMedia.type?.includes("image") ? (
+            <Image
+              src={selectedMedia.url}
+              alt="preview"
+              width={900}
+              height={900}
+              className="max-h-[90vh] w-auto rounded-lg"
+            />
+          ) : selectedMedia.type?.includes("video") ? (
+            <video
+              src={selectedMedia.url}
+              controls
+              autoPlay
+              className="max-h-[90vh] w-auto rounded-lg"
+            />
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }

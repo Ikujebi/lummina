@@ -8,6 +8,7 @@ interface MessageBody {
   id?: string;
   content?: string;
   matterId?: string;
+  fileType?: string;
   attachments?: Attachment[];
 }
 
@@ -140,6 +141,7 @@ export async function POST(req: Request) {
           ? {
               create: attachments.map((att) => ({
                 fileUrl: att.fileUrl,
+                fileType: att.fileType,
               })),
             }
           : undefined,
@@ -162,6 +164,7 @@ export async function POST(req: Request) {
       attachments: message.attachments.map((a) => ({
         id: a.id,
         fileUrl: a.fileUrl,
+        fileType: a.fileType,
       })),
     };
 
