@@ -141,7 +141,7 @@ export async function POST(req: Request) {
           ? {
               create: attachments.map((att) => ({
                 fileUrl: att.fileUrl,
-                fileType: att.fileType,
+                fileType: att.fileType ?? "unknown",
               })),
             }
           : undefined,

@@ -21,31 +21,34 @@ export async function POST(req: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const result: UploadApiResponse = await new Promise(
-      (resolve, reject) => {
-        const uploadStream = cloudinary.uploader.upload_stream(
-          {
-            resource_type: "auto",
-            folder: "chat_uploads",
-            type: "upload",
-          },
-          (error, result) => {
-            if (error) return reject(error);
-            if (!result) return reject(new Error("No result from Cloudinary"));
-            resolve(result);
-          }
-        );
+    const result: UploadApiResponse = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          resource_type: "raw",
+          folder: "chat_uploads",
+          use_filename: true,
+          unique_filename: true,
+        },
+        (error, result) => {
+          if (error) return reject(error);
+          if (!result) return reject(new Error("No upload result"));
+          resolve(result);
+        }
+      );
 
-        uploadStream.end(buffer);
-      }
-    );
+      uploadStream.end(buffer);
+    });
 
-return NextResponse.json({
-  fileUrl: result.secure_url,
-  fileType: result.mimetype || "application/octet-stream",
-});
+    return NextResponse.json({
+      fileUrl: result.secure_url, // 🔥 DO NOT MODIFY
+      fileType: file.name.split(".").pop()?.toLowerCase(),
+      fileName: file.name,
+    });
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+    console.error("Upload error:", err);
+    return NextResponse.json(
+      { error: "Upload failed" },
+      { status: 500 }
+    );
   }
 }

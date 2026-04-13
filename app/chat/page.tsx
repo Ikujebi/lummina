@@ -2,10 +2,12 @@
 
 import { useEffect, useState, useRef } from "react";
 import Pusher from "pusher-js";
-import { Message, Attachment } from "@/types/chat";
+import { Message } from "@/types/chat";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/app/hooks/useAuth";
 import Image from "next/image";
+
+import MessageItem from "@/app/components/chat/MessageItem";
 
 export default function ChatPage() {
   const searchParams = useSearchParams();
@@ -13,6 +15,7 @@ export default function ChatPage() {
   const { user, loading } = useAuth();
 
   const matterId = searchParams.get("matterId") || "";
+  const userId = user?.id;
 
   const [input, setInput] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -29,22 +32,15 @@ export default function ChatPage() {
     type: string;
   } | null>(null);
 
-  const userId = user?.id;
-
+  // ---------------- AUTH GUARD ----------------
   useEffect(() => {
     if (loading) return;
 
-    if (!user) {
-      router.push("/");
-      return;
-    }
-
-    if (!matterId) {
-      router.push("/cases");
-      return;
-    }
+    if (!user) router.push("/");
+    if (!matterId) router.push("/cases");
   }, [user, loading, matterId, router]);
 
+  // ---------------- FETCH MESSAGES ----------------
   useEffect(() => {
     if (!matterId) return;
 
@@ -55,11 +51,10 @@ export default function ChatPage() {
 
         const normalized: Message[] = Array.isArray(data)
           ? data
-          : (data?.data ?? []);
+          : data?.data ?? [];
 
         setMessages(normalized);
-      } catch (err) {
-        console.error(err);
+      } catch {
         setMessages([]);
       }
     }
@@ -67,6 +62,7 @@ export default function ChatPage() {
     fetchMessages();
   }, [matterId]);
 
+  // ---------------- PUSHER ----------------
   useEffect(() => {
     if (!matterId) return;
 
@@ -85,7 +81,7 @@ export default function ChatPage() {
 
     channel.bind("update-message", (updated: Message) => {
       setMessages((prev) =>
-        prev.map((m) => (m.id === updated.id ? updated : m)),
+        prev.map((m) => (m.id === updated.id ? updated : m))
       );
     });
 
@@ -99,10 +95,12 @@ export default function ChatPage() {
     };
   }, [matterId]);
 
+  // ---------------- AUTO SCROLL ----------------
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // ---------------- TEXTAREA AUTO HEIGHT ----------------
   useEffect(() => {
     if (!textareaRef.current) return;
 
@@ -111,27 +109,7 @@ export default function ChatPage() {
       Math.min(textareaRef.current.scrollHeight, 120) + "px";
   }, [input]);
 
-  function formatChatTime(date?: string | Date) {
-    if (!date) return "";
-
-    const d = new Date(date);
-    const now = new Date();
-
-    const isToday = d.toDateString() === now.toDateString();
-
-    if (isToday) {
-      return d.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    }
-
-    return d.toLocaleDateString([], {
-      day: "2-digit",
-      month: "short",
-    });
-  }
-
+  // ---------------- SEND MESSAGE ----------------
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
 
@@ -139,7 +117,7 @@ export default function ChatPage() {
     if (!userId || !matterId) return;
 
     try {
-      let uploadedAttachment: Attachment | null = null;
+      let uploadedAttachment = null;
 
       if (file) {
         setIsUploading(true);
@@ -161,220 +139,101 @@ export default function ChatPage() {
 
         uploadedAttachment = {
           fileUrl: data.fileUrl,
-          fileType: data.fileType,
-          fileName: file.name,
+          fileName: data.fileName || file.name,
+          fileType: file.type,
         };
       }
 
       const res = await fetch("/api/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content: input,
-          matterId,
-          attachments: uploadedAttachment ? [uploadedAttachment] : [],
-        }),
-      });
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    content: input,
+    matterId,
+    attachments: uploadedAttachment ? [uploadedAttachment] : [],
+  }),
+});
 
       const data = await res.json();
 
-      setMessages((prev) => [...prev, data.data]);
-
+console.log("Message send response:", data);
       setInput("");
       setFile(null);
 
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (err) {
-      console.error(err);
-      setUploadError(err instanceof Error ? err.message : "Upload failed");
-      return;
+      setUploadError(
+        err instanceof Error ? err.message : "Upload failed"
+      );
     } finally {
       setIsUploading(false);
     }
   }
+
   const filePreviewUrl = file ? URL.createObjectURL(file) : null;
   const filePreviewType = file?.type || "";
 
   return (
-    <div className="h-screen flex flex-col bg-[#F7e7ce] text-[#5F021F] overflow-hidden">
-      <div className="p-4 bg-white shadow font-semibold">Case Chat</div>
+    <div className="h-screen flex flex-col bg-[#F7e7ce] text-[#5F021F]">
+      <div className="p-4 bg-white shadow font-semibold">
+        Case Chat
+      </div>
 
       {uploadError && (
-        <div className="mx-4 my-2 text-sm text-red-500 bg-red-50 p-2 rounded-lg">
+        <div className="mx-4 my-2 text-red-500 text-sm bg-red-50 p-2 rounded">
           {uploadError}
         </div>
       )}
 
+      {/* ---------------- MESSAGES ---------------- */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((msg) => {
-          const isMe = msg.senderId === userId;
-
-          return (
-            <div
-              key={msg.id}
-              className={`flex flex-col max-w-[75%] ${
-                isMe ? "ml-auto items-end" : "mr-auto items-start"
-              }`}
-            >
-              <div
-                className={`px-3 py-2 rounded-2xl shadow-sm ${
-                  isMe
-                    ? "bg-[#FFD6A5] rounded-br-none"
-                    : "bg-white rounded-bl-none"
-                }`}
-              >
-                {msg.content && (
-                  <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
-                )}
-
-                {(() => {
-                  const attachments = msg.attachments ?? [];
-                  if (attachments.length === 0) return null;
-
-                  return (
-                    <div className="mt-2 flex flex-col gap-2">
-                      {attachments.map((att, i) => {
-                        const url = att.fileUrl.toLowerCase();
-                        const mime = (att.fileType || "").toLowerCase();
-
-                        const isImage =
-                          mime.startsWith("image") ||
-                          /\.(jpg|jpeg|png|gif|webp|heic)$/i.test(url);
-
-                        const isVideo =
-                          mime.startsWith("video") ||
-                          /\.(mp4|mov|webm|avi)$/i.test(url);
-
-                        const isPDF =
-                          mime.includes("pdf") || url.endsWith(".pdf");
-
-                        const isDoc =
-                          mime.includes("word") ||
-                          mime.includes("officedocument") ||
-                          /\.(doc|docx)$/i.test(url);
-                        return (
-                          <div key={i}>
-                            {isImage && (
-                              <div
-                                className="cursor-pointer"
-                                onClick={() =>
-                                  setSelectedMedia({
-                                    url: att.fileUrl,
-                                    type: att.fileType ?? "",
-                                  })
-                                }
-                              >
-                                <Image
-                                  src={att.fileUrl}
-                                  alt="attachment"
-                                  width={250}
-                                  height={250}
-                                  className="rounded-xl object-cover"
-                                />
-                              </div>
-                            )}
-
-                            {isVideo && (
-                              <video
-                                src={att.fileUrl}
-                                className="rounded-xl max-w-[250px] cursor-pointer"
-                                onClick={() =>
-                                  setSelectedMedia({
-                                    url: att.fileUrl,
-                                    type: att.fileType ?? "",
-                                  })
-                                }
-                              />
-                            )}
-
-                            {isPDF && (
-                              <iframe
-                                src={att.fileUrl}
-                                className="w-full h-[250px] rounded-lg border"
-                              />
-                            )}
-
-                            {isDoc && (
-                              <a
-                                href={att.fileUrl}
-                                target="_blank"
-                                className="flex items-center gap-2 text-sm underline"
-                              >
-                                📄 {att.fileName || "Document"}
-                              </a>
-                            )}
-
-                            {!isImage && !isPDF && !isDoc && !isVideo && (
-                              <a
-                                href={att.fileUrl}
-                                target="_blank"
-                                className="text-sm text-blue-600 underline"
-                              >
-                                📎 Download file
-                              </a>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
-              </div>
-
-              <div className="text-[10px] opacity-60 mt-1 px-1">
-                {formatChatTime(msg.createdAt)}
-              </div>
-            </div>
-          );
-        })}
+        {messages.map((msg) => (
+          <MessageItem
+            key={msg.id}
+            msg={msg}
+            userId={userId || ""}
+            onPreview={(url, type) =>
+              setSelectedMedia({ url, type })
+            }
+          />
+        ))}
 
         <div ref={messagesEndRef} />
       </div>
 
+      {/* ---------------- INPUT ---------------- */}
       <form
         onSubmit={handleSend}
         className="p-3 bg-white flex items-end gap-2 border-t"
       >
-        <div className="flex-1 bg-[#FFF4E0] rounded-2xl px-3 py-2 flex items-end gap-2">
+        <div className="flex-1 bg-[#FFF4E0] rounded-2xl p-2 flex gap-2">
           <input
             type="file"
-            ref={fileInputRef}
             hidden
+            ref={fileInputRef}
             onChange={(e) => setFile(e.target.files?.[0] || null)}
           />
 
-          {file && (
-            <div className="mb-2 relative w-fit">
-              {filePreviewType.includes("image") && filePreviewUrl && (
+          {/* FILE PREVIEW */}
+          {file && filePreviewUrl && (
+            <div className="relative">
+              {filePreviewType.startsWith("image") && (
                 <Image
                   src={filePreviewUrl}
+                  width={100}
+                  height={100}
                   alt="preview"
-                  width={120}
-                  height={120}
-                  className="rounded-lg object-cover"
                 />
               )}
 
-              {filePreviewType.includes("video") && filePreviewUrl && (
-                <video
-                  src={filePreviewUrl}
-                  className="w-[120px] rounded-lg"
-                  controls
-                />
+              {filePreviewType.startsWith("video") && (
+                <video src={filePreviewUrl} controls />
               )}
 
-              {!filePreviewType.includes("image") &&
-                !filePreviewType.includes("video") && (
-                  <div className="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                    📎 {file.name}
-                  </div>
-                )}
-
-              {/* remove button */}
               <button
                 type="button"
                 onClick={() => setFile(null)}
-                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs"
+                className="absolute -top-2 -right-2 bg-red-500 text-white w-5 h-5 rounded-full"
               >
                 ×
               </button>
@@ -385,45 +244,42 @@ export default function ChatPage() {
             ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            className="flex-1 bg-transparent outline-none resize-none"
             placeholder="Type a message..."
-            className="flex-1 bg-transparent outline-none resize-none max-h-[120px]"
           />
 
-          <button type="button" onClick={() => fileInputRef.current?.click()}>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+          >
             📎
           </button>
         </div>
 
         <button
-          type="submit"
           disabled={isUploading}
-          className="bg-[#5F021F] text-white px-4 py-2 rounded-xl disabled:opacity-50"
+          className="bg-[#5F021F] text-white px-4 rounded-xl"
         >
-          {isUploading ? "Uploading..." : "📤"}
+          {isUploading ? "..." : "📤"}
         </button>
       </form>
 
+      {/* ---------------- MEDIA MODAL ---------------- */}
       {selectedMedia && (
         <div
-          className="fixed inset-0 bg-black/90 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black/90 flex items-center justify-center"
           onClick={() => setSelectedMedia(null)}
         >
-          {selectedMedia.type?.includes("image") ? (
+          {selectedMedia.type.startsWith("image") ? (
             <Image
               src={selectedMedia.url}
+              width={1000}
+              height={1000}
               alt="preview"
-              width={900}
-              height={900}
-              className="max-h-[90vh] w-auto rounded-lg"
             />
-          ) : selectedMedia.type?.includes("video") ? (
-            <video
-              src={selectedMedia.url}
-              controls
-              autoPlay
-              className="max-h-[90vh] w-auto rounded-lg"
-            />
-          ) : null}
+          ) : (
+            <video src={selectedMedia.url} controls />
+          )}
         </div>
       )}
     </div>
