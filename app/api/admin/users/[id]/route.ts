@@ -1,5 +1,6 @@
 // app/api/admin/users/[id]/route.ts
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/requireAdmin";
 import { logAudit } from "@/lib/audit";
@@ -47,28 +48,41 @@ export async function PATCH(
 ) {
   try {
     await requireAdmin();
-    const { id } = await context.params;
-    const { role } = await req.json();
 
-    if (!role) {
-      return NextResponse.json({ success: false, error: "Role is required" }, { status: 400 });
+    const { id } = await context.params; // ✅ IMPORTANT (same as GET)
+
+    const body = await req.json();
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: "Missing user id" },
+        { status: 400 }
+      );
+    }
+
+    const data: Prisma.UserUpdateInput = {};
+
+    if (typeof body.role === "string") {
+      data.role = body.role;
+    }
+
+    if (typeof body.isApproved === "boolean") {
+      data.isApproved = body.isApproved;
     }
 
     const updatedUser = await prisma.user.update({
       where: { id },
-      data: { role },
+      data,
     });
-
-    // ✅ Log audit
-    const currentUser = await getCurrentUser();
-    if (currentUser) {
-      await logAudit(currentUser.id, "UPDATE", "User", updatedUser.id);
-    }
 
     return NextResponse.json({ success: true, user: updatedUser });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ success: false, error: "Failed to update user" }, { status: 500 });
+    console.error("PATCH error:", error);
+
+    return NextResponse.json(
+      { success: false, error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 

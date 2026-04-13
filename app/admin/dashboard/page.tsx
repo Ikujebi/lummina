@@ -8,6 +8,7 @@ import AlertsPanel from "../../components/admin-dashboard/AlertsPanel";
 import ChartsSection from "../../components/dashboard/ChartsSection";
 import { Spin } from "antd";
 import { User } from "@/types/admin";
+import { approveUser, deleteUser, updateUser } from "@/lib/api/users";
 
 
 // ================= TYPES =================
@@ -146,72 +147,54 @@ console.log("Line chart data:", line);
 
     // ================= APPROVE HANDLER =================
   const handleApprove = async (userId: string) => {
-    try {
-      const res = await fetch("/api/admin/approve-user", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
-      });
+  try {
+    const res = await approveUser(userId);
 
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || "Failed to approve user");
-      }
+    setUsers((prev) =>
+      prev.map((user) =>
+        user.id === userId ? { ...user, isApproved: true } : user
+      )
+    );
 
-      const data = await res.json();
-
-      setUsers((prev) =>
-        prev.map((user) => (user.id === userId ? { ...user, isApproved: true } : user))
-      );
-
-      console.log(data.message);
-    } catch (err) {
-      console.error("Approve error:", err);
-    }
-  };
+    console.log(res.message);
+  } catch (err) {
+    console.error("Approve error:", err);
+  }
+};
 
 
     // ================= SAVE HANDLER =================
   const handleSave = async (user: User) => {
-    try {
-      const res = await fetch(`/api/admin/users/${user.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: user.name, email: user.email, role: user.role }),
-      });
+  try {
+    const res = await updateUser({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    });
 
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || "Failed to save user");
-      }
+    setUsers((prev) =>
+      prev.map((u) => (u.id === user.id ? { ...u, ...user } : u))
+    );
 
-      setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, ...user } : u)));
-    } catch (err) {
-      console.error("Save error:", err);
-    }
-  };
+    console.log(res);
+  } catch (err) {
+    console.error("Save error:", err);
+  }
+};
 
 
   
   // ================= DELETE HANDLER =================
   const handleDelete = async (userId: string) => {
-    try {
-      const res = await fetch(`/api/admin/users/${userId}`, {
-        method: "DELETE",
-      });
+  try {
+    await deleteUser(userId);
 
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || "Failed to delete user");
-      }
-
-      setUsers((prev) => prev.filter((u) => u.id !== userId));
-    } catch (err) {
-      console.error("Delete error:", err);
-    }
-  };
-
-
+    setUsers((prev) => prev.filter((u) => u.id !== userId));
+  } catch (err) {
+    console.error("Delete error:", err);
+  }
+};
   // ================= UI =================
   return (
     <Spin spinning={loading} size="large">

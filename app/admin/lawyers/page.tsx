@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import UsersTable from "../../components/admin-dashboard/UsersTable";
+import { approveUser } from "@/lib/api/users";
 
 interface User {
   id: string;
@@ -91,7 +92,9 @@ export default function LawyersPage() {
         body: JSON.stringify({
           email: inviteEmail,
           role: "LAWYER",
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          expiresAt: new Date(
+            Date.now() + 7 * 24 * 60 * 60 * 1000,
+          ).toISOString(),
         }),
       });
       const data = await res.json();
@@ -109,14 +112,15 @@ export default function LawyersPage() {
   };
 
   const filteredLawyers = lawyers.filter((u) =>
-    u.name.toLowerCase().includes(search.toLowerCase())
+    u.name.toLowerCase().includes(search.toLowerCase()),
   );
 
   return (
     <div className="flex flex-col gap-4 md:p-4">
       {/* Inline message */}
-     {message && (
-  <div className="
+      {message && (
+        <div
+          className="
   flex flex-col gap-2 
   border rounded bg-[#F7E7CE] 
   w-full           /* mobile takes full width */
@@ -126,10 +130,11 @@ export default function LawyersPage() {
   p-4
   text-sm sm:text-base
   overflow-x-auto
-">
-  {message}
-</div>
-)}
+"
+        >
+          {message}
+        </div>
+      )}
 
       {/* Header */}
       <section className="flex flex-col sm:flex-row flex-wrap justify-between items-start sm:items-center gap-3 sm:gap-0">
@@ -235,14 +240,26 @@ export default function LawyersPage() {
         <div className="overflow-x-auto">
           <UsersTable
             users={filteredLawyers}
-            onApprove={(id) =>
-              setLawyers((prev) =>
-                prev.map((u) => (u.id === id ? { ...u, isApproved: true } : u))
-              )
-            }
+            onApprove={async (id) => {
+              try {
+                await approveUser(id); // ✅ CALL BACKEND
+
+                // ✅ update UI AFTER success
+                setLawyers((prev) =>
+                  prev.map((u) =>
+                    u.id === id ? { ...u, isApproved: true } : u,
+                  ),
+                );
+
+                setMessage("User approved successfully");
+              } catch (err) {
+                console.error(err);
+                setMessage("Failed to approve user");
+              }
+            }}
             onSave={async (updatedUser) =>
               setLawyers((prev) =>
-                prev.map((u) => (u.id === updatedUser.id ? updatedUser : u))
+                prev.map((u) => (u.id === updatedUser.id ? updatedUser : u)),
               )
             }
             onDelete={async (id) =>

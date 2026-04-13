@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { randomUUID } from "crypto";
-import nodemailer from "nodemailer";
+// import nodemailer from "nodemailer";
 import { Prisma } from "@prisma/client"
 import { Resend } from "resend"
 
@@ -15,7 +15,7 @@ interface InvitationBody {
 }
 
 // Nodemailer transporter
-const transporter = nodemailer.createTransport({
+/* const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: Number(process.env.SMTP_PORT),
   secure: Number(process.env.SMTP_PORT) === 465,
@@ -23,7 +23,7 @@ const transporter = nodemailer.createTransport({
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
-});
+}); */
 const resend = new Resend(process.env.RESEND_API_KEY);
 // --- Helper: Require admin ---
 async function requireAdmin() {
