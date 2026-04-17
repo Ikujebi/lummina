@@ -15,8 +15,18 @@ export async function POST(req: Request) {
     const file = data.get("file") as File;
 
     if (!file) {
-      return NextResponse.json({ error: "No file" }, { status: 400 });
+      return NextResponse.json(
+        { error: "No file provided" },
+        { status: 400 }
+      );
     }
+
+    // Debug (optional but helpful)
+    console.log("Uploading file:", {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+    });
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
@@ -24,7 +34,7 @@ export async function POST(req: Request) {
     const result: UploadApiResponse = await new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
-          resource_type: "raw",
+          resource_type: "auto", // ✅ handles images, videos, PDFs, docs
           folder: "chat_uploads",
           use_filename: true,
           unique_filename: true,
@@ -36,13 +46,21 @@ export async function POST(req: Request) {
         }
       );
 
+      uploadStream.on("error", reject);
+
       uploadStream.end(buffer);
     });
 
     return NextResponse.json({
-      fileUrl: result.secure_url, // 🔥 DO NOT MODIFY
-      fileType: file.name.split(".").pop()?.toLowerCase(),
+      fileUrl: result.secure_url,
+
+      // ✅ IMPORTANT FIX: use real MIME type from browser
+      fileType: file.type,
+
       fileName: file.name,
+
+      // optional but useful for debugging/UI
+      resourceType: result.resource_type,
     });
   } catch (err) {
     console.error("Upload error:", err);
