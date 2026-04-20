@@ -27,16 +27,13 @@ type PdfModule = {
   pdfjs: typeof pdfjs;
 };
 
-export default function AttachmentRenderer({
-  attachment,
-  onPreview,
-}: Props) {
+export default function AttachmentRenderer({ attachment, onPreview }: Props) {
   const [pdfModules, setPdfModules] = useState<PdfModule | null>(null);
   const [pdfReady, setPdfReady] = useState(false);
 
   const { isImage, isVideo, isPDF, isDoc } = getAttachmentType(
     attachment.fileUrl,
-    attachment.fileType
+    attachment.fileType,
   );
 
   const url = attachment.fileUrl;
@@ -47,11 +44,10 @@ export default function AttachmentRenderer({
     const loadPdf = async () => {
       const mod = await import("react-pdf");
 
-      mod.pdfjs.GlobalWorkerOptions.workerSrc =
-  new URL(
-    "pdfjs-dist/build/pdf.worker.min.mjs",
-    import.meta.url
-  ).toString();
+      mod.pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+        "pdfjs-dist/build/pdf.worker.min.mjs",
+        import.meta.url,
+      ).toString();
       setPdfModules({
         Document: mod.Document,
         Page: mod.Page,
@@ -100,7 +96,12 @@ export default function AttachmentRenderer({
               <p className="text-xs p-3">Loading PDF...</p>
             ) : (
               <Document file={url}>
-                <Page pageNumber={1} width={240} />
+                <Page
+                  pageNumber={1}
+                  width={240}
+                  renderTextLayer={false}
+                  renderAnnotationLayer={false}
+                />
               </Document>
             )}
           </div>
@@ -112,9 +113,7 @@ export default function AttachmentRenderer({
             </p>
           </div>
 
-          <p className="text-[11px] text-gray-500 mt-1">
-            PDF Document
-          </p>
+          <p className="text-[11px] text-gray-500 mt-1">PDF Document</p>
 
           <div className="flex gap-2 mt-3">
             <a
@@ -140,10 +139,7 @@ export default function AttachmentRenderer({
 
       {/* DOC */}
       {isDoc && (
-        <a
-          href={forceCloudinaryDownload(url)}
-          className="text-sm underline"
-        >
+        <a href={forceCloudinaryDownload(url)} className="text-sm underline">
           📄 {attachment.fileName}
         </a>
       )}
