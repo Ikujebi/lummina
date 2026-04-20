@@ -127,7 +127,7 @@ export default function AttachmentRenderer({ attachment, onPreview }: Props) {
 
             <a
               href={url}
-              download
+              download={attachment.fileName}
               onClick={(e) => e.stopPropagation()}
               className="text-xs px-3 py-1 bg-[#5F021F] text-white rounded"
             >
@@ -139,9 +139,36 @@ export default function AttachmentRenderer({ attachment, onPreview }: Props) {
 
       {/* DOC */}
       {isDoc && (
-        <a href={forceCloudinaryDownload(url)} className="text-sm underline">
-          📄 {attachment.fileName}
-        </a>
+        <div className="bg-white border rounded-xl p-3 w-[260px] shadow-sm">
+          <div className="flex items-center gap-2">
+            <FileIcon type="doc" />
+            <p className="text-sm font-medium truncate">
+              {attachment.fileName}
+            </p>
+          </div>
+
+          <p className="text-[11px] text-gray-500 mt-1">Word Document</p>
+
+          <div className="flex gap-2 mt-3">
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs px-3 py-1 bg-gray-100 rounded"
+            >
+              Open
+            </a>
+
+            <a
+              href={url}
+              download={attachment.fileName}
+              onClick={(e) => e.stopPropagation()}
+              className="text-xs px-3 py-1 bg-[#5F021F] text-white rounded"
+            >
+              Download
+            </a>
+          </div>
+        </div>
       )}
 
       {/* FALLBACK */}

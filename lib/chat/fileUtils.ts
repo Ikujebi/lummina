@@ -25,9 +25,10 @@ export function getAttachmentType(url: string, fileType?: string) {
     lower.includes(".pdf");
 
   const isDoc =
-    type.includes("word") ||
-    type.includes("document") ||
-    /\.(doc|docx)$/.test(lower);
+  type.includes("word") ||
+  type.includes("officedocument") ||
+  type.includes("msword") ||
+  /\.(doc|docx)$/i.test(lower);
 
   return { isImage, isVideo, isPDF, isDoc };
 }

@@ -1,15 +1,9 @@
 "use client";
 
-interface Case {
-  id: string;
-  client: string;
-  stage: string;
-  progress: number;
-  update: string;
-}
+import type { LawyerMatter } from "@/types/lawyer";
 
 interface CasesGridProps {
-  cases: Case[];
+  cases: LawyerMatter[];
 }
 
 export default function CasesGrid({ cases }: CasesGridProps) {
@@ -22,31 +16,37 @@ export default function CasesGrid({ cases }: CasesGridProps) {
         >
           <header className="flex justify-between items-start">
             <div>
-              <p className="font-semibold text-lg text-[#5F021F]">{c.client}</p>
-              <p className="text-xs text-[#5F021F]/70">{`Case ID ${c.id}`}</p>
+              <p className="font-semibold text-lg text-[#5F021F]">
+                {c.title}
+              </p>
+
+              <p className="text-xs text-[#5F021F]/70">
+                Case #{c.caseNumber}
+              </p>
             </div>
+
             <span
               className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                c.stage === "Review"
-                  ? "bg-[#FFD6A5]/50 text-[#5F021F]"
-                  : "bg-[#FFA500]/30 text-[#5F021F]"
+                c.status === "OPEN"
+                  ? "bg-green-200 text-green-800"
+                  : c.status === "IN_PROGRESS"
+                  ? "bg-yellow-200 text-yellow-800"
+                  : c.status === "PENDING"
+                  ? "bg-orange-200 text-orange-800"
+                  : "bg-gray-300 text-gray-700"
               }`}
             >
-              {c.stage}
+              {c.status}
             </span>
           </header>
 
-          <div className="flex flex-col gap-1">
-            <span className="text-xs text-[#5F021F]/70">Progress {c.progress}%</span>
-            <div className="w-full h-2 rounded-full bg-[#FFE8B2]/50 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-[#FFA500] to-[#5F021F]"
-                style={{ width: `${c.progress}%` }}
-              />
-            </div>
-          </div>
+          <p className="text-sm text-[#5F021F]/70">
+            Client: {c.client?.name}
+          </p>
 
-          <p className="text-sm text-[#5F021F]/70">{c.update}</p>
+          <p className="text-xs text-[#5F021F]/60">
+            Last updated: {new Date(c.updatedAt).toLocaleDateString()}
+          </p>
 
           <div className="flex flex-wrap gap-2">
             <a
@@ -55,12 +55,14 @@ export default function CasesGrid({ cases }: CasesGridProps) {
             >
               View Details
             </a>
+
             <a
               href="#"
               className="px-3 py-2 bg-[#FFE8B2] text-[#5F021F] rounded-lg text-sm font-semibold"
             >
               Open Chat
             </a>
+
             <a
               href="#"
               className="px-3 py-2 bg-[#FFE8B2] text-[#5F021F] rounded-lg text-sm font-semibold"

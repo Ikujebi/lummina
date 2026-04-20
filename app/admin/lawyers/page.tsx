@@ -62,7 +62,9 @@ export default function LawyersPage() {
           role: "LAWYER",
         }),
       });
+
       const data = await res.json();
+
       if (data.success) {
         setLawyers((prev) => [...prev, data.user]);
         setNewLawyerName("");
@@ -97,7 +99,9 @@ export default function LawyersPage() {
           ).toISOString(),
         }),
       });
+
       const data = await res.json();
+
       if (data.invitation) {
         setMessage("Invitation sent successfully");
         setInviteEmail("");
@@ -119,19 +123,7 @@ export default function LawyersPage() {
     <div className="flex flex-col gap-4 md:p-4">
       {/* Inline message */}
       {message && (
-        <div
-          className="
-  flex flex-col gap-2 
-  border rounded bg-[#F7E7CE] 
-  w-full           /* mobile takes full width */
-  max-w-[16rem]    /* max width on small screens */
-  md:max-w-[600px] /* desktop width */
-  mx-auto
-  p-4
-  text-sm sm:text-base
-  overflow-x-auto
-"
-        >
+        <div className="flex flex-col gap-2 border rounded bg-[#F7E7CE] w-full max-w-[16rem] md:max-w-[600px] mx-auto p-4 text-sm sm:text-base overflow-x-auto">
           {message}
         </div>
       )}
@@ -146,16 +138,18 @@ export default function LawyersPage() {
             Manage all lawyers in the system, add new ones or send Invite.
           </p>
         </div>
+
         <div className="flex gap-2 mt-2 sm:mt-0">
           <button
             onClick={() => setShowForm((prev) => !prev)}
-            className="text-2xl sm:text-3xl font-bold text-[#5F021F] hover:text-[#7a0230] transition"
+            className="text-2xl sm:text-3xl font-bold text-[#5F021F] hover:text-[#7a0230]"
           >
             +
           </button>
+
           <button
             onClick={() => setShowInviteForm((prev) => !prev)}
-            className="bg-[#021F5F]/90 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded hover:bg-[#03287a] text-sm sm:text-base"
+            className="bg-[#021F5F]/90 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded hover:bg-[#03287a]"
           >
             Invite Lawyer
           </button>
@@ -164,32 +158,35 @@ export default function LawyersPage() {
 
       {/* Add Lawyer Form */}
       {showForm && (
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-end w-full overflow-x-auto">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-end w-full">
           <div className="flex flex-col gap-2 w-[54%] sm:w-auto">
             <input
               type="text"
               placeholder="Name"
               value={newLawyerName}
               onChange={(e) => setNewLawyerName(e.target.value)}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 border rounded text-sm sm:text-base w-full"
+              className="px-3 py-2 border rounded"
             />
+
             <input
               type="email"
               placeholder="Email"
               value={newLawyerEmail}
               onChange={(e) => setNewLawyerEmail(e.target.value)}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 border rounded text-sm sm:text-base w-full"
+              className="px-3 py-2 border rounded"
             />
+
             <input
               type="password"
               placeholder="Password"
               value={newLawyerPassword}
               onChange={(e) => setNewLawyerPassword(e.target.value)}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 border rounded text-sm sm:text-base w-full"
+              className="px-3 py-2 border rounded"
             />
+
             <button
               onClick={addLawyer}
-              className="bg-[#5F021F] text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded hover:bg-[#7a0230] text-sm sm:text-base w-full sm:w-auto"
+              className="bg-[#5F021F] text-white px-4 py-2 rounded"
             >
               Add Lawyer
             </button>
@@ -197,26 +194,28 @@ export default function LawyersPage() {
         </div>
       )}
 
-      {/* Invite Lawyer Form */}
+      {/* Invite Form */}
       {showInviteForm && (
-        <div className="flex flex-col gap-2 p-3 sm:p-4 border rounded bg-[#F7E7CE] w-full sm:w-96 overflow-x-auto">
+        <div className="flex flex-col gap-2 p-4 border rounded bg-[#F7E7CE] w-full sm:w-96">
           <input
             type="email"
             placeholder="Lawyer's Email"
             value={inviteEmail}
             onChange={(e) => setInviteEmail(e.target.value)}
-            className="px-2 sm:px-3 py-1.5 sm:py-2 border rounded text-sm sm:text-base w-full"
+            className="px-3 py-2 border rounded"
           />
-          <div className="flex flex-col sm:flex-row gap-2 mt-2">
+
+          <div className="flex gap-2 mt-2">
             <button
               onClick={inviteLawyer}
-              className="bg-[#5F021F] text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded hover:bg-[#7a0230] text-sm sm:text-base w-full sm:w-auto"
+              className="bg-[#5F021F] text-white px-4 py-2 rounded"
             >
               Send Invite
             </button>
+
             <button
               onClick={() => setShowInviteForm(false)}
-              className="bg-gray-300 text-[#5F021F] px-3 sm:px-4 py-1.5 sm:py-2 rounded hover:bg-gray-400 text-sm sm:text-base w-full sm:w-auto"
+              className="bg-gray-300 px-4 py-2 rounded"
             >
               Cancel
             </button>
@@ -230,43 +229,101 @@ export default function LawyersPage() {
         placeholder="Search lawyers..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl border border-[#5F021F]/30 outline-none text-sm sm:text-base md:w-full w-64"
+        className="px-4 py-2 border rounded-xl"
       />
 
       {/* Table */}
       {loading ? (
-        <p className="text-sm sm:text-base">Loading lawyers...</p>
+        <p>Loading lawyers...</p>
       ) : (
-        <div className="overflow-x-auto">
-          <UsersTable
-            users={filteredLawyers}
-            onApprove={async (id) => {
-              try {
-                await approveUser(id); // ✅ CALL BACKEND
+        <UsersTable
+          users={filteredLawyers}
 
-                // ✅ update UI AFTER success
-                setLawyers((prev) =>
-                  prev.map((u) =>
-                    u.id === id ? { ...u, isApproved: true } : u,
-                  ),
-                );
+          /* =======================
+             APPROVE (UNCHANGED)
+          ======================= */
+          onApprove={async (id) => {
+            try {
+              await approveUser(id);
 
-                setMessage("User approved successfully");
-              } catch (err) {
-                console.error(err);
-                setMessage("Failed to approve user");
-              }
-            }}
-            onSave={async (updatedUser) =>
               setLawyers((prev) =>
-                prev.map((u) => (u.id === updatedUser.id ? updatedUser : u)),
-              )
+                prev.map((u) =>
+                  u.id === id ? { ...u, isApproved: true } : u,
+                ),
+              );
+
+              setMessage("User approved successfully");
+            } catch (err) {
+              console.error(err);
+              setMessage("Failed to approve user");
             }
-            onDelete={async (id) =>
-              setLawyers((prev) => prev.filter((u) => u.id !== id))
+          }}
+
+          /* =======================
+             EDIT (NOW REAL BACKEND)
+          ======================= */
+          onSave={async (updatedUser) => {
+            try {
+              const res = await fetch(`/api/admin/users/${updatedUser.id}`, {
+                method: "PUT",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  name: updatedUser.name,
+                  email: updatedUser.email,
+                  role: updatedUser.role,
+                  isApproved: updatedUser.isApproved,
+                }),
+              });
+
+              const data = await res.json();
+
+              if (!res.ok) {
+                setMessage(data.error || "Failed to update user");
+                return;
+              }
+
+              setLawyers((prev) =>
+                prev.map((u) =>
+                  u.id === updatedUser.id ? data.user : u
+                )
+              );
+
+              setMessage("User updated successfully");
+            } catch (err) {
+              console.error(err);
+              setMessage("Failed to update user");
             }
-          />
-        </div>
+          }}
+
+          /* =======================
+             DELETE (NOW REAL BACKEND)
+          ======================= */
+          onDelete={async (id) => {
+            try {
+              const res = await fetch(`/api/admin/users/${id}`, {
+                method: "DELETE",
+              });
+
+              const data = await res.json();
+
+              if (!res.ok) {
+                setMessage(data.error || "Failed to delete user");
+                return;
+              }
+
+              setLawyers((prev) =>
+                prev.filter((u) => u.id !== id),
+              );
+
+              setMessage("User deleted successfully");
+            } catch (err) {
+              console.error(err);
+              setMessage("Failed to delete user");
+            }
+          }}
+        />
       )}
     </div>
   );

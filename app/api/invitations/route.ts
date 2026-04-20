@@ -94,30 +94,31 @@ export async function POST(req: Request) {
     }); */
 
 
-    await resend.emails.send({
-  from: "Lummina Law <onboarding@resend.dev>", // change later
+    const { data, error } = await resend.emails.send({
+  from: "Lummina Law <onboarding@resend.dev>",
   to: email,
   subject: "You're invited to Lummina Law",
-
   text: `
-Lummina Law Invitation
+You have been invited as a ${role}.
 
-You have been invited to join as a ${role}.
-
-Accept your invitation:
 ${invitationLink}
 
-This link expires on:
-${new Date(expiresAt).toLocaleString()}
-  `,  html: `
+Expires: ${new Date(expiresAt).toLocaleString()}
+  `,
+  html: `
     <p>Hello,</p>
     <p>You have been invited to join Lummina Law as a <strong>${role}</strong>.</p>
-    <p>Click the link below to accept your invitation:</p>
-    <a href="${invitationLink}">${invitationLink}</a>
-    <p>This link expires on ${new Date(expiresAt).toLocaleString()}.</p>
-    <p>Thanks,<br/>Lummina Law Team</p>
+    <p><a href="${invitationLink}">Accept Invitation</a></p>
+    <p>Expires: ${new Date(expiresAt).toLocaleString()}</p>
   `,
 });
+
+console.log("📧 RESEND RESPONSE:", data);
+console.log("❌ RESEND ERROR:", error);
+
+if (error) {
+  throw new Error(error.message);
+}
     return NextResponse.json({
       message: "Invitation created and email sent",
       invitation,

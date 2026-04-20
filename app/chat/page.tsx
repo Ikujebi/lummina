@@ -6,6 +6,7 @@ import { Message } from "@/types/chat";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/app/hooks/useAuth";
 import Image from "next/image";
+import { ArrowLeft } from "lucide-react";
 
 import MessageItem from "@/app/components/chat/MessageItem";
 
@@ -175,9 +176,17 @@ console.log("Message send response:", data);
 
   return (
     <div className="h-screen flex flex-col bg-[#F7e7ce] text-[#5F021F]">
-      <div className="p-4 bg-white shadow font-semibold">
-        Case Chat
-      </div>
+      <div className="p-4 bg-white shadow flex items-center gap-3 font-semibold">
+  <button
+    onClick={() => router.back()}
+    className="p-2 rounded-full hover:bg-gray-100 transition"
+    aria-label="Go back"
+  >
+    <ArrowLeft size={20} />
+  </button>
+
+  <span>Case Chat</span>
+</div>
 
       {uploadError && (
         <div className="mx-4 my-2 text-red-500 text-sm bg-red-50 p-2 rounded">

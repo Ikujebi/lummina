@@ -15,10 +15,7 @@ export async function POST(req: Request) {
     const file = data.get("file") as File;
 
     if (!file) {
-      return NextResponse.json(
-        { error: "No file provided" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
     // Debug (optional but helpful)
@@ -30,26 +27,41 @@ export async function POST(req: Request) {
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
+    const isPdf = file.type === "application/pdf";
+    const isVideo = file.type.startsWith("video/");
+    const isImage = file.type.startsWith("image/");
 
-    const result: UploadApiResponse = await new Promise((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        {
-          resource_type: "auto", // ✅ handles images, videos, PDFs, docs
-          folder: "chat_uploads",
-          use_filename: true,
-          unique_filename: true,
-        },
-        (error, result) => {
-          if (error) return reject(error);
-          if (!result) return reject(new Error("No upload result"));
-          resolve(result);
-        }
-      );
+  const result: UploadApiResponse = await new Promise((resolve, reject) => {
+  const uploadStream = cloudinary.uploader.upload_stream(
+    {
+      folder: "chat_uploads",
 
-      uploadStream.on("error", reject);
+      // ✅ FIX 1: correct resource types
+      resource_type: isPdf
+        ? "raw"
+        : isVideo
+          ? "video"
+          : "image",
 
-      uploadStream.end(buffer);
-    });
+      // ✅ FIX 2: force correct filename WITH extension
+      public_id: file.name,
+
+      // ❌ remove this (it breaks PDFs sometimes)
+      // use_filename: true,
+      // unique_filename: true,
+
+      // optional: forces download behavior for non-PDF docs
+      flags: !isPdf && !isVideo && !isImage ? "attachment" : undefined,
+    },
+    (error, result) => {
+      if (error) return reject(error);
+      if (!result) return reject(new Error("No upload result"));
+      resolve(result);
+    }
+  );
+
+  uploadStream.end(buffer);
+});
 
     return NextResponse.json({
       fileUrl: result.secure_url,
@@ -64,9 +76,6 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     console.error("Upload error:", err);
-    return NextResponse.json(
-      { error: "Upload failed" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
   }
 }
