@@ -9,6 +9,8 @@ export interface LawyerMatter {
   caseNumber: string;
   title: string;
   status: MatterStatus;
+    progress: number;
+
   client: {
     name: string;
   };

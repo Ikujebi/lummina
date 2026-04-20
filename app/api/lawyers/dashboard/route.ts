@@ -14,7 +14,7 @@ export async function GET() {
       );
     }
 
-    // 📦 Fetch matters assigned to this lawyer
+    // 📦 Fetch ONLY matters assigned to this lawyer
     const matters = await prisma.matter.findMany({
       where: {
         lawyerId: user.id,
@@ -27,57 +27,46 @@ export async function GET() {
       },
     });
 
-    // 📊 Compute stats (real DB-driven)
+    // =========================
+    // 📊 STATS (DERIVED FROM DB)
+    // =========================
     const totalMatters = matters.length;
 
-    const completedMatters = await prisma.matter.count({
-      where: {
-        lawyerId: user.id,
-        status: "CLOSED",
-      },
-    });
+    const completedMatters = matters.filter(
+      (m) => m.status === "CLOSED"
+    ).length;
 
-    const activeMatters = await prisma.matter.count({
-      where: {
-        lawyerId: user.id,
-        status: {
-          in: ["OPEN", "IN_PROGRESS", "PENDING"],
-        },
-      },
-    });
+    const activeMatters = matters.filter(
+      (m) => m.status !== "CLOSED"
+    ).length;
 
-    const pendingMatters = await prisma.matter.count({
-      where: {
-        lawyerId: user.id,
-        status: "PENDING",
-      },
-    });
+    const pendingMatters = matters.filter(
+      (m) => m.status === "PENDING"
+    ).length;
 
-    // 🎯 Transform DB → UI format (THIS FIXES YOUR TYPE ERROR)
+    // =========================
+    // 🎯 UI FORMAT TRANSFORM
+    // =========================
     const formattedMatters = matters.map((m) => {
-      let progress = 0;
-
-      switch (m.status) {
-        case "OPEN":
-          progress = 20;
-          break;
-        case "IN_PROGRESS":
-          progress = 60;
-          break;
-        case "PENDING":
-          progress = 80;
-          break;
-        case "CLOSED":
-          progress = 100;
-          break;
-      }
+      const progressMap: Record<string, number> = {
+        OPEN: 20,
+        IN_PROGRESS: 60,
+        PENDING: 80,
+        CLOSED: 100,
+      };
 
       return {
-        id: m.caseNumber, // UI expects case id
-        client: m.client?.name || "Unknown Client",
+        id: m.id,
+        caseNumber: m.caseNumber,
+        title: m.title,
+        status: m.status,
+        client: m.client,
+        updatedAt: m.updatedAt,
+
+        // UI-specific fields (for dashboard cards)
         stage: m.status,
-        progress,
-        update: new Date(m.updatedAt).toLocaleDateString(),
+        progress: progressMap[m.status] ?? 0,
+        update: m.updatedAt.toISOString(),
       };
     });
 
