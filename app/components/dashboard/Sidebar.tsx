@@ -3,6 +3,7 @@ import Link from "next/link";
 
 interface Props {
   open: boolean;
+   onClose: () => void;
   className?: string;
 }
 

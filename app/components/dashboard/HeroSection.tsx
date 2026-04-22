@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import lawyerPhoto from "@/public/img/careers.jpg";
-import { Client } from "./types";
+import { Client } from "../../../types/types";
 
 type Props = {
   client: Client;

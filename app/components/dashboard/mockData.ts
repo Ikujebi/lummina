@@ -1,4 +1,4 @@
-import { Client, TimelineItem } from "./types";
+import { Client, TimelineItem } from "../../../types/types";
 
 export const client: Client = {
   name: "Ikujebi Ayanfe",

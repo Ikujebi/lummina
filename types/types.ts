@@ -1,5 +1,6 @@
 export type TimelineItem = {
-  date: string;
+   id: string;
+  time: string;
   title: string;
   content: string;
 };
