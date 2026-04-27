@@ -18,14 +18,13 @@ interface MatterBody {
 // ----------------------------
 export async function GET() {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const matters = await prisma.matter.findMany({
     where: {
-      OR: [
-        { clientId: user.id },
-        { lawyerId: user.id },
-      ],
+      OR: [{ clientId: user.id }, { lawyerId: user.id }],
     },
     include: {
       client: true,
@@ -45,23 +44,37 @@ export async function GET() {
 // ----------------------------
 export async function POST(req: Request) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   try {
     const body: MatterBody = await req.json();
     const { title, description, status, clientId, lawyerId } = body;
 
     if (!title || !status || !clientId || !lawyerId) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
     }
 
-    // Only admin or lawyer can create matters
     if (!["ADMIN", "LAWYER"].includes(user.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
+    // ✅ FIX: generate required caseNumber
+    const caseNumber = `CASE-${Date.now()}`;
+
     const matter = await prisma.matter.create({
-      data: { title, description, status, clientId, lawyerId },
+      data: {
+        caseNumber,
+        title,
+        description,
+        status,
+        clientId,
+        lawyerId,
+      },
       include: {
         client: true,
         lawyer: true,
@@ -71,10 +84,16 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json({ message: "Matter created", matter });
+    return NextResponse.json({
+      message: "Matter created",
+      matter,
+    });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: "Failed to create matter" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to create matter" },
+      { status: 500 }
+    );
   }
 }
 
@@ -83,26 +102,44 @@ export async function POST(req: Request) {
 // ----------------------------
 export async function PATCH(req: Request) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   try {
     const body: MatterBody = await req.json();
     const { id, title, description, status } = body;
 
-    if (!id) return NextResponse.json({ error: "Missing matter ID" }, { status: 400 });
+    if (!id) {
+      return NextResponse.json(
+        { error: "Missing matter ID" },
+        { status: 400 }
+      );
+    }
 
     const matter = await prisma.matter.findUnique({ where: { id } });
-    if (!matter) return NextResponse.json({ error: "Matter not found" }, { status: 404 });
 
-    // Check if current user owns the matter
-    const userOwnsMatter = matter.lawyerId === user.id || matter.clientId === user.id;
+    if (!matter) {
+      return NextResponse.json(
+        { error: "Matter not found" },
+        { status: 404 }
+      );
+    }
+
+    const userOwnsMatter =
+      matter.lawyerId === user.id || matter.clientId === user.id;
+
     if (!canAccessMatter(user.role, userOwnsMatter)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
     const updatedMatter = await prisma.matter.update({
       where: { id },
-      data: { title, description, status },
+      data: {
+        title,
+        description,
+        status,
+      },
       include: {
         client: true,
         lawyer: true,
@@ -112,10 +149,16 @@ export async function PATCH(req: Request) {
       },
     });
 
-    return NextResponse.json({ message: "Matter updated", matter: updatedMatter });
+    return NextResponse.json({
+      message: "Matter updated",
+      matter: updatedMatter,
+    });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: "Failed to update matter" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to update matter" },
+      { status: 500 }
+    );
   }
 }
 
@@ -124,17 +167,32 @@ export async function PATCH(req: Request) {
 // ----------------------------
 export async function DELETE(req: Request) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   try {
     const { id } = await req.json();
-    if (!id) return NextResponse.json({ error: "Missing matter ID" }, { status: 400 });
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "Missing matter ID" },
+        { status: 400 }
+      );
+    }
 
     const matter = await prisma.matter.findUnique({ where: { id } });
-    if (!matter) return NextResponse.json({ error: "Matter not found" }, { status: 404 });
 
-    // Check if current user owns the matter
-    const userOwnsMatter = matter.lawyerId === user.id || matter.clientId === user.id;
+    if (!matter) {
+      return NextResponse.json(
+        { error: "Matter not found" },
+        { status: 404 }
+      );
+    }
+
+    const userOwnsMatter =
+      matter.lawyerId === user.id || matter.clientId === user.id;
+
     if (!canAccessMatter(user.role, userOwnsMatter)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
@@ -144,6 +202,9 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ message: "Matter deleted" });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: "Failed to delete matter" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to delete matter" },
+      { status: 500 }
+    );
   }
 }
