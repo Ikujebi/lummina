@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { RouteContext } from "@/types/route";
+import { NextRequest } from "next/server";
 
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
 
-export async function GET(req: Request, { params }: RouteContext<{ id: string }>) {
   const user = await getCurrentUser();
 
   if (!user || user.role !== "LAWYER") {
@@ -13,7 +17,7 @@ export async function GET(req: Request, { params }: RouteContext<{ id: string }>
 
   const matter = await prisma.matter.findFirst({
     where: {
-      id: params.id,
+      id,
       lawyerId: user.id,
     },
     include: {

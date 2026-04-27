@@ -5,7 +5,7 @@ import { NextRequest } from "next/server";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -14,12 +14,13 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { id } = await params;
+
     const { action, details } = await req.json();
 
-    // ensure lawyer owns this matter
     const matter = await prisma.matter.findFirst({
       where: {
-        id: params.id,
+        id,
         lawyerId: user.id,
       },
     });
