@@ -76,6 +76,7 @@ export default function GlossaryPage() {
       {/* Sidebar */}
       <Sidebar
         open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
         className={`
           fixed top-16 left-0 z-50 w-64 h-[calc(100%-4rem)] bg-white shadow-lg rounded-r-xl
           transform transition-transform duration-300 ease-in-out
