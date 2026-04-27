@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { RouteContext } from "@/types/route";
+import { NextRequest } from "next/server";
 
-
-export async function POST(req: Request, { params }: RouteContext<{ id: string }>) {
+export async function POST(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     const user = await getCurrentUser();
 
