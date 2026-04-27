@@ -1,56 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Chart } from "chart.js/auto";
 import * as d3 from "d3";
+import { ChartsSectionProps } from "@/types/types"; // or keep inline
 
-interface DoughnutData {
-  labels: string[];
-  values: number[];
-}
-
-interface LinePoint {
-  label: string;
-  value: number;
-}
-
-export default function ChartsSection() {
+export default function ChartsSection({
+  doughnutData,
+  lineData,
+  progress,
+  loading = false,
+}: ChartsSectionProps) {
   const casesChartRef = useRef<Chart | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const sparklineRef = useRef<SVGSVGElement | null>(null);
-
-  const [doughnutData, setDoughnutData] = useState<DoughnutData | null>(null);
-  const [lineData, setLineData] = useState<LinePoint[]>([]);
-  const [progress, setProgress] = useState<number>(0);
-
-  const [loading, setLoading] = useState(true);
-
-  // ================= FETCH BACKEND =================
-  useEffect(() => {
-    async function load() {
-      try {
-        const res = await fetch("/api/client/dashboard");
-        const data = await res.json();
-
-        // EXPECTED backend shape:
-        // data.charts = { doughnut, line, progress }
-
-        const charts = data?.charts;
-
-        if (charts) {
-          setDoughnutData(charts.doughnut);
-          setLineData(charts.line || []);
-          setProgress(charts.progress || 0);
-        }
-      } catch (err) {
-        console.error("Charts load error:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    load();
-  }, []);
 
   // ================= DOUGHNUT =================
   useEffect(() => {
@@ -115,7 +78,7 @@ export default function ChartsSection() {
     svg.attr("viewBox", "0 0 320 140");
 
     const line = d3
-      .line<LinePoint>()
+      .line<{ label: string; value: number }>()
       .x((d) => x(d.label) as number)
       .y((d) => y(d.value));
 

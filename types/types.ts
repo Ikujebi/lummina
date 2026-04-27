@@ -16,3 +16,20 @@ export type Client = {
   lawyer: string;
   status: string;
 };
+
+interface DoughnutData {
+  labels: string[];
+  values: number[];
+}
+
+interface LinePoint {
+  label: string;
+  value: number;
+}
+
+export interface ChartsSectionProps {
+  doughnutData: DoughnutData;
+  lineData: LinePoint[];
+  progress: number;
+  loading?: boolean;
+}
