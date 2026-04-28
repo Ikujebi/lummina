@@ -10,7 +10,6 @@ interface Activity {
   time: string;
 }
 
-// 🔹 extend your existing type
 interface ActivityWithMatter extends MatterActivity {
   matter?: {
     id: string;
@@ -22,7 +21,6 @@ interface ActivitiesResponse {
   activities: ActivityWithMatter[];
 }
 
-// 🔹 fallback data (UI only)
 const fallbackActivities: Activity[] = [
   {
     id: "1",
@@ -51,21 +49,18 @@ export default function ProcessHistory() {
   useEffect(() => {
     async function fetchActivities() {
       try {
-        const res = await fetch("/api/activities");
+        const res = await fetch("/api/lawyers/matter-activity");
         const data: ActivitiesResponse = await res.json();
 
         const backend = data?.activities ?? [];
 
         const mapped: Activity[] = backend.map((a) => ({
           id: a.id,
-          title: a.details
-            ? `${a.action} - ${a.details}`
-            : a.action,
+          title: a.details ? `${a.action} - ${a.details}` : a.action,
           caseId: a.matter?.caseNumber || a.matter?.id || "N/A",
           time: formatTime(a.createdAt),
         }));
 
-        // ✅ safer fallback condition
         if (!backend.length) {
           setActivities(fallbackActivities);
         } else {
@@ -73,7 +68,6 @@ export default function ProcessHistory() {
         }
       } catch (error) {
         console.error("Failed to fetch activities:", error);
-        // ❗ fallback on error
         setActivities(fallbackActivities);
       } finally {
         setLoading(false);
@@ -99,30 +93,45 @@ export default function ProcessHistory() {
   }
 
   return (
-    <section className="bg-[#FFF4E0] rounded-2xl p-6 shadow-md">
-      <h3 className="text-lg font-semibold text-[#5F021F] mb-6">
+    <section className="bg-[#FFF4E0] rounded-2xl p-4 sm:p-6 shadow-md w-full">
+      {/* HEADER */}
+      <h3 className="text-base sm:text-lg font-semibold text-[#5F021F] mb-4 sm:mb-6">
         Process History
       </h3>
 
+      {/* LOADING */}
       {loading ? (
-        <p className="text-sm text-[#5F021F]/60">Loading...</p>
+        <p className="text-xs sm:text-sm text-[#5F021F]/60">Loading...</p>
+      ) : activities.length === 0 ? (
+        <p className="text-xs sm:text-sm text-[#5F021F]/60">
+          No recent activity found.
+        </p>
       ) : (
-        <ul className="flex flex-col gap-6">
-          {activities.map((activity) => (
-            <li key={activity.id} className="flex gap-4">
+        <ul className="flex flex-col gap-5 sm:gap-6">
+          {activities.map((activity, idx) => (
+            <li key={activity.id} className="flex gap-3 sm:gap-4">
+              {/* TIMELINE DOT + LINE */}
               <div className="flex flex-col items-center">
-                <span className="w-3 h-3 rounded-full bg-[#FFA500]" />
-                <span className="flex-1 w-[2px] bg-[#F7E7CE]" />
+                <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#FFA500]" />
+
+                <span
+                  className={`w-[2px] bg-[#F7E7CE] flex-1 ${
+                    idx === activities.length - 1 ? "hidden" : ""
+                  }`}
+                />
               </div>
 
-              <div>
-                <p className="font-semibold text-[#5F021F]">
+              {/* CONTENT */}
+              <div className="min-w-0">
+                <p className="font-semibold text-sm sm:text-base text-[#5F021F] break-words leading-snug">
                   {activity.title}
                 </p>
-                <p className="text-sm text-[#5F021F]/70">
+
+                <p className="text-xs sm:text-sm text-[#5F021F]/70">
                   Case ID: {activity.caseId}
                 </p>
-                <p className="text-xs text-[#5F021F]/50">
+
+                <p className="text-[11px] sm:text-xs text-[#5F021F]/50">
                   {activity.time}
                 </p>
               </div>

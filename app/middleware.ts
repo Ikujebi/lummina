@@ -11,7 +11,16 @@ export function middleware(req: NextRequest) {
   const token = req.cookies.get("token")?.value;
   const path = req.nextUrl.pathname;
 
+  // Public routes (IMPORTANT: allow chat route access logic to continue)
+  const isPublicChatRoute = path.startsWith("/chat");
+
+  // If no token and route is protected → redirect
   if (!token) {
+    // allow chat to still redirect properly instead of hard blocking
+    if (isPublicChatRoute) {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
+
     return NextResponse.redirect(new URL("/", req.url));
   }
 
@@ -19,7 +28,8 @@ export function middleware(req: NextRequest) {
     const decoded: TokenPayload = verifyToken(token);
     const allowedRoute = roleRoutes[decoded.role];
 
-    if (!path.startsWith(allowedRoute)) {
+    // Prevent role mismatch access
+    if (!path.startsWith(allowedRoute) && !isPublicChatRoute) {
       return NextResponse.redirect(new URL(allowedRoute, req.url));
     }
 
@@ -30,5 +40,10 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/lawyer/:path*", "/client/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/lawyer/:path*",
+    "/client/:path*",
+    "/chat/:path*", // ✅ REQUIRED for your chat route to work properly
+  ],
 };

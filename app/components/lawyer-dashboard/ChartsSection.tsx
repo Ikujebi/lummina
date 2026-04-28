@@ -52,59 +52,59 @@ const stageData: StageData[] = [
 
 export default function ChartsSection() {
   return (
-    <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+    <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 w-full">
 
-      {/* Cases Trend */}
-      <div className="bg-[#FFF4E0] rounded-2xl p-6 shadow-md h-[320px]">
-        <h3 className="text-lg font-semibold text-[#5F021F] mb-4">
+      {/* CASES TREND */}
+      <div className="bg-[#FFF4E0] rounded-2xl p-4 sm:p-6 shadow-md h-[260px] sm:h-[300px]">
+        <h3 className="text-base sm:text-lg font-semibold text-[#5F021F] mb-3 sm:mb-4">
           Cases Trend
         </h3>
 
         <ResponsiveContainer width="100%" height="85%">
           <LineChart data={monthlyCases}>
             <CartesianGrid stroke="#F7E7CE" strokeDasharray="3 3" />
-            <XAxis dataKey="month" stroke="#5F021F" />
-            <YAxis stroke="#5F021F" />
+            <XAxis dataKey="month" stroke="#5F021F" fontSize={10} />
+            <YAxis stroke="#5F021F" fontSize={10} />
             <Tooltip />
             <Line
               type="monotone"
               dataKey="cases"
               stroke="#FFA500"
-              strokeWidth={3}
-              dot={{ fill: "#5F021F" }}
+              strokeWidth={2}
+              dot={{ fill: "#5F021F", r: 3 }}
             />
           </LineChart>
         </ResponsiveContainer>
       </div>
 
-      {/* Revenue */}
-      <div className="bg-[#FFF4E0] rounded-2xl p-6 shadow-md h-[320px]">
-        <h3 className="text-lg font-semibold text-[#5F021F] mb-4">
+      {/* REVENUE */}
+      <div className="bg-[#FFF4E0] rounded-2xl p-4 sm:p-6 shadow-md h-[260px] sm:h-[300px]">
+        <h3 className="text-base sm:text-lg font-semibold text-[#5F021F] mb-3 sm:mb-4">
           Revenue Overview
         </h3>
 
         <ResponsiveContainer width="100%" height="85%">
           <BarChart data={revenueData}>
             <CartesianGrid stroke="#F7E7CE" strokeDasharray="3 3" />
-            <XAxis dataKey="month" stroke="#5F021F" />
-            <YAxis stroke="#5F021F" />
+            <XAxis dataKey="month" stroke="#5F021F" fontSize={10} />
+            <YAxis stroke="#5F021F" fontSize={10} />
             <Tooltip />
             <Bar dataKey="revenue" fill="#FFA500" radius={[6, 6, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
-      {/* Stage Distribution */}
-      <div className="bg-[#FFF4E0] rounded-2xl p-6 shadow-md h-[320px]">
-        <h3 className="text-lg font-semibold text-[#5F021F] mb-4">
+      {/* STAGE DISTRIBUTION */}
+      <div className="bg-[#FFF4E0] rounded-2xl p-4 sm:p-6 shadow-md h-[260px] sm:h-[300px] md:col-span-2 xl:col-span-1">
+        <h3 className="text-base sm:text-lg font-semibold text-[#5F021F] mb-3 sm:mb-4">
           Case Stage Distribution
         </h3>
 
         <ResponsiveContainer width="100%" height="85%">
           <BarChart data={stageData}>
             <CartesianGrid stroke="#F7E7CE" strokeDasharray="3 3" />
-            <XAxis dataKey="stage" stroke="#5F021F" />
-            <YAxis stroke="#5F021F" />
+            <XAxis dataKey="stage" stroke="#5F021F" fontSize={9} interval={0} />
+            <YAxis stroke="#5F021F" fontSize={10} />
             <Tooltip />
             <Bar dataKey="count" fill="#5F021F" radius={[6, 6, 0, 0]} />
           </BarChart>

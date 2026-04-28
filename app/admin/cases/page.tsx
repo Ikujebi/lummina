@@ -4,12 +4,11 @@ import { useEffect, useState } from "react";
 import type { Case, Lawyer, Client } from "@/types/admin";
 import { Select, Tag, Modal, Form, Input, Button } from "antd";
 import MattersTable from "../../components/admin-dashboard/MattersTable";
+import "./cases.css"
 export default function CasesPage() {
   const [cases, setCases] = useState<Case[]>([]);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<Case["status"] | "ALL">(
-    "ALL"
-  );
+  const [statusFilter, setStatusFilter] = useState<Case["status"] | "ALL">("ALL");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [form] = Form.useForm();
@@ -23,17 +22,20 @@ export default function CasesPage() {
       try {
         const [casesRes, lawyersRes, clientsRes] = await Promise.all([
           fetch("/api/admin/matters"),
-          fetch("/api/admin/lawyers"),
+          fetch("/api/lawyers"),
           fetch("/api/admin/clients"),
         ]);
 
-        const casesData: Case[] = await casesRes.json();
-        const lawyersData: Lawyer[] = await lawyersRes.json();
-        const clientsData: Client[] = await clientsRes.json();
+        // ---- safe JSON parsing ----
+        const casesJson = await casesRes.json();
+        const lawyersJson = await lawyersRes.json();
+        const clientsJson = await clientsRes.json();
 
-        setCases(casesData);
-        setLawyers(lawyersData);
-        setClients(clientsData);
+        // ---- FIX: extract actual arrays ----
+        setCases(casesJson.matters || casesJson || []);
+        setLawyers(lawyersJson.lawyers || []);
+        setClients(clientsJson.clients || []);
+
       } catch (err) {
         console.error("Failed to fetch data:", err);
       }
@@ -58,20 +60,18 @@ export default function CasesPage() {
   // Create new case
   const handleCreateCase = async (values: {
     title: string;
-    lawyer: string; // ID from Select
-    client: string; // ID from Select
+    lawyer: string;
+    client: string;
     status: Case["status"];
   }) => {
     try {
-      console.log("Submitting IDs:", values.lawyer, values.client); // debug
-
       const res = await fetch("/api/admin/matters", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: values.title,
-          lawyerId: String(values.lawyer), // ✅ ensure UUID string
-          clientId: String(values.client), // ✅ ensure UUID string
+          lawyerId: String(values.lawyer),
+          clientId: String(values.client),
           status: values.status,
         }),
       });
@@ -83,9 +83,10 @@ export default function CasesPage() {
         return;
       }
 
-      setCases([data, ...cases]);
+      setCases((prev) => [data, ...prev]);
       setIsModalOpen(false);
       form.resetFields();
+
     } catch (err) {
       console.error(err);
       alert("Failed to create case");
@@ -94,14 +95,15 @@ export default function CasesPage() {
 
   return (
     <div className="flex flex-col gap-6">
+
       {/* Header */}
       <div className="flex items-center justify-between w-full">
         <h1 className="text-2xl font-semibold text-[#5F021F]">Cases</h1>
+
         <Button
           type="primary"
           onClick={() => setIsModalOpen(true)}
           style={{ backgroundColor: "#5F021F", borderColor: "#5F021F" }}
-        className=""
         >
           Create Case
         </Button>
@@ -119,16 +121,23 @@ export default function CasesPage() {
 
         <Select
           value={statusFilter}
+         
           onChange={(value) =>
             setStatusFilter(value as Case["status"] | "ALL")
           }
-          className="w-full sm:w-48"
+          style={{ backgroundColor: "#FFF4E0", borderColor: "#5F021F" }}
+          className="w-full sm:w-48 brand-select"
           options={[
             { value: "ALL", label: <Tag>All</Tag> },
             { value: "OPEN", label: <Tag color="green">Open</Tag> },
             { value: "IN_PROGRESS", label: <Tag color="orange">In Progress</Tag> },
             { value: "CLOSED", label: <Tag color="red">Closed</Tag> },
           ]}
+          classNames={{
+    popup: {
+      root: "brand-select-dropdown",
+    },
+  }}
         />
       </div>
 
@@ -143,19 +152,15 @@ export default function CasesPage() {
         footer={null}
       >
         <Form form={form} layout="vertical" onFinish={handleCreateCase}>
-          <Form.Item
-            name="title"
-            label="Case Title"
-            rules={[{ required: true }]}
-          >
+
+          <Form.Item name="title" label="Case Title" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
 
-          {/* Lawyer Select */}
+          {/* Lawyer */}
           <Form.Item name="lawyer" label="Lawyer" rules={[{ required: true }]}>
             <Select
-              showSearch
-              optionFilterProp="label"
+              showSearch={{ optionFilterProp: "label" }}
               options={lawyers.map((l) => ({
                 value: l.id,
                 label: l.name,
@@ -163,11 +168,10 @@ export default function CasesPage() {
             />
           </Form.Item>
 
-          {/* Client Select */}
+          {/* Client */}
           <Form.Item name="client" label="Client" rules={[{ required: true }]}>
             <Select
-              showSearch
-              optionFilterProp="label"
+              showSearch={{ optionFilterProp: "label" }}
               options={clients.map((c) => ({
                 value: c.id,
                 label: c.name,
@@ -196,6 +200,7 @@ export default function CasesPage() {
               Create Case
             </Button>
           </Form.Item>
+
         </Form>
       </Modal>
     </div>

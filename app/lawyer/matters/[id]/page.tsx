@@ -18,8 +18,7 @@ export default function MatterPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`/api/lawyer/matters/${id}`);
-
+        const res = await fetch(`/api/matters/${id}`);
         if (!res.ok) throw new Error("Failed to load matter");
 
         const data = await res.json();

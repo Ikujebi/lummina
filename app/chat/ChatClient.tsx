@@ -41,7 +41,7 @@ export default function ChatPage({
     if (loading) return;
 
     if (!user) router.push("/");
-    if (!matterId) router.push("/cases");
+    
   }, [user, loading, matterId, router]);
 
   // ---------------- FETCH MESSAGES ----------------

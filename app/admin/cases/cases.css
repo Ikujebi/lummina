@@ -1,0 +1,12 @@
+.brand-select .ant-select-selector {
+  border: 1px solid #5F021F !important;
+}
+
+.brand-select.ant-select-focused .ant-select-selector {
+  border-color: #5F021F !important;
+  box-shadow: 0 0 0 2px rgba(95, 2, 31, 0.25) !important;
+}
+
+.brand-select:hover .ant-select-selector {
+  border-color: #5F021F !important;
+}

@@ -39,7 +39,8 @@
     "resend": "^6.10.0",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -49,6 +50,7 @@
     "@types/nodemailer": "^7.0.11",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/zxcvbn": "^4.4.5",
     "dotenv": "^17.3.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",

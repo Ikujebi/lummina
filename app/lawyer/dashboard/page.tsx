@@ -14,7 +14,6 @@ export default function LawyerDashboard() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
 
-  // ✅ FIX 1: No nullable stats (prevents TS + runtime issues)
   const [stats, setStats] = useState<LawyerStats>({
     activeMatters: 0,
     completedMatters: 0,
@@ -26,16 +25,17 @@ export default function LawyerDashboard() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch("/api/lawyer/dashboard");
+        const res = await fetch("/api/lawyers/dashboard");
         const data = await res.json();
 
-        // ✅ safe assignments
         setMatters(data.matters || []);
-        setStats(data.stats || {
-          activeMatters: 0,
-          completedMatters: 0,
-          totalMatters: 0,
-        });
+        setStats(
+          data.stats || {
+            activeMatters: 0,
+            completedMatters: 0,
+            totalMatters: 0,
+          }
+        );
       } catch (err) {
         console.error("Dashboard load error:", err);
       }
@@ -44,17 +44,16 @@ export default function LawyerDashboard() {
     load();
   }, []);
 
-  // 🔍 filter matters safely
   const filteredMatters = matters
-    .filter((m) =>
-      m.title.toLowerCase().includes(search.toLowerCase()) ||
-      m.caseNumber.toLowerCase().includes(search.toLowerCase())
+    .filter(
+      (m) =>
+        m.title.toLowerCase().includes(search.toLowerCase()) ||
+        m.caseNumber.toLowerCase().includes(search.toLowerCase())
     )
-    .filter((m) =>
-      statusFilter === "All Status" || m.status === statusFilter
+    .filter(
+      (m) => statusFilter === "All Status" || m.status === statusFilter
     );
 
-  // 📊 widgets from stats
   const widgetsData = [
     { label: "Active Matters", value: String(stats.activeMatters) },
     { label: "Completed Matters", value: String(stats.completedMatters) },
@@ -62,32 +61,37 @@ export default function LawyerDashboard() {
   ];
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className="w-full max-w-7xl mx-auto md:px-4 lg:px-8 flex flex-col gap-8 sm:gap-10">
 
       {/* HERO */}
-      <section className="flex flex-col lg:flex-row justify-between gap-6">
-        <div>
+      <section className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+
+        {/* TEXT */}
+        <div className="space-y-1">
           <p className="text-xs text-[#FFA500] uppercase">
             Active Matters
           </p>
-          <h1 className="text-3xl font-semibold text-[#5F021F]">
+
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-[#5F021F] leading-snug">
             Welcome back, here are your matters.
           </h1>
         </div>
 
-        <div className="flex gap-3">
+        {/* CONTROLS */}
+        <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+
           <input
             type="search"
             placeholder="Search matter"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="px-4 py-2 rounded-xl bg-[#FFF4E0]"
+            className="w-full sm:w-64 px-4 py-2 rounded-xl bg-[#FFF4E0] outline-none"
           />
 
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 rounded-xl bg-[#FFF4E0]"
+            className="w-full sm:w-48 px-4 py-2 rounded-xl bg-[#FFF4E0] outline-none"
           >
             {["All Status", "OPEN", "IN_PROGRESS", "PENDING", "CLOSED"].map(
               (s) => (
