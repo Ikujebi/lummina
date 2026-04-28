@@ -37,12 +37,18 @@ export default function ChatPage({
   } | null>(null);
 
   // ---------------- AUTH GUARD ----------------
-  useEffect(() => {
-    if (loading) return;
+useEffect(() => {
+  if (loading) return;
 
-    if (!user) router.push("/");
-    
-  }, [user, loading, matterId, router]);
+  if (!user) {
+    router.push("/");
+    return;
+  }
+
+  if (!matterId) {
+    throw new Error("Missing matterId in Chat route");
+  }
+}, [user, loading, matterId, router]);
 
   // ---------------- FETCH MESSAGES ----------------
   useEffect(() => {
