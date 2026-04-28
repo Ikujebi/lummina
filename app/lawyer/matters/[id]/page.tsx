@@ -63,20 +63,13 @@ export default function MatterPage() {
 
   return (
     <div className="space-y-6">
-
       {/* HEADER */}
       <div>
-        <h1 className="text-2xl font-bold text-[#5F021F]">
-          {matter.title}
-        </h1>
+        <h1 className="text-2xl font-bold text-[#5F021F]">{matter.title}</h1>
 
-        <p className="text-sm text-gray-600">
-          Case: {matter.caseNumber}
-        </p>
+        <p className="text-sm text-gray-600">Case: {matter.caseNumber}</p>
 
-        <p className="text-sm">
-          Client: {matter.client.name}
-        </p>
+        <p className="text-sm">Client: {matter.client.name}</p>
       </div>
 
       {/* TABS */}
@@ -100,10 +93,8 @@ export default function MatterPage() {
       {/* ===================== */}
       {tab === "activity" && (
         <div className="space-y-6">
-
           {/* ADD ACTIVITY */}
           <div className="bg-[#FFF4E0] p-4 rounded-xl space-y-3">
-
             <input
               value={action}
               onChange={(e) => setAction(e.target.value)}
@@ -130,14 +121,10 @@ export default function MatterPage() {
           <div className="space-y-3">
             {matter.activities.map((a) => (
               <div key={a.id} className="bg-white border p-4 rounded-xl">
-                <p className="font-semibold text-[#5F021F]">
-                  {a.action}
-                </p>
+                <p className="font-semibold text-[#5F021F]">{a.action}</p>
 
                 {a.details && (
-                  <p className="text-sm text-gray-600">
-                    {a.details}
-                  </p>
+                  <p className="text-sm text-gray-600">{a.details}</p>
                 )}
 
                 <p className="text-xs text-gray-400">
@@ -154,10 +141,9 @@ export default function MatterPage() {
       {/* ===================== */}
       {tab === "chat" && (
         <div className="h-[75vh] border rounded-xl overflow-hidden">
-          <ChatPage />
+          <ChatPage params={{ matterId: id as string }} />{" "}
         </div>
       )}
-
     </div>
   );
 }
