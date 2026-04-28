@@ -4,8 +4,10 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import heroIllustration from "@/public/img/careers.jpg";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import { motion } from "framer-motion";
+import Bg from "@/public/img/loginbg.png";
+import Logo from "@/public/img/Lummina2.png";
 
 type LoginResponse = {
   role?: "ADMIN" | "LAWYER" | "CLIENT";
@@ -18,11 +20,9 @@ export default function SignInPage() {
   const [form, setForm] = useState({
     email: "",
     password: "",
-     // optional, useful for registration
   });
 
   const [showPassword, setShowPassword] = useState(false);
- 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -49,16 +49,11 @@ export default function SignInPage() {
 
       if (!res.ok) throw new Error(data.error ?? "Login failed");
 
-      if (data.role === "ADMIN") {
-        localStorage.setItem("isLoggedIn", "true");
-        router.push("/admin/dashboard");
-      } else if (data.role === "LAWYER") {
-        localStorage.setItem("isLoggedIn", "true");
-        router.push("/lawyer/dashboard");
-      } else {
-        localStorage.setItem("isLoggedIn", "true");
-        router.push("/client/dashboard");
-      }
+      localStorage.setItem("isLoggedIn", "true");
+
+      if (data.role === "ADMIN") router.push("/admin/dashboard");
+      else if (data.role === "LAWYER") router.push("/lawyer/dashboard");
+      else router.push("/client/dashboard");
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message);
       else setError("Something went wrong");
@@ -68,59 +63,80 @@ export default function SignInPage() {
   };
 
   return (
-    <main className="min-h-screen grid lg:grid-cols-[minmax(320px,1fr)_minmax(320px,1fr)] gap-8 lg:gap-12 p-6 lg:p-12 items-center justify-center bg-[#F7E7CE]">
-      {/* Sign-in Card */}
-      <section className="bg-white/90 rounded-[1.25rem] shadow-2xl p-6 md:p-10 border border-[#FFD580]/30 w-full max-w-lg mx-auto lg:mx-0">
-        <header className="text-center mb-6">
-          <div className="inline-flex items-center gap-2 mb-2 text-[#5F021F] justify-center">
-            <span className="font-bold text-xl md:text-2xl">LexTrust</span>
-          </div>
-          <h1 className="text-[#5F021F] text-2xl md:text-3xl font-semibold">
-            Sign in to your account
-          </h1>
-        </header>
+    <main className="relative min-h-screen flex items-center justify-center px-6 overflow-hidden">
 
-        <form onSubmit={handleSubmit} className="grid gap-4">
+      {/* Background image (slightly softened, not dark) */}
+      <Image
+        src={Bg}
+        alt="Background"
+        fill
+        priority
+        className="object-cover -z-20 brightness-90 contrast-105 saturate-95"
+      />
+
+      {/* Cream overlay (lighter + softer than before) */}
+      <div className="absolute inset-0 bg-[#F6E9D2]/70 backdrop-blur-[2px] -z-10" />
+
+      {/* Subtle warm glow (reduced intensity) */}
+      <div className="absolute w-[450px] h-[450px] bg-[#FFD580]/10 rounded-full blur-3xl top-[-120px] left-[-120px]" />
+
+      {/* Card */}
+      <motion.section
+        initial={{ opacity: 0, y: 40, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="w-full max-w-md bg-[#FFF6E5]/95 border border-[#E6C98F]/40 rounded-2xl shadow-[0_20px_50px_rgba(95,2,31,0.12)] p-8"
+      >
+
+        {/* Logo */}
+        <div className="flex justify-center mb-6">
+          <Image src={Logo} alt="Lummina Logo" width={150} height={50} priority />
+        </div>
+
+        <h1 className="text-center text-[#5F021F] text-2xl font-semibold mb-6">
+          Sign in to your account
+        </h1>
+
+        <form onSubmit={handleSubmit} className="grid gap-5">
+
           {/* Email */}
-          <div className="grid gap-2">
-            <label className="text-[#5F021F] text-sm">Email</label>
+          <div className="grid gap-1">
+            <label className="text-[#5F021F]/75 text-sm">Email</label>
             <input
               name="email"
               type="email"
               value={form.email}
               onChange={handleChange}
               required
-              className="w-full h-14 px-4 border border-[#5F021F] rounded-lg"
+              className="h-12 px-4 rounded-lg bg-white/70 border border-[#E6C98F]/40 text-[#5F021F] focus:outline-none focus:ring-2 focus:ring-[#5F021F]/50 transition"
             />
           </div>
 
           {/* Password */}
-         <div className="grid gap-2">
-  <label className="text-[#5F021F] text-sm">Password</label>
-  <div className="relative">
-    <input
-      name="password"
-      type={showPassword ? "text" : "password"}
-      value={form.password}
-      onChange={handleChange}
-      required
-      className="w-full h-14 px-4 border border-[#5F021F] rounded-lg pr-12"
-    />
-    <button
-      type="button"
-      onClick={() => setShowPassword((prev) => !prev)}
-      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-    >
-      {showPassword ? (
-        <EyeSlashIcon className="h-5 w-5" />
-      ) : (
-        <EyeIcon className="h-5 w-5" />
-      )}
-    </button>
-  </div>
-</div>
-
-          
+          <div className="grid gap-1">
+            <label className="text-[#5F021F]/75 text-sm">Password</label>
+            <div className="relative">
+              <input
+                name="password"
+                type={showPassword ? "text" : "password"}
+                value={form.password}
+                onChange={handleChange}
+                required
+                className="w-full h-12 px-4 pr-12 rounded-lg bg-white/70 border border-[#E6C98F]/40 text-[#5F021F] focus:outline-none focus:ring-2 focus:ring-[#5F021F]/50 transition"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5F021F]/60 hover:text-[#5F021F]"
+              >
+                {showPassword ? (
+                  <EyeSlashIcon className="h-5 w-5" />
+                ) : (
+                  <EyeIcon className="h-5 w-5" />
+                )}
+              </button>
+            </div>
+          </div>
 
           {/* Error */}
           {error && (
@@ -128,34 +144,28 @@ export default function SignInPage() {
           )}
 
           {/* Button */}
-          <button
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            whileHover={{ scale: 1.02 }}
             type="submit"
             disabled={loading}
-            className="w-full h-14 bg-[#5F021F] text-white font-semibold rounded-lg mt-4 disabled:opacity-50"
+            className="h-12 bg-[#5F021F] text-white font-semibold rounded-lg mt-2 hover:bg-[#7A0328] transition shadow-md"
           >
             {loading ? "Signing in..." : "Sign In"}
-          </button>
+          </motion.button>
 
           {/* Links */}
-          <div className="flex justify-between text-sm mt-2">
-            <Link href="/forgot-password" className="underline">
+          <div className="flex justify-between text-sm text-[#5F021F]/70 mt-2">
+            <Link href="/forgot-password" className="hover:text-[#5F021F] transition">
               Forgot password?
             </Link>
-            <Link href="/register" className="underline">
+            <Link href="/register" className="hover:text-[#5F021F] transition">
               Create account
             </Link>
           </div>
-        </form>
-      </section>
 
-      {/* Illustration */}
-      <aside className="hidden lg:grid place-items-center">
-        <Image
-          src={heroIllustration}
-          alt="Legal illustration"
-          className="w-full max-w-[540px] rounded-xl shadow-lg"
-        />
-      </aside>
+        </form>
+      </motion.section>
     </main>
   );
 }
