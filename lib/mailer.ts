@@ -26,7 +26,7 @@ export async function sendEmail(
 ) {
   try {
     await transporter.sendMail({
-      from: `"Your App Name" <${process.env.SMTP_FROM}>`,
+      from: `"Lummina Legal" <${process.env.SMTP_FROM}>`,
       to,
       subject,
       text,
