@@ -1,3 +1,5 @@
+console.log("PRISMA FILE LOADED");
+
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
@@ -6,6 +8,8 @@ declare global {
 }
 
 function createPrisma() {
+    console.log("CREATE PRISMA CALLED x2");
+
   const connectionString = process.env.DATABASE_URL;
 
   if (!connectionString) {
