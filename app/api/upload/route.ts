@@ -15,10 +15,12 @@ export async function POST(req: Request) {
     const file = data.get("file") as File;
 
     if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+      return NextResponse.json(
+        { error: "No file provided" },
+        { status: 400 }
+      );
     }
 
-    // Debug (optional but helpful)
     console.log("Uploading file:", {
       name: file.name,
       type: file.type,
@@ -27,55 +29,78 @@ export async function POST(req: Request) {
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const isPdf = file.type === "application/pdf";
-    const isVideo = file.type.startsWith("video/");
+
+    // =========================
+    // 1. Determine file type
+    // =========================
     const isImage = file.type.startsWith("image/");
+    const isVideo = file.type.startsWith("video/");
+    const isRaw = !isImage && !isVideo;
 
-  const result: UploadApiResponse = await new Promise((resolve, reject) => {
-  const uploadStream = cloudinary.uploader.upload_stream(
-    {
-      folder: "chat_uploads",
+    const resourceType: "image" | "video" | "raw" = isImage
+      ? "image"
+      : isVideo
+      ? "video"
+      : "raw";
 
-      // ✅ FIX 1: correct resource types
-      resource_type: isPdf
-        ? "raw"
-        : isVideo
-          ? "video"
-          : "image",
+    // =========================
+    // 2. Safe filename handling
+    // =========================
+    const fileExt = file.name.split(".").pop(); // docx, xlsx, pdf, etc
 
-      // ✅ FIX 2: force correct filename WITH extension
-      public_id: file.name,
+    const baseName = file.name
+      .split(".")[0]
+      .replace(/\s+/g, "-")
+      .replace(/[^a-zA-Z0-9-_]/g, "");
 
-      // ❌ remove this (it breaks PDFs sometimes)
-      // use_filename: true,
-      // unique_filename: true,
+    const publicId = `${Date.now()}-${baseName}`;
 
-      // optional: forces download behavior for non-PDF docs
-      flags: !isPdf && !isVideo && !isImage ? "attachment" : undefined,
-    },
-    (error, result) => {
-      if (error) return reject(error);
-      if (!result) return reject(new Error("No upload result"));
-      resolve(result);
-    }
-  );
+    // =========================
+    // 3. Upload to Cloudinary
+    // =========================
+    const result: UploadApiResponse = await new Promise(
+      (resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: "chat_uploads",
 
-  uploadStream.end(buffer);
-});
+            // 🔥 CRITICAL FIX
+            resource_type: resourceType,
 
+            // safe + unique ID
+            public_id: publicId,
+
+            // 🔥 CRITICAL FIX for DOCX/XLSX/ZIP/etc
+            format: isRaw ? fileExt : undefined,
+
+            // optional: force download behavior for raw files
+            flags: isRaw ? "attachment" : undefined,
+          },
+          (error, result) => {
+            if (error) return reject(error);
+            if (!result) return reject(new Error("No upload result"));
+            resolve(result);
+          }
+        );
+
+        uploadStream.end(buffer);
+      }
+    );
+
+    // =========================
+    // 4. Response
+    // =========================
     return NextResponse.json({
       fileUrl: result.secure_url,
-
-      // ✅ IMPORTANT FIX: use real MIME type from browser
       fileType: file.type,
-
       fileName: file.name,
-
-      // optional but useful for debugging/UI
       resourceType: result.resource_type,
     });
   } catch (err) {
     console.error("Upload error:", err);
-    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Upload failed" },
+      { status: 500 }
+    );
   }
 }

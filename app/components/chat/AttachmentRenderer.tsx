@@ -138,47 +138,47 @@ export default function AttachmentRenderer({ attachment, onPreview }: Props) {
       )}
 
       {/* DOC */}
-      {isDoc && (
-        <div className="bg-white border rounded-xl p-3 w-[260px] shadow-sm">
-          <div className="flex items-center gap-2">
-            <FileIcon type="doc" />
-            <p className="text-sm font-medium truncate">
-              {attachment.fileName}
-            </p>
-          </div>
+    {isDoc && (
+  <div className="bg-white border rounded-xl p-3 w-[260px] shadow-sm">
+    <iframe
+      src={`https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`}
+      className="w-full h-[200px] rounded"
+    />
 
-          <p className="text-[11px] text-gray-500 mt-1">Word Document</p>
+    <p className="text-[11px] text-gray-500 mt-1">
+      Document Preview
+    </p>
 
-          <div className="flex gap-2 mt-3">
-            <a
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs px-3 py-1 bg-gray-100 rounded"
-            >
-              Open
-            </a>
+    <div className="flex gap-2 mt-3">
+      <a
+        href={url}
+        target="_blank"
+        className="text-xs px-3 py-1 bg-gray-100 rounded"
+      >
+        Open
+      </a>
 
-            <a
-              href={url}
-              download={attachment.fileName}
-              onClick={(e) => e.stopPropagation()}
-              className="text-xs px-3 py-1 bg-[#5F021F] text-white rounded"
-            >
-              Download
-            </a>
-          </div>
-        </div>
-      )}
-
+      <a
+        href={forceCloudinaryDownload(url)}
+        className="text-xs px-3 py-1 bg-[#5F021F] text-white rounded"
+      >
+        Download
+      </a>
+    </div>
+  </div>
+)}
       {/* FALLBACK */}
       {!isImage && !isVideo && !isPDF && !isDoc && (
-        <a
-          href={forceCloudinaryDownload(url)}
-          className="text-sm underline text-blue-600"
-        >
-          📎 Download file
-        </a>
+        <div className="bg-gray-50 border rounded-lg p-3 flex items-center justify-between">
+  <span className="text-sm truncate">{attachment.fileName}</span>
+
+  <a
+    href={forceCloudinaryDownload(url)}
+    className="text-xs px-2 py-1 bg-[#5F021F] text-white rounded"
+  >
+   📎 Download
+  </a>
+</div>
       )}
     </div>
   );

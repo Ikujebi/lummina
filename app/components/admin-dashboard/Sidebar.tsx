@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import LogoutButton from "../LogoutButton";
+import { MenuItem } from "@/types/side";
 
 interface SidebarProps {
   open: boolean;
@@ -10,20 +12,8 @@ interface SidebarProps {
 
 export default function Sidebar({ open, setOpen }: SidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
 
-  // --- Logout handler ---
-  const handleLogout = async () => {
-    try {
-     const res = await fetch("/api/auth/logout", { method: "POST" }); // Calls app/logout/route.ts
-      if (!res.ok) throw new Error("Logout failed");
-      router.push("/"); // Redirect to login after logout
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const menuItems = [
+  const menuItems: MenuItem[] = [
     { label: "Dashboard", icon: "📊", href: "/admin/dashboard" },
     { label: "Lawyers", icon: "👨‍⚖️", href: "/admin/lawyers" },
     { label: "Clients", icon: "👥", href: "/admin/clients" },
@@ -32,32 +22,29 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
     { label: "Documents", icon: "📄", href: "/admin/documents" },
     { label: "Notifications", icon: "🔔", href: "/admin/notifications" },
     { label: "Settings", icon: "⚙️", href: "/admin/settings" },
-    { label: "Logout", icon: "🚪", action: handleLogout }, // Logout button
+    { label: "Logout", icon: "🚪", isLogout: true },
   ];
 
-  const renderLink = (item: typeof menuItems[0]) => {
-    const isActive = pathname === item.href;
+  const renderLink = (item: MenuItem) => {
+    const isActive = item.href ? pathname === item.href : false;
 
-    // If item has an action (like logout), render a button instead of Link
-    if (item.action) {
+    // ✅ Logout button (reusable component)
+    if (item.isLogout) {
       return (
-        <button
-          key={item.label}
-          onClick={() => {
-            item.action?.();
-            setOpen(false);
-          }}
-          className="flex items-center gap-2 px-4 py-3 rounded-xl font-semibold text-[#5F021F]/80 hover:bg-[#FFE8B2]"
-        >
-          {item.icon} {item.label}
-        </button>
+        <LogoutButton
+          key="logout"
+          icon={item.icon}
+          label={item.label}
+          onClose={() => setOpen(false)}
+        />
       );
     }
 
+    // ✅ Normal links
     return (
       <Link
         key={item.href}
-        href={item.href}
+        href={item.href!}
         className={`flex items-center gap-2 px-4 py-3 rounded-xl font-semibold ${
           isActive
             ? "bg-[#FFD6A5] text-[#5F021F]"
@@ -79,6 +66,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
             className="absolute inset-0 bg-black/40"
             onClick={() => setOpen(false)}
           />
+
           <aside className="relative w-64 bg-[#FFF4E0] p-6 shadow-xl">
             <button
               className="mb-6 text-xl"
@@ -86,6 +74,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
             >
               ✕
             </button>
+
             <nav className="flex flex-col gap-3">
               {menuItems.map(renderLink)}
             </nav>
@@ -95,7 +84,9 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
 
       {/* DESKTOP */}
       <aside className="hidden lg:flex flex-col p-6 bg-[#FFF4E0] border-r border-[#5F021F]/10 min-w-[260px]">
-        <nav className="flex flex-col gap-3">{menuItems.map(renderLink)}</nav>
+        <nav className="flex flex-col gap-3">
+          {menuItems.map(renderLink)}
+        </nav>
       </aside>
     </>
   );

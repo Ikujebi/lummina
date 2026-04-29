@@ -1,12 +1,3 @@
-export function getFilePreview(file: File | null) {
-  if (!file) return null;
-
-  return {
-    url: URL.createObjectURL(file),
-    type: file.type || "",
-  };
-}
-
 export function getAttachmentType(url: string, fileType?: string) {
   const type = (fileType || "").toLowerCase();
   const lower = (url || "").toLowerCase();
@@ -24,11 +15,32 @@ export function getAttachmentType(url: string, fileType?: string) {
     type.includes("pdf") ||
     lower.includes(".pdf");
 
+  // 🔥 FULL DOCUMENT SUPPORT (Word, Excel, PowerPoint, Text, RTF, CSV)
   const isDoc =
-  type.includes("word") ||
-  type.includes("officedocument") ||
-  type.includes("msword") ||
-  /\.(doc|docx)$/i.test(lower);
+    // Word
+    type.includes("wordprocessingml") ||
+    type.includes("msword") ||
+    /\.(doc|docx)$/i.test(lower) ||
 
-  return { isImage, isVideo, isPDF, isDoc };
+    // Excel
+    type.includes("spreadsheetml") ||
+    type.includes("excel") ||
+    /\.(xls|xlsx|csv)$/i.test(lower) ||
+
+    // PowerPoint
+    type.includes("presentationml") ||
+    /\.(ppt|pptx)$/i.test(lower) ||
+
+    // RTF + Text
+    type.includes("rtf") ||
+    type === "application/rtf" ||
+    type === "text/rtf" ||
+    /\.(rtf|txt)$/i.test(lower);
+
+  return {
+    isImage,
+    isVideo,
+    isPDF,
+    isDoc,
+  };
 }
