@@ -54,7 +54,7 @@ export default function CasesGrid({ cases }: CasesGridProps) {
 
             {/* ✅ CHAT (FULL PAGE NAVIGATION) */}
             <button
-              onClick={() => router.push(`/chat?matterId=${c.id}`)}
+              onClick={() => router.push(`/chat/${c.id}`)}
               className="px-3 py-2 bg-[#FFE8B2] rounded-lg text-sm"
             >
               Open Chat

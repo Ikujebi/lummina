@@ -16,6 +16,12 @@ export async function POST(req: Request) {
       );
 
     // Check password
+    if (!user.password) {
+  return NextResponse.json(
+    { error: "Invalid account setup" },
+    { status: 500 }
+  );
+}
     const valid = await comparePassword(password, user.password);
     if (!valid)
       return NextResponse.json(

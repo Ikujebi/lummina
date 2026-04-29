@@ -1,9 +1,9 @@
 import ChatClient from "../ChatClient";
 
-export default function Page({
+export default async function Page({
   params,
 }: {
-  params: { matterId: string };
+  params: Promise<{ matterId: string }>;
 }) {
-  return <ChatClient params={params} />;
+  return <ChatClient params={await params} />;
 }

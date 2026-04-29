@@ -56,7 +56,7 @@ export default function MattersTable({ cases }: { cases: Case[] }) {
                 <td className="px-2 py-2 sm:px-4 sm:py-3 border">
                   <button
                     onClick={() =>
-                      router.push(`/chat?matterId=${c.id}`)
+                      router.push(`/chat/${c.id}`)
                     }
                     className="text-[#5F021F] font-semibold hover:underline"
                   >
@@ -103,7 +103,7 @@ export default function MattersTable({ cases }: { cases: Case[] }) {
               {/* CHAT BUTTON (mobile) */}
               <button
                 onClick={() =>
-                  router.push(`/chat?matterId=${c.id}`)
+                  router.push(`/chat/${c.id}`)
                 }
                 className="mt-2 text-sm font-semibold text-[#5F021F]  bg-[#FFD6A5] px-3 py-1 rounded"
               >
