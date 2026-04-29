@@ -9,9 +9,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-   turbopack: {
-    root: "C:/Users/Tochukwu/Documents/GitHub/lummina",
-  },
 };
 
 export default nextConfig;
