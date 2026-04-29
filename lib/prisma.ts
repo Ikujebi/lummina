@@ -1,17 +1,25 @@
-// lib/prisma.ts
 import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg"; // Prisma 7+ Postgres adapter
+import { PrismaPg } from "@prisma/adapter-pg";
 
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL!,
-});
-
-// Use globalThis to prevent multiple instances in dev
 declare global {
   var prisma: PrismaClient | undefined;
 }
 
-export const prisma = globalThis.prisma ?? new PrismaClient({ adapter });
+function createPrisma() {
+  const connectionString = process.env.DATABASE_URL;
+
+  if (!connectionString) {
+    throw new Error("DATABASE_URL is missing in environment variables");
+  }
+
+  const adapter = new PrismaPg({
+    connectionString,
+  });
+
+  return new PrismaClient({ adapter });
+}
+
+export const prisma = globalThis.prisma ?? createPrisma();
 
 if (process.env.NODE_ENV !== "production") {
   globalThis.prisma = prisma;
