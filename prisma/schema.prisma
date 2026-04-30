@@ -4,11 +4,10 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  
 }
 
 // ============================================
-// ENUMS
+// ENUMS1
 // ============================================
 enum Role {
   ADMIN
