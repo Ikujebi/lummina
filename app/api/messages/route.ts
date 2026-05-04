@@ -41,13 +41,16 @@ function getErrorMessage(err: unknown) {
 async function assertMatterAccess(user: AuthUser, matterId: string) {
   const matter = await prisma.matter.findUnique({
     where: { id: matterId },
+    include: {
+      client: true,
+    },
   });
 
   if (!matter) throw new Error("Matter not found");
 
   const isAllowed =
     user.role === "ADMIN" ||
-    user.id === matter.clientId ||
+    user.id === matter.client.userId ||
     user.id === matter.lawyerId;
 
   if (!isAllowed) throw new Error("Forbidden");

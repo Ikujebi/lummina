@@ -20,16 +20,22 @@ type Props = {
   onPreview: (url: string, type: string) => void;
 };
 
-// ✅ Proper type instead of `any`
 type PdfModule = {
   Document: React.ComponentType<DocumentProps>;
   Page: React.ComponentType<PageProps>;
   pdfjs: typeof pdfjs;
 };
 
-export default function AttachmentRenderer({ attachment, onPreview }: Props) {
+export default function AttachmentRenderer({
+  attachment,
+  onPreview,
+}: Props) {
   const [pdfModules, setPdfModules] = useState<PdfModule | null>(null);
   const [pdfReady, setPdfReady] = useState(false);
+
+  const [fileStatus, setFileStatus] = useState<
+    "checking" | "exists" | "missing"
+  >("checking");
 
   const { isImage, isVideo, isPDF, isDoc } = getAttachmentType(
     attachment.fileUrl,
@@ -38,27 +44,59 @@ export default function AttachmentRenderer({ attachment, onPreview }: Props) {
 
   const url = attachment.fileUrl;
 
+  /**
+   * OPTIONAL: lightweight existence check
+   * (safe fallback only — UI does NOT depend on it)
+   */
   useEffect(() => {
     if (!isPDF) return;
 
-    const loadPdf = async () => {
-      const mod = await import("react-pdf");
+    let cancelled = false;
 
-      mod.pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-        "pdfjs-dist/build/pdf.worker.min.mjs",
-        import.meta.url,
-      ).toString();
-      setPdfModules({
-        Document: mod.Document,
-        Page: mod.Page,
-        pdfjs: mod.pdfjs,
+    fetch(url, { method: "HEAD" })
+      .then((res) => {
+        if (cancelled) return;
+        setFileStatus(res.ok ? "exists" : "missing");
+      })
+      .catch(() => {
+        if (!cancelled) setFileStatus("missing");
       });
 
-      setPdfReady(true);
+    return () => {
+      cancelled = true;
+    };
+  }, [url, isPDF]);
+
+  /**
+   * ONLY load react-pdf if file is confirmed OK OR unknown
+   * BUT NEVER if already marked missing
+   */
+  useEffect(() => {
+    if (!isPDF || fileStatus === "missing") return;
+
+    const loadPdf = async () => {
+      try {
+        const mod = await import("react-pdf");
+
+        mod.pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+          "pdfjs-dist/build/pdf.worker.min.mjs",
+          import.meta.url,
+        ).toString();
+
+        setPdfModules({
+          Document: mod.Document,
+          Page: mod.Page,
+          pdfjs: mod.pdfjs,
+        });
+
+        setPdfReady(true);
+      } catch {
+        setFileStatus("missing");
+      }
     };
 
     loadPdf();
-  }, [isPDF]);
+  }, [isPDF, fileStatus]);
 
   const Document = pdfModules?.Document;
   const Page = pdfModules?.Page;
@@ -87,12 +125,20 @@ export default function AttachmentRenderer({ attachment, onPreview }: Props) {
 
       {/* PDF */}
       {isPDF && (
-        <div
-          className="bg-white border rounded-xl p-3 w-[260px] shadow-sm cursor-zoom-in"
-          onClick={() => onPreview(url, attachment.fileType || "pdf")}
-        >
-          <div className="rounded-md bg-gray-100 flex justify-center overflow-hidden">
-            {!pdfReady || !Document || !Page ? (
+        <div className="bg-white border rounded-xl p-3 w-[260px] shadow-sm">
+          <div
+            className="rounded-md bg-gray-100 flex justify-center overflow-hidden cursor-zoom-in"
+            onClick={() =>
+              fileStatus === "exists" &&
+              onPreview(url, attachment.fileType || "pdf")
+            }
+          >
+            {/* HARD STOP */}
+            {fileStatus === "missing" ? (
+              <p className="text-xs p-3 text-red-500">
+                File deleted or unavailable
+              </p>
+            ) : !pdfReady || !Document || !Page ? (
               <p className="text-xs p-3">Loading PDF...</p>
             ) : (
               <Document file={url}>
@@ -113,22 +159,21 @@ export default function AttachmentRenderer({ attachment, onPreview }: Props) {
             </p>
           </div>
 
-          <p className="text-[11px] text-gray-500 mt-1">PDF Document</p>
+          <p className="text-[11px] text-gray-500 mt-1">
+            PDF Document
+          </p>
 
           <div className="flex gap-2 mt-3">
             <a
               href={url}
               target="_blank"
-              onClick={(e) => e.stopPropagation()}
               className="text-xs px-3 py-1 bg-gray-100 rounded"
             >
               Open
             </a>
 
             <a
-              href={url}
-              download={attachment.fileName}
-              onClick={(e) => e.stopPropagation()}
+              href={forceCloudinaryDownload(url)}
               className="text-xs px-3 py-1 bg-[#5F021F] text-white rounded"
             >
               Download
@@ -138,47 +183,52 @@ export default function AttachmentRenderer({ attachment, onPreview }: Props) {
       )}
 
       {/* DOC */}
-    {isDoc && (
-  <div className="bg-white border rounded-xl p-3 w-[260px] shadow-sm">
-    <iframe
-      src={`https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`}
-      className="w-full h-[200px] rounded"
-    />
+      {isDoc && (
+        <div className="bg-white border rounded-xl p-3 w-[260px] shadow-sm">
+          <iframe
+            src={`https://docs.google.com/gview?url=${encodeURIComponent(
+              url,
+            )}&embedded=true`}
+            className="w-full h-[200px] rounded"
+          />
 
-    <p className="text-[11px] text-gray-500 mt-1">
-      Document Preview
-    </p>
+          <p className="text-[11px] text-gray-500 mt-1">
+            Document Preview
+          </p>
 
-    <div className="flex gap-2 mt-3">
-      <a
-        href={url}
-        target="_blank"
-        className="text-xs px-3 py-1 bg-gray-100 rounded"
-      >
-        Open
-      </a>
+          <div className="flex gap-2 mt-3">
+            <a
+              href={url}
+              target="_blank"
+              className="text-xs px-3 py-1 bg-gray-100 rounded"
+            >
+              Open
+            </a>
 
-      <a
-        href={forceCloudinaryDownload(url)}
-        className="text-xs px-3 py-1 bg-[#5F021F] text-white rounded"
-      >
-        Download
-      </a>
-    </div>
-  </div>
-)}
+            <a
+              href={forceCloudinaryDownload(url)}
+              className="text-xs px-3 py-1 bg-[#5F021F] text-white rounded"
+            >
+              Download
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* FALLBACK */}
       {!isImage && !isVideo && !isPDF && !isDoc && (
         <div className="bg-gray-50 border rounded-lg p-3 flex items-center justify-between">
-  <span className="text-sm truncate">{attachment.fileName}</span>
+          <span className="text-sm truncate">
+            {attachment.fileName}
+          </span>
 
-  <a
-    href={forceCloudinaryDownload(url)}
-    className="text-xs px-2 py-1 bg-[#5F021F] text-white rounded"
-  >
-   📎 Download
-  </a>
-</div>
+          <a
+            href={forceCloudinaryDownload(url)}
+            className="text-xs px-2 py-1 bg-[#5F021F] text-white rounded"
+          >
+            📎 Download
+          </a>
+        </div>
       )}
     </div>
   );
