@@ -2,16 +2,22 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
+// ===============================
+// GET CLIENT DASHBOARD
+// ===============================
 export async function GET() {
   try {
     const user = await getCurrentUser();
 
     if (!user || user.role !== "CLIENT") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
     // ===============================
-    // 1. GET CLIENT FROM USER
+    // 1. GET CLIENT (REAL SOURCE OF TRUTH)
     // ===============================
     const client = await prisma.client.findFirst({
       where: {
@@ -23,26 +29,26 @@ export async function GET() {
       return NextResponse.json({
         client: null,
         timeline: [],
+        charts: {
+          doughnut: { labels: [], values: [] },
+          line: [],
+          progress: 0,
+        },
       });
     }
 
     // ===============================
-    // 2. GET MATTERS USING CLIENT ID (CRITICAL FIX)
+    // 2. GET MATTERS
     // ===============================
     const matters = await prisma.matter.findMany({
       where: {
-        clientId: client.id, // ✅ FIXED (THIS WAS YOUR BUG)
+        clientId: client.id,
       },
       include: {
         lawyer: true,
-        client: true,
         activities: {
           orderBy: { createdAt: "desc" },
-          take: 5,
         },
-        documents: true,
-        tasks: true,
-        appointments: true,
       },
       orderBy: {
         updatedAt: "desc",
@@ -50,32 +56,88 @@ export async function GET() {
     });
 
     // ===============================
-    // 3. BUILD TIMELINE
+    // DEBUG (TEMP - REMOVE LATER)
     // ===============================
-    const timeline = matters.flatMap((matter) =>
-      matter.activities.map((a) => ({
-        id: a.id,
-        title: a.action,
-        content: a.details ?? "",
-        time: formatTime(a.createdAt),
-      }))
-    );
+    console.log("CLIENT ID:", client.id);
+    console.log("MATTERS COUNT:", matters.length);
 
+    for (const m of matters) {
+      console.log("MATTER:", m.caseNumber, "ACTIVITIES:", m.activities.length);
+    }
+
+    // ===============================
+    // 3. BUILD TIMELINE (SAFE)
+    // ===============================
+   const timeline = matters.flatMap((matter) =>
+  (matter.activities ?? []).map((activity) => ({
+    id: activity.id,
+    action: activity.action,
+    details: activity.details ?? "",
+    time: formatTime(activity.createdAt), // ✅ USE IT HERE
+    matter: {
+      id: matter.id,
+      caseNumber: matter.caseNumber,
+    },
+  }))
+);
+
+    // ===============================
+    // 4. LATEST MATTER
+    // ===============================
     const latestMatter = matters[0];
 
     // ===============================
-    // 4. RESPONSE
+    // 5. CHART DATA (SAFE)
+    // ===============================
+    const statusCounts = {
+      OPEN: 0,
+      IN_PROGRESS: 0,
+      PENDING: 0,
+      CLOSED: 0,
+    };
+
+    for (const matter of matters) {
+      if (statusCounts[matter.status as keyof typeof statusCounts] !== undefined) {
+        statusCounts[matter.status as keyof typeof statusCounts]++;
+      }
+    }
+
+    const charts = {
+      doughnut: {
+        labels: Object.keys(statusCounts),
+        values: Object.values(statusCounts),
+      },
+
+      line: matters.slice(0, 7).map((m, i) => ({
+        label: m.caseNumber || `Case ${i + 1}`,
+        value: m.activities?.length ?? 0,
+      })),
+
+      progress: matters.length
+        ? Math.round(
+            (matters.filter((m) => m.status === "CLOSED").length /
+              matters.length) *
+              100
+          )
+        : 0,
+    };
+
+    // ===============================
+    // 6. RESPONSE
     // ===============================
     return NextResponse.json({
       client: {
         id: client.id,
         name: user.name || "Client",
-        caseId: latestMatter?.caseNumber || "",
-        lawyer: latestMatter?.lawyer?.name || "",
+        caseId: latestMatter?.caseNumber || "Not Assigned",
+        lawyer: latestMatter?.lawyer?.name || "Pending Assignment",
         status: latestMatter?.status || "OPEN",
-        matters, // optional but useful for frontend
+        matters,
       },
+
       timeline,
+
+      charts,
     });
 
   } catch (err) {

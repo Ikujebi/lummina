@@ -56,7 +56,7 @@ export default function ChartsSection() {
 
       {/* CASES TREND */}
       <div className="bg-[#FFF4E0] rounded-2xl p-4 sm:p-6 shadow-md h-[260px] sm:h-[300px]">
-        <h3 className="text-base sm:text-lg font-semibold text-[#5F021F] mb-3 sm:mb-4">
+        <h3 className="text-base sm:text-lg font-semibold text-[#5F021F] mb-1 sm:mb-4">
           Cases Trend
         </h3>
 
@@ -79,7 +79,7 @@ export default function ChartsSection() {
 
       {/* REVENUE */}
       <div className="bg-[#FFF4E0] rounded-2xl p-4 sm:p-6 shadow-md h-[260px] sm:h-[300px]">
-        <h3 className="text-base sm:text-lg font-semibold text-[#5F021F] mb-3 sm:mb-4">
+        <h3 className="text-base sm:text-lg font-semibold text-[#5F021F] mb-1 sm:mb-4">
           Revenue Overview
         </h3>
 
@@ -96,7 +96,7 @@ export default function ChartsSection() {
 
       {/* STAGE DISTRIBUTION */}
       <div className="bg-[#FFF4E0] rounded-2xl p-4 sm:p-6 shadow-md h-[260px] sm:h-[300px] md:col-span-2 xl:col-span-1">
-        <h3 className="text-base sm:text-lg font-semibold text-[#5F021F] mb-3 sm:mb-4">
+        <h3 className="text-base sm:text-lg font-semibold text-[#5F021F] mb-1 sm:mb-4">
           Case Stage Distribution
         </h3>
 

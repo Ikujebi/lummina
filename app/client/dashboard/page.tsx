@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import HeroSection from "@/app/components/dashboard/HeroSection";
 import ChartsSection from "@/app/components/dashboard/ChartsSection";
 import TimelineSection from "@/app/components/dashboard/TimelineSection";
-import ProcessHistory from "@/app/components/lawyer-dashboard/ProcessHistory";
+import ProcessHistory from "@/app/components/dashboard/ProcessHistory";
 
 import { TimelineItem } from "@/types/types";
 import type { ClientDashboardData } from "@/types/client";
@@ -129,7 +129,7 @@ async function load() {
           loading={loading}
         />
 
-        {/* <ProcessHistory /> */}
+        <ProcessHistory />
       </div>
 
       {/* TIMELINE */}

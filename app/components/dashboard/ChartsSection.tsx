@@ -97,7 +97,7 @@ export default function ChartsSection({
 
       {/* Doughnut */}
       <div className="bg-white p-6 rounded-2xl shadow h-[350px]">
-        <h2 className="font-semibold text-[#5F021F] mb-4">
+        <h2 className="font-semibold text-[#5F021F] mb-1">
           Case Distribution
         </h2>
 
@@ -110,7 +110,7 @@ export default function ChartsSection({
 
       {/* Line */}
       <div className="bg-white p-6 rounded-2xl shadow">
-        <h2 className="font-semibold text-[#5F021F] mb-4">
+        <h2 className="font-semibold text-[#5F021F] mb-[5rem]">
           Activity Trend
         </h2>
 
