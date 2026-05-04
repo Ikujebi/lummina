@@ -10,45 +10,77 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // ===============================
+    // 1. GET CLIENT FROM USER
+    // ===============================
+    const client = await prisma.client.findFirst({
+      where: {
+        userId: user.id,
+      },
+    });
+
+    if (!client) {
+      return NextResponse.json({
+        client: null,
+        timeline: [],
+      });
+    }
+
+    // ===============================
+    // 2. GET MATTERS USING CLIENT ID (CRITICAL FIX)
+    // ===============================
     const matters = await prisma.matter.findMany({
       where: {
-        clientId: user.id,
+        clientId: client.id, // ✅ FIXED (THIS WAS YOUR BUG)
       },
       include: {
+        lawyer: true,
+        client: true,
         activities: {
           orderBy: { createdAt: "desc" },
           take: 5,
         },
-        lawyer: true,
+        documents: true,
+        tasks: true,
+        appointments: true,
       },
       orderBy: {
         updatedAt: "desc",
       },
     });
 
+    // ===============================
+    // 3. BUILD TIMELINE
+    // ===============================
     const timeline = matters.flatMap((matter) =>
-  matter.activities.map((a) => ({
-    id: a.id,
-    title: a.action,
-    content: a.details ?? "",
-    time: formatTime(a.createdAt),
-  }))
-);
+      matter.activities.map((a) => ({
+        id: a.id,
+        title: a.action,
+        content: a.details ?? "",
+        time: formatTime(a.createdAt),
+      }))
+    );
 
     const latestMatter = matters[0];
 
+    // ===============================
+    // 4. RESPONSE
+    // ===============================
     return NextResponse.json({
       client: {
+        id: client.id,
         name: user.name || "Client",
         caseId: latestMatter?.caseNumber || "",
         lawyer: latestMatter?.lawyer?.name || "",
         status: latestMatter?.status || "OPEN",
+        matters, // optional but useful for frontend
       },
       timeline,
     });
 
   } catch (err) {
-    console.error(err);
+    console.error("CLIENT DASHBOARD ERROR:", err);
+
     return NextResponse.json(
       { error: "Failed to load dashboard" },
       { status: 500 }
@@ -56,6 +88,9 @@ export async function GET() {
   }
 }
 
+// ===============================
+// TIME FORMATTER
+// ===============================
 function formatTime(date: Date) {
   const diff = Date.now() - new Date(date).getTime();
 

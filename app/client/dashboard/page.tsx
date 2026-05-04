@@ -51,27 +51,41 @@ export default function ClientDashboard() {
      FETCH DASHBOARD DATA
   ======================= */
   useEffect(() => {
- async function load() {
+async function load() {
   try {
     const res = await fetch("/api/clients/dashboard", {
       credentials: "include",
     });
 
+    console.log("📡 STATUS:", res.status);
+
     if (!res.ok) throw new Error("Failed to fetch dashboard");
 
     const data = await res.json();
 
-    // 🔥 IMPORTANT FIX
-    const client = Array.isArray(data) ? data[0] : data.clients?.[0] ?? data[0];
+    console.log("📦 RAW DASHBOARD:", data);
+
+    // ✅ FIXED: correct extraction
+    const client = data?.client;
+
+    console.log("👤 CLIENT:", client);
+    console.log("⚖️ MATTERS:", client?.matters);
+
+    if (client?.matters?.length) {
+      console.log("📌 FIRST MATTER:", client.matters[0]);
+    } else {
+      console.warn("⚠️ NO MATTERS FOUND");
+    }
 
     setClient(client ?? defaultClient);
 
-    // matters = timeline source
-    setTimeline(client?.matters ?? []);
+    // 🔥 IMPORTANT: timeline should come from backend timeline, not matters
+    setTimeline(data?.timeline ?? []);
 
     setDashboard(data);
+
   } catch (err) {
-    console.error("Client dashboard error:", err);
+    console.error("❌ Dashboard error:", err);
   } finally {
     setLoading(false);
   }
@@ -115,7 +129,7 @@ export default function ClientDashboard() {
           loading={loading}
         />
 
-        <ProcessHistory />
+        {/* <ProcessHistory /> */}
       </div>
 
       {/* TIMELINE */}

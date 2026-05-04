@@ -18,23 +18,21 @@ type Props = {
 export default function HeroSection({ client }: Props) {
   const clientName = client?.name || "Client";
 
-  // 🔥 Sort matters (latest first)
-  const sortedMatters = client?.matters
-    ? [...client.matters].sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() -
-          new Date(a.createdAt).getTime()
-      )
-    : [];
+  // 🔥 Safe sorting of matters (latest first)
+  const sortedMatters = (client?.matters ?? [])
+    .filter(Boolean)
+    .sort((a, b) => {
+      const dateA = new Date(a.createdAt ?? 0).getTime();
+      const dateB = new Date(b.createdAt ?? 0).getTime();
+      return dateB - dateA;
+    });
 
-  const latestMatter = sortedMatters[0];
+  // 🔥 single source of truth
+  const latestMatter = sortedMatters[0] ?? null;
 
   const caseId = latestMatter?.caseNumber || "Not Assigned";
 
-  const lawyer =
-    latestMatter?.lawyer?.name ||
-    client?.lawyer ||
-    "Pending Assignment";
+  const lawyer = latestMatter?.lawyer?.name || "Pending Assignment";
 
   const status = latestMatter?.status || "OPEN";
 
@@ -168,6 +166,7 @@ export default function HeroSection({ client }: Props) {
 
           {/* STATUS */}
           <div className="mt-8 flex flex-wrap items-center gap-3">
+
             <span className="text-sm font-medium text-gray-500">
               Current Status:
             </span>
@@ -175,10 +174,11 @@ export default function HeroSection({ client }: Props) {
             <div className={`inline-flex items-center rounded-full border px-5 py-2 text-sm font-bold tracking-wide ${statusStyles}`}>
               {status}
             </div>
+
           </div>
 
           {/* ===================== */}
-          {/* TIMELINE SECTION */}
+          {/* TIMELINE */}
           {/* ===================== */}
 
           <div className="mt-12 border-t border-gray-100 pt-8">
@@ -195,8 +195,8 @@ export default function HeroSection({ client }: Props) {
                 </p>
               )}
 
-              {sortedMatters.map((matter, index) => {
-                const isLatest = index === 0;
+              {sortedMatters.map((matter) => {
+                const isLatest = matter.id === latestMatter?.id;
 
                 const statusColor =
                   matter.status === "OPEN"
