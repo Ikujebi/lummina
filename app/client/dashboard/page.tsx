@@ -51,23 +51,34 @@ export default function ClientDashboard() {
      FETCH DASHBOARD DATA
   ======================= */
   useEffect(() => {
-    async function load() {
-      try {
-        const res = await fetch("/api/client/dashboard");
-        const data = await res.json();
+ async function load() {
+  try {
+    const res = await fetch("/api/clients/dashboard", {
+      credentials: "include",
+    });
 
-        setClient(data.client ?? defaultClient);
-        setTimeline(data.timeline ?? []);
-        setDashboard(data);
-      } catch (err) {
-        console.error("Client dashboard error:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
+    if (!res.ok) throw new Error("Failed to fetch dashboard");
 
-    load();
-  }, []);
+    const data = await res.json();
+
+    // 🔥 IMPORTANT FIX
+    const client = Array.isArray(data) ? data[0] : data.clients?.[0] ?? data[0];
+
+    setClient(client ?? defaultClient);
+
+    // matters = timeline source
+    setTimeline(client?.matters ?? []);
+
+    setDashboard(data);
+  } catch (err) {
+    console.error("Client dashboard error:", err);
+  } finally {
+    setLoading(false);
+  }
+}
+
+  load();
+}, []);
 
   /* =======================
      LOADING STATE

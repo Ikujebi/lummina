@@ -15,6 +15,16 @@ export type Client = {
   caseId: string;
   lawyer: string;
   status: string;
+ matters?: {
+  id: string;
+  caseNumber: string;
+  status: "OPEN" | "IN_PROGRESS" | "PENDING" | "CLOSED";
+  createdAt: string;
+  title?: string;
+  lawyer?: {
+    name: string;
+  };
+}[];
 };
 
 interface DoughnutData {
