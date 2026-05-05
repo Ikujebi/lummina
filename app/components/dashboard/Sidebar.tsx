@@ -17,9 +17,8 @@ export default function Sidebar({ open, onClose }: Props) {
   const links = [
     { label: "Home", href: "/client/dashboard" },
     { label: "Documents", href: "/client/documents" },
-    { label: "Chat", href: "/client/chat" },
     { label: "Cases", href: "/client/cases" },
-    { label: "Glossary", href: "/client/glossary" },
+    { label: "Glossary", href: "/glossary" },
     { label: "Settings", href: "/client/settings" },
   ];
 
@@ -78,16 +77,13 @@ export default function Sidebar({ open, onClose }: Props) {
 
         {/* FOOTER */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-100 flex flex-col gap-2">
-          
           <LogoutButton
             icon={<LogOut size={16} />}
             label="Logout"
             onClose={onClose}
           />
 
-          <p className="text-xs text-gray-400">
-            Secure Legal Dashboard
-          </p>
+          <p className="text-xs text-gray-400">Secure Legal Dashboard</p>
         </div>
       </aside>
     </>
