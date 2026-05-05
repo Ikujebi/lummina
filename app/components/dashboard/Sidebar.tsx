@@ -17,7 +17,7 @@ export default function Sidebar({ open, onClose }: Props) {
   const links = [
     { label: "Home", href: "/client/dashboard" },
     { label: "Documents", href: "/client/documents" },
-    { label: "Cases", href: "/client/cases" },
+    { label: "Matters", href: "/client/cases" },
     { label: "Glossary", href: "/glossary" },
     { label: "Settings", href: "/client/settings" },
   ];

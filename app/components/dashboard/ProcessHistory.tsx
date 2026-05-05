@@ -79,7 +79,7 @@ export default function ClientProcessHistory() {
       {/* HEADER */}
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-bold text-[#5F021F]">
-          Case Process History
+          Matter Process History
         </h3>
 
         <span className="text-xs text-gray-500">

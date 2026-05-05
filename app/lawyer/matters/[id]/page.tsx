@@ -33,9 +33,6 @@ const { Text } = Typography;
 type Tab = "overview" | "activity";
 
 export default function MatterPage() {
-  // =========================
-  // ALL HOOKS FIRST (STRICT ORDER)
-  // =========================
   const params = useParams();
   const router = useRouter();
 
@@ -60,13 +57,11 @@ export default function MatterPage() {
 
   const [tab, setTab] = useState<Tab>("overview");
 
-  // =========================
-  // LOAD MATTER
-  // =========================
+  /* =========================
+     LOAD MATTER
+  ========================= */
   useEffect(() => {
     if (!id) return;
-
-    let isMounted = true;
 
     async function load() {
       try {
@@ -74,31 +69,22 @@ export default function MatterPage() {
         if (!res.ok) throw new Error("Failed to load matter");
 
         const data = await res.json();
-
-        if (isMounted) {
-          setMatter(data.matter);
-        }
+        setMatter(data.matter);
       } catch (err) {
         console.error(err);
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     }
 
     load();
-
-    return () => {
-      isMounted = false;
-    };
   }, [id]);
 
-  // =========================
-  // ADD ACTIVITY
-  // =========================
+  /* =========================
+     ADD ACTIVITY
+  ========================= */
   async function addActivity() {
-    if (!action || !matter || !id) return;
+    if (!action || !matter) return;
 
     setSubmitting(true);
 
@@ -137,13 +123,11 @@ export default function MatterPage() {
     }
   }
 
-  // =========================
-  // EARLY RETURNS (AFTER HOOKS ONLY)
-  // =========================
+  /* =========================
+     LOADING / ERROR STATES
+  ========================= */
   if (!id) {
-    return (
-      <div className="text-red-500">Invalid matter route</div>
-    );
+    return <div className="text-red-500">Invalid route</div>;
   }
 
   if (loading) {
@@ -156,14 +140,9 @@ export default function MatterPage() {
   }
 
   if (!matter) {
-    return (
-      <div className="text-red-500">Matter not found</div>
-    );
+    return <div className="text-red-500">Matter not found</div>;
   }
 
-  // =========================
-  // UI
-  // =========================
   return (
     <ConfigProvider
       theme={{
@@ -191,7 +170,7 @@ export default function MatterPage() {
           </h1>
 
           <div className="flex flex-wrap gap-3 text-sm text-gray-600">
-            <span>Case: {matter.caseNumber}</span>
+            <span>Matter: {matter.caseNumber}</span>
             <span>•</span>
             <span>Client: {matter.client.name}</span>
             <span>•</span>
@@ -322,11 +301,13 @@ export default function MatterPage() {
             </Card>
 
             <Card title={`Timeline (${matter.activities.length})`}>
+
               <Timeline
                 items={matter.activities.map((a) => ({
                   color: "#5F021F",
-                  children: (
+                  content: (
                     <Card size="small" style={{ marginBottom: 10 }}>
+
                       <div className="flex justify-between">
                         <strong style={{ color: "#5F021F" }}>
                           {a.action}
@@ -336,6 +317,7 @@ export default function MatterPage() {
                           <Tag color="#FFF4E0">
                             {a.type}
                           </Tag>
+
                           <Tag>{a.visibility}</Tag>
                         </div>
                       </div>
@@ -349,10 +331,12 @@ export default function MatterPage() {
                       <div style={{ fontSize: 11, color: "#999", marginTop: 6 }}>
                         {new Date(a.createdAt).toLocaleString()}
                       </div>
+
                     </Card>
                   ),
                 }))}
               />
+
             </Card>
 
           </div>

@@ -102,7 +102,7 @@ export default function ClientCasesPage() {
 
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-[#5F021F]">
-            My Cases
+            My Matters
           </h1>
 
           <p className="mt-2 text-sm text-[#5F021F]/70">
@@ -118,7 +118,7 @@ export default function ClientCasesPage() {
 
           <div>
             <p className="text-xs uppercase tracking-wide text-[#5F021F]/60">
-              Total Cases
+              Total Matters
             </p>
 
             <h3 className="text-2xl font-bold text-[#5F021F]">
@@ -140,7 +140,7 @@ export default function ClientCasesPage() {
 
           <input
             type="text"
-            placeholder="Search case title, number, lawyer..."
+            placeholder="Search title, number, lawyer..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-12 w-full rounded-2xl border border-[#E8D8BE] bg-[#FFFCF7] pl-11 pr-4 text-sm outline-none transition focus:border-[#FFA500]"
@@ -169,7 +169,7 @@ export default function ClientCasesPage() {
           </div>
 
           <h2 className="text-xl font-semibold text-[#5F021F]">
-            No Cases Found
+            No Matters Found
           </h2>
 
           <p className="mt-2 max-w-md text-sm leading-relaxed text-[#5F021F]/70">

@@ -124,7 +124,7 @@ export default function ChartsSection({
       {/* Progress */}
       <div className="bg-white p-6 rounded-2xl shadow flex flex-col items-center justify-center">
         <h2 className="font-semibold text-[#5F021F] mb-2">
-          Case Completion Rate
+          Matter Completion Rate
         </h2>
 
         <span className="text-4xl font-bold text-[#FFA500]">

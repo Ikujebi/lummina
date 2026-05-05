@@ -78,12 +78,10 @@ export default function HeroSection({ client }: Props) {
               </span>
             </div>
 
-            <h3 className="text-2xl font-bold leading-tight">
-              Track Your Legal Progress
-            </h3>
+            
 
             <p className="mt-3 text-sm text-gray-600">
-              Stay informed about your case updates, legal process,
+              Stay informed about your case updates,  process,
               and assigned counsel in real time.
             </p>
 
@@ -96,7 +94,7 @@ export default function HeroSection({ client }: Props) {
           {/* LABEL */}
           <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[#5F021F]/10 bg-[#5F021F]/5 px-4 py-2 text-sm font-medium text-[#5F021F] mb-6">
             <ShieldCheck size={16} />
-            Secure Legal Portal
+            Secure  Portal
           </div>
 
           {/* TITLE */}
@@ -108,8 +106,8 @@ export default function HeroSection({ client }: Props) {
           </h1>
 
           <p className="mt-5 max-w-xl text-base leading-7 text-gray-600">
-            Access your legal records, monitor your case progress,
-            and communicate seamlessly with your legal team.
+            Access your  records, monitor your case progress,
+            and communicate seamlessly with your  team.
           </p>
 
           {/* INFO CARDS */}
@@ -125,7 +123,7 @@ export default function HeroSection({ client }: Props) {
 
                 <div>
                   <p className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
-                    Case ID
+                    Matter ID
                   </p>
 
                   <h3 className="text-lg font-bold text-[#5F021F]">
@@ -135,7 +133,7 @@ export default function HeroSection({ client }: Props) {
               </div>
 
               <p className="text-sm text-gray-500">
-                Your most recent legal matter reference.
+                Your most recent matter reference.
               </p>
             </div>
 
@@ -143,7 +141,7 @@ export default function HeroSection({ client }: Props) {
             <div className="rounded-2xl border border-gray-200 bg-gray-50/80 p-5 hover:-translate-y-1 hover:shadow-lg transition">
 
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#FFA500] text-white">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#5F021F] text-white">
                   <Scale size={20} />
                 </div>
 
@@ -159,7 +157,7 @@ export default function HeroSection({ client }: Props) {
               </div>
 
               <p className="text-sm text-gray-500">
-                Your legal representative handling this matter.
+                Your  representative handling this matter.
               </p>
             </div>
           </div>
@@ -184,14 +182,14 @@ export default function HeroSection({ client }: Props) {
           <div className="mt-12 border-t border-gray-100 pt-8">
 
             <h2 className="text-xl font-bold text-[#5F021F] mb-6">
-              Case Progression Timeline
+               Progression Timeline
             </h2>
 
             <div className="relative border-l-2 border-[#5F021F]/20 pl-6 space-y-8">
 
               {sortedMatters.length === 0 && (
                 <p className="text-gray-500 text-sm">
-                  No case history available yet.
+                  No history available yet.
                 </p>
               )}
 
