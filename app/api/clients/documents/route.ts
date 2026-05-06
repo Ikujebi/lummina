@@ -54,10 +54,7 @@ export async function GET() {
         createdAt: "desc",
       },
     });
-    console.log({
-  userId: user.id,
-  clientId: client?.id,
-});
+   
 
     return NextResponse.json({
       success: true,

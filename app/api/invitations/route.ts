@@ -5,7 +5,6 @@ import { randomUUID } from "crypto";
 import { Prisma } from "@prisma/client";
 import { Resend } from "resend";
 
-// --- Types ---
 interface InvitationBody {
   id?: string;
   email?: string;
@@ -14,7 +13,6 @@ interface InvitationBody {
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// --- Helper: Require admin ---
 async function requireAdmin() {
   const user = await getCurrentUser();
   if (!user || user.role !== "ADMIN") {
@@ -23,7 +21,6 @@ async function requireAdmin() {
   return user;
 }
 
-// --- GET: List all invitations (Admin only) ---
 export async function GET() {
   try {
     await requireAdmin();
@@ -33,13 +30,11 @@ export async function GET() {
     });
 
     return NextResponse.json(invitations);
-  } catch (err) {
-    console.error(err);
+  } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
 
-// --- POST: Create invitation & send email ---
 export async function POST(req: Request) {
   try {
     const admin = await requireAdmin();
@@ -55,8 +50,6 @@ export async function POST(req: Request) {
     }
 
     const token = randomUUID();
-
-    // ✅ FIXED: 24 HOUR EXPIRY (server controlled)
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     const invitation = await prisma.invitation.create({
@@ -71,17 +64,11 @@ export async function POST(req: Request) {
 
     const invitationLink = `${process.env.NEXT_PUBLIC_BASE_URL}/register?token=${token}`;
 
-    const { data, error } = await resend.emails.send({
+    const { error } = await resend.emails.send({
       from: "Lummina Law <noreply@legal.lumminalaw.com>",
       to: email,
       subject: "You're invited to Lummina Law",
-      text: `
-You have been invited as a ${role}.
-
-${invitationLink}
-
-Expires: ${expiresAt.toLocaleString()}
-      `,
+      text: `You have been invited as a ${role}.\n\n${invitationLink}`,
       html: `
         <p>Hello,</p>
         <p>You have been invited to join Lummina Law as a <strong>${role}</strong>.</p>
@@ -89,9 +76,6 @@ Expires: ${expiresAt.toLocaleString()}
         <p>Expires: ${expiresAt.toLocaleString()}</p>
       `,
     });
-
-    console.log("📧 RESEND RESPONSE:", data);
-    console.log("❌ RESEND ERROR:", error);
 
     if (error) {
       throw new Error(error.message);
@@ -101,8 +85,7 @@ Expires: ${expiresAt.toLocaleString()}
       message: "Invitation created and email sent",
       invitation,
     });
-  } catch (err) {
-    console.error(err);
+  } catch {
     return NextResponse.json(
       { error: "Failed to create invitation" },
       { status: 500 }
@@ -110,7 +93,6 @@ Expires: ${expiresAt.toLocaleString()}
   }
 }
 
-// --- PATCH: Update invitation ---
 export async function PATCH(req: Request) {
   try {
     await requireAdmin();
@@ -134,8 +116,7 @@ export async function PATCH(req: Request) {
       message: "Invitation updated",
       invitation,
     });
-  } catch (err) {
-    console.error(err);
+  } catch {
     return NextResponse.json(
       { error: "Failed to update invitation" },
       { status: 500 }
@@ -143,7 +124,6 @@ export async function PATCH(req: Request) {
   }
 }
 
-// --- DELETE: Remove invitation ---
 export async function DELETE(req: Request) {
   try {
     await requireAdmin();
@@ -162,8 +142,7 @@ export async function DELETE(req: Request) {
     });
 
     return NextResponse.json({ message: "Invitation deleted" });
-  } catch (err) {
-    console.error(err);
+  } catch {
     return NextResponse.json(
       { error: "Failed to delete invitation" },
       { status: 500 }

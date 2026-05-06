@@ -11,9 +11,6 @@ export async function GET(
 
   const user = await getCurrentUser();
 
-  console.log("USER:", user);
-  console.log("ROLE:", user?.role);
-  console.log("USER ID:", user?.id);
 
   if (!user || user.role !== "CLIENT") {
     return NextResponse.json(

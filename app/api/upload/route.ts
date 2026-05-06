@@ -21,11 +21,7 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log("Uploading file:", {
-      name: file.name,
-      type: file.type,
-      size: file.size,
-    });
+   
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);

@@ -11,13 +11,16 @@ const pusher = new Pusher({
 });
 
 export async function POST(req: Request) {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
+    const user = await getCurrentUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const { matterId, isTyping } = await req.json();
 
     if (!matterId) {
@@ -34,7 +37,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { error: "Typing event failed" },
       { status: 500 }

@@ -21,7 +21,7 @@ const defaultClient: ClientDashboardData = {
 };
 
 /* =======================
-   DASHBOARD TYPE (optional safety)
+   DASHBOARD TYPE
 ======================= */
 type DashboardData = {
   client: ClientDashboardData;
@@ -51,48 +51,32 @@ export default function ClientDashboard() {
      FETCH DASHBOARD DATA
   ======================= */
   useEffect(() => {
-async function load() {
-  try {
-    const res = await fetch("/api/clients/dashboard", {
-      credentials: "include",
-    });
+    async function load() {
+      try {
+        const res = await fetch("/api/clients/dashboard", {
+          credentials: "include",
+        });
 
-    console.log("📡 STATUS:", res.status);
+        if (!res.ok) throw new Error("Failed to fetch dashboard");
 
-    if (!res.ok) throw new Error("Failed to fetch dashboard");
+        const data = await res.json();
 
-    const data = await res.json();
+        const client = data?.client;
 
-    console.log("📦 RAW DASHBOARD:", data);
+        setClient(client ?? defaultClient);
 
-    // ✅ FIXED: correct extraction
-    const client = data?.client;
+        setTimeline(data?.timeline ?? []);
+        setDashboard(data);
 
-    console.log("👤 CLIENT:", client);
-    console.log("⚖️ MATTERS:", client?.matters);
-
-    if (client?.matters?.length) {
-      console.log("📌 FIRST MATTER:", client.matters[0]);
-    } else {
-      console.warn("⚠️ NO MATTERS FOUND");
+      } catch {
+        // production-safe: no console noise
+      } finally {
+        setLoading(false);
+      }
     }
 
-    setClient(client ?? defaultClient);
-
-    // 🔥 IMPORTANT: timeline should come from backend timeline, not matters
-    setTimeline(data?.timeline ?? []);
-
-    setDashboard(data);
-
-  } catch (err) {
-    console.error("❌ Dashboard error:", err);
-  } finally {
-    setLoading(false);
-  }
-}
-
-  load();
-}, []);
+    load();
+  }, []);
 
   /* =======================
      LOADING STATE
@@ -111,10 +95,8 @@ async function load() {
   return (
     <div className="flex flex-col gap-10">
 
-      {/* HERO */}
       <HeroSection client={client} />
 
-      {/* CHARTS + HISTORY */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
         <ChartsSection
@@ -132,7 +114,6 @@ async function load() {
         <ProcessHistory />
       </div>
 
-      {/* TIMELINE */}
       <TimelineSection timeline={timeline} />
 
     </div>

@@ -3,13 +3,16 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 
 export async function POST(req: Request) {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
+    const user = await getCurrentUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const { messageId, status } = await req.json();
 
     if (!messageId || !status) {
@@ -35,7 +38,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(receipt);
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to update receipt" },
       { status: 500 }

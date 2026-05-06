@@ -55,15 +55,10 @@ export async function GET() {
       },
     });
 
-    // ===============================
-    // DEBUG (TEMP - REMOVE LATER)
-    // ===============================
-    console.log("CLIENT ID:", client.id);
-    console.log("MATTERS COUNT:", matters.length);
+  
+  
 
-    for (const m of matters) {
-      console.log("MATTER:", m.caseNumber, "ACTIVITIES:", m.activities.length);
-    }
+   
 
     // ===============================
     // 3. BUILD TIMELINE (SAFE)

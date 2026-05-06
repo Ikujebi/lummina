@@ -23,15 +23,11 @@ export async function POST(req: Request) {
     // =========================
     // BODY
     // =========================
-    const { currentPassword, newPassword } =
-      await req.json();
+    const { currentPassword, newPassword } = await req.json();
 
     if (!currentPassword || !newPassword) {
       return NextResponse.json(
-        {
-          error:
-            "Current password and new password are required",
-        },
+        { error: "Current password and new password are required" },
         { status: 400 }
       );
     }
@@ -41,10 +37,7 @@ export async function POST(req: Request) {
     // =========================
     if (newPassword.length < 8) {
       return NextResponse.json(
-        {
-          error:
-            "New password must be at least 8 characters",
-        },
+        { error: "New password must be at least 8 characters" },
         { status: 400 }
       );
     }
@@ -53,9 +46,7 @@ export async function POST(req: Request) {
     // GET USER
     // =========================
     const dbUser = await prisma.user.findUnique({
-      where: {
-        id: user.id,
-      },
+      where: { id: user.id },
       select: {
         id: true,
         name: true,
@@ -81,9 +72,7 @@ export async function POST(req: Request) {
 
     if (!isValidPassword) {
       return NextResponse.json(
-        {
-          error: "Current password is incorrect",
-        },
+        { error: "Current password is incorrect" },
         { status: 400 }
       );
     }
@@ -98,10 +87,7 @@ export async function POST(req: Request) {
 
     if (samePassword) {
       return NextResponse.json(
-        {
-          error:
-            "New password cannot be the same as current password",
-        },
+        { error: "New password cannot be the same as current password" },
         { status: 400 }
       );
     }
@@ -115,57 +101,36 @@ export async function POST(req: Request) {
     // UPDATE USER
     // =========================
     await prisma.user.update({
-      where: {
-        id: user.id,
-      },
-      data: {
-        password: hashedPassword,
-      },
+      where: { id: user.id },
+      data: { password: hashedPassword },
     });
 
     // =========================
-    // EMAIL NOTIFICATION
+    // EMAIL NOTIFICATION (NON-BLOCKING)
     // =========================
     if (dbUser.email) {
-      const { data, error } =
-        await resend.emails.send({
-          from:
-            "Lummina Law Security <onboarding@resend.dev>",
-
-          to: dbUser.email,
-
-          subject:
-            "Your Lummina Law Password Was Changed",
-
-          text: `
+      await resend.emails.send({
+        from: "Lummina Law Security <onboarding@resend.dev>",
+        to: dbUser.email,
+        subject: "Your Lummina Law Password Was Changed",
+        text: `
 Hello ${dbUser.name || "User"},
 
 Your password was successfully changed.
 
-If you made this change, no further action is required.
-
-If you did NOT make this change, please contact support immediately.
+If you did not make this change, please contact support immediately.
 
 - Lummina Law Security
-          `,
-
-          html: `
+        `,
+        html: `
 <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
-  <h2 style="color:#5F021F;">
-    Password Changed Successfully
-  </h2>
+  <h2 style="color:#5F021F;">Password Changed Successfully</h2>
 
-  <p>
-    Hello <strong>${dbUser.name || "User"}</strong>,
-  </p>
+  <p>Hello <strong>${dbUser.name || "User"}</strong>,</p>
 
-  <p>
-    Your Lummina Law account password was successfully changed.
-  </p>
+  <p>Your Lummina Law account password was successfully changed.</p>
 
-  <p>
-    If you made this change, no further action is required.
-  </p>
+  <p>If you made this change, no further action is required.</p>
 
   <p style="color:#b91c1c;">
     If you did NOT make this change, please contact support immediately.
@@ -177,14 +142,10 @@ If you did NOT make this change, please contact support immediately.
     Lummina Law Security Team
   </p>
 </div>
-          `,
-        });
-
-      console.log("📧 PASSWORD EMAIL:", data);
-
-      if (error) {
-        console.error("❌ RESEND ERROR:", error);
-      }
+        `,
+      }).catch(() => {
+        // silently fail email (do not block flow)
+      });
     }
 
     // =========================
@@ -192,11 +153,9 @@ If you did NOT make this change, please contact support immediately.
     // =========================
     const response = NextResponse.json({
       success: true,
-      message:
-        "Password changed successfully. Please login again.",
+      message: "Password changed successfully. Please login again.",
     });
 
-    // 🔥 CLEAR AUTH COOKIE
     response.cookies.set("token", "", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -207,16 +166,9 @@ If you did NOT make this change, please contact support immediately.
 
     return response;
 
-  } catch (err) {
-    console.error(
-      "PASSWORD CHANGE ERROR:",
-      err
-    );
-
+  } catch {
     return NextResponse.json(
-      {
-        error: "Failed to change password",
-      },
+      { error: "Failed to change password" },
       { status: 500 }
     );
   }
