@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 
-// simple case number generator (reuse your existing logic if you already have one)
+// simple case number generator
 async function generateCaseNumber() {
   const year = new Date().getFullYear();
   const prefix = `LUM-${year}`;
@@ -25,16 +25,19 @@ async function generateCaseNumber() {
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
 
     if (!user || user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
-    const requestId = params.id;
+    const { id: requestId } = await context.params;
     const { lawyerId } = await req.json();
 
     if (!lawyerId) {
@@ -69,7 +72,7 @@ export async function POST(
       );
     }
 
-    // 3. convert request → real case (this is your design)
+    // 3. convert request → case
     const matter = await prisma.matter.update({
       where: { id: requestId },
       data: {
