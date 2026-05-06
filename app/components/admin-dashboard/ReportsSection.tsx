@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Select, Button, Spin } from "antd";
 import {
   BarChart,
@@ -42,42 +42,55 @@ export default function ReportsSection() {
   const [selectedLawyer, setSelectedLawyer] = useState<string | undefined>();
   const [selectedClient, setSelectedClient] = useState<string | undefined>();
 
-  const fetchAnalytics = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      params.append("period", period);
-      if (selectedLawyer) params.append("lawyerId", selectedLawyer);
-      if (selectedClient) params.append("clientId", selectedClient);
-
-      const res = await fetch(`/api/admin/reports?${params.toString()}`);
-      if (!res.ok) throw new Error("Failed to fetch analytics data");
-      const data: Analytics = await res.json();
-      setAnalytics(data);
-    } catch (err) {
-      console.error("Analytics fetch error:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [period, selectedLawyer, selectedClient]);
-
   useEffect(() => {
+    const fetchAnalytics = async () => {
+      setLoading(true);
+
+      try {
+        const params = new URLSearchParams();
+        params.append("period", period);
+
+        if (selectedLawyer) params.append("lawyerId", selectedLawyer);
+        if (selectedClient) params.append("clientId", selectedClient);
+
+        const res = await fetch(`/api/admin/reports?${params.toString()}`);
+
+        if (!res.ok) throw new Error("Failed to fetch analytics data");
+
+        const data: Analytics = await res.json();
+        setAnalytics(data);
+      } catch (err) {
+        console.error("Analytics fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchAnalytics();
-  }, [fetchAnalytics]);
+  }, [period, selectedLawyer, selectedClient]);
 
   const downloadCSV = () => {
     if (!analytics) return;
+
     const rows = [
       ["Date", "New Cases", "Closed Cases"],
-      ...analytics.chartData.map((d) => [d.date, d.newCases, d.closedCases]),
+      ...analytics.chartData.map((d) => [
+        d.date,
+        d.newCases,
+        d.closedCases,
+      ]),
     ];
+
     const csv = rows.map((r) => r.join(",")).join("\n");
+
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
+
     const a = document.createElement("a");
     a.href = url;
     a.download = `analytics-${period}.csv`;
     a.click();
+
     URL.revokeObjectURL(url);
   };
 
@@ -95,78 +108,50 @@ export default function ReportsSection() {
             <Select
               value={period}
               onChange={(value) => setPeriod(value)}
-              style={{ width: 140, color: "#5F021F", borderColor: "#5F021F" }}
+              style={{ width: 140 }}
               options={[
                 { value: "week", label: "This Week" },
                 { value: "month", label: "This Month" },
                 { value: "year", label: "This Year" },
               ]}
-              className="!border-[#5F021F] !text-[#5F021F]"
-              styles={{
-                popup: {
-                  root: {
-                    color: "#5F021F",
-                  },
-                },
-              }}
             />
 
             {/* Lawyer Filter */}
             <Select
               value={selectedLawyer}
-              onChange={(value) => {
-                setSelectedLawyer(value || undefined);
-                fetchAnalytics(); // auto fetch
-              }}
+              onChange={(value) => setSelectedLawyer(value || undefined)}
               placeholder="All Lawyers"
               allowClear
-              style={{ width: 180, color: "#5F021F", borderColor: "#5F021F" }}
-              className="!border-[#5F021F] !text-[#5F021F]"
+              style={{ width: 180 }}
               options={analytics?.lawyers.map((l) => ({
                 value: l.id,
                 label: l.name,
               }))}
-              styles={{
-                popup: {
-                  root: {
-                    color: "#5F021F",
-                  },
-                },
-              }}
             />
 
             {/* Client Filter */}
             <Select
               value={selectedClient}
-              onChange={(value) => {
-                setSelectedClient(value || undefined);
-                fetchAnalytics(); // auto fetch
-              }}
+              onChange={(value) => setSelectedClient(value || undefined)}
               placeholder="All Clients"
               allowClear
-              style={{ width: 180, color: "#5F021F", borderColor: "#5F021F" }}
-              className="!border-[#5F021F] !text-[#5F021F]"
+              style={{ width: 180 }}
               options={analytics?.clients.map((c) => ({
                 value: c.id,
                 label: c.name,
               }))}
-              styles={{
-                popup: {
-                  root: {
-                    color: "#5F021F",
-                  },
-                },
-              }}
             />
 
             {/* Buttons */}
             <Button
               type="primary"
-              onClick={fetchAnalytics}
               style={{
                 backgroundColor: "#FFA500",
                 borderColor: "#FFA500",
                 color: "#5F021F",
+              }}
+              onClick={() => {
+                // optional manual refresh if needed
               }}
             >
               Refresh Data
@@ -211,7 +196,7 @@ export default function ReportsSection() {
         </div>
 
         {/* Chart */}
-        {analytics?.chartData.length ? (
+        {analytics?.chartData?.length ? (
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={analytics.chartData}>
               <XAxis dataKey="date" />
@@ -245,10 +230,7 @@ function StatCard({ title, value, color }: StatCardProps) {
       style={{ borderColor: color || "#ccc" }}
     >
       <p className="text-sm text-[#5F021F]/70">{title}</p>
-      <h3
-        className="text-2xl font-semibold mt-2"
-        style={{ color: color || "#000" }}
-      >
+      <h3 className="text-2xl font-semibold mt-2" style={{ color }}>
         {value}
       </h3>
     </div>
