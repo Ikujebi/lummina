@@ -33,19 +33,27 @@ export async function POST(req: Request) {
       );
     }
 
-    const matter = await prisma.matter.create({
+    // ✅ STORE AS REQUEST (NOT A MATTER)
+    const request = await prisma.emailLog.create({
       data: {
-        title,
-        description,
+        recipient: "admin@system.com",
+        subject: `New Matter Request: ${title}`,
+        body: JSON.stringify({
+          clientId: client.id,
+          title,
+          description,
+        }),
         status: "PENDING",
-        caseNumber: `REQ-${Date.now()}`,
-        clientId: client.id,
-        lawyerId: "", // or null if your schema allows
       },
     });
 
-    return NextResponse.json({ matter });
-  } catch {
+    return NextResponse.json({
+      message: "Request submitted successfully",
+      requestId: request.id,
+    });
+  } catch (error) {
+    console.error("MATTER REQUEST ERROR:", error);
+
     return NextResponse.json(
       { error: "Failed to submit request" },
       { status: 500 }

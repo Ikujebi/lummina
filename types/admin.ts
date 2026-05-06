@@ -1,18 +1,18 @@
 // types/admin.ts
-export interface Widget {
+export type Widget ={
   label: string;
   value: string | number;
   trend?: string;
   trendUp?: boolean;
 }
 
-export interface Alert {
+export type Alert ={
   title: string;
   meta: string;
   actionText: string;
 }
 
-export interface User {
+export type User ={
   id: string;
   name: string;
   email: string;
@@ -20,20 +20,20 @@ export interface User {
    isApproved: boolean;
 }
 
-export interface Lawyer {
+export type Lawyer ={
   id: string;
   name: string;
   email: string;
   specialization: string;
 }
 
-export interface Client {
+export type Client ={
   id: string;
   name: string;
   email: string;
 }
 
-export interface Matter {
+export type Matter ={
   id: string;
   title: string;
   status: string;
@@ -41,13 +41,13 @@ export interface Matter {
   client: string;
 }
 
-export interface Report {
+export type Report ={
   id: string;
   title: string;
   createdAt: string;
 }
 
-export interface AuditLog {
+export type AuditLog ={
   id: string;
   action: string;
   user: string;
@@ -55,24 +55,24 @@ export interface AuditLog {
 }
 
 // Breakdown of matters by status
-export interface MatterStatusBreakdown {
+export type MatterStatusBreakdown ={
   status: string; // "ACTIVE" | "PENDING" | "CLOSED" (match Prisma enum)
   _count: number;
 }
 
 // Monthly matters for trend charts
-export interface MonthlyMatter {
+export type MonthlyMatter ={
   month: string; // e.g., "2026-03"
   count: number;
 }
 
 // Full report summary returned by backend /api/admin/reports
-export interface ReportSummary {
+export type ReportSummary ={
   totalMatters: number;
   statusBreakdown: MatterStatusBreakdown[];
   monthlyMatters: MonthlyMatter[];
 }
-export interface Case {
+export type Case ={
   id: string;
   title: string;
   status: "OPEN" | "IN_PROGRESS" | "CLOSED";
@@ -80,3 +80,22 @@ export interface Case {
   client: string;
   caseNumber: string;
 }
+
+export type MatterRequest = {
+  id: string;
+  subject: string | null;
+  recipient: string | null;
+  status: string;
+  sentAt: string | Date;
+
+  data: {
+    clientId?: string;
+    title?: string;
+    description?: string;
+  };
+
+  client?: {
+    id: string;
+    name: string;
+  } | null;
+};

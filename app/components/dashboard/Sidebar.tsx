@@ -19,6 +19,7 @@ export default function Sidebar({ open, onClose }: Props) {
     { label: "Documents", href: "/client/documents" },
     { label: "Matters", href: "/client/cases" },
     { label: "Glossary", href: "/glossary" },
+    { label: "Request New Matter", href: "/client/matters/request" },
     { label: "Settings", href: "/client/settings" },
   ];
 

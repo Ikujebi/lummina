@@ -16,6 +16,7 @@ type CaseItem = {
   title: string;
   caseNumber: string;
   status: string;
+  type?: "CASE" | "COMPLIANCE";
   lawyer?: {
     name: string;
   };
@@ -25,12 +26,26 @@ function getStatusStyles(status: string) {
   switch (status.toLowerCase()) {
     case "open":
       return "bg-emerald-50 text-emerald-700 border border-emerald-200";
+
     case "pending":
       return "bg-amber-50 text-amber-700 border border-amber-200";
+
     case "closed":
       return "bg-gray-100 text-gray-700 border border-gray-200";
+
     default:
       return "bg-[#FFF4E0] text-[#5F021F] border border-[#F3D5A4]";
+  }
+}
+
+function getTypeStyles(type?: "CASE" | "COMPLIANCE") {
+  switch (type) {
+    case "COMPLIANCE":
+      return "bg-blue-50 text-blue-700 border border-blue-200";
+
+    case "CASE":
+    default:
+      return "bg-purple-50 text-purple-700 border border-purple-200";
   }
 }
 
@@ -54,12 +69,10 @@ export default function ClientCasesPage() {
 
         const data = await res.json();
 
-        // ✅ FIX: matters come from client object
         const matters = data.client?.matters || [];
 
         setCases(matters);
-      } catch (err) {
-        console.error(err);
+      } catch {
         setCases([]);
       } finally {
         setLoading(false);
@@ -89,7 +102,7 @@ export default function ClientCasesPage() {
     return (
       <div className="flex items-center gap-3 text-[#5F021F]">
         <Loader2 className="animate-spin" size={18} />
-        <span>Loading cases...</span>
+        <span>Loading matters...</span>
       </div>
     );
   }
@@ -106,7 +119,7 @@ export default function ClientCasesPage() {
           </h1>
 
           <p className="mt-2 text-sm text-[#5F021F]/70">
-            Track your legal matters, updates, and lawyer activity.
+            Track your legal matters, compliance requests, updates, and lawyer activity.
           </p>
         </div>
 
@@ -178,6 +191,7 @@ export default function ClientCasesPage() {
         </div>
       ) : (
         <div className="grid gap-5">
+
           {filteredCases.map((c) => (
             <Link
               key={c.id}
@@ -193,6 +207,7 @@ export default function ClientCasesPage() {
 
                     <div className="flex flex-wrap items-center gap-3">
 
+                      {/* STATUS */}
                       <span
                         className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusStyles(
                           c.status
@@ -201,6 +216,16 @@ export default function ClientCasesPage() {
                         {c.status}
                       </span>
 
+                      {/* TYPE */}
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-semibold ${getTypeStyles(
+                          c.type
+                        )}`}
+                      >
+                        {c.type || "CASE"}
+                      </span>
+
+                      {/* CASE NUMBER */}
                       <span className="text-xs font-medium tracking-wide text-[#5F021F]/50">
                         {c.caseNumber}
                       </span>
