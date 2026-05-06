@@ -1,28 +1,39 @@
 import { NextResponse } from "next/server";
-
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 
 export async function GET() {
   try {
-    // 1. Get authenticated user
     const user = await getCurrentUser();
 
     if (!user?.id) {
       return NextResponse.json(
-        { message: "Unauthorized" },
+        { success: false, message: "Unauthorized" },
         { status: 401 }
       );
     }
 
-    const clientId = user.id;
+    // ✅ FIX: resolve real client first
+    const client = await prisma.client.findFirst({
+      where: {
+        userId: user.id,
+      },
+    });
 
-    // 2. Fetch documents
+    if (!client) {
+      return NextResponse.json({
+        success: true,
+        documents: [],
+      });
+    }
+
     const documents = await prisma.document.findMany({
       where: {
         matter: {
-          clientId,
+          clientId: client.id,
+          
         },
+        
       },
       include: {
         matter: {
@@ -32,8 +43,6 @@ export async function GET() {
             caseNumber: true,
           },
         },
-
-        // ✅ FIX: correct relation name from Prisma schema
         uploader: {
           select: {
             id: true,
@@ -41,18 +50,25 @@ export async function GET() {
           },
         },
       },
-
       orderBy: {
         createdAt: "desc",
       },
     });
+    console.log({
+  userId: user.id,
+  clientId: client?.id,
+});
 
-    return NextResponse.json(documents);
+    return NextResponse.json({
+      success: true,
+      documents,
+    });
   } catch (error) {
     console.error("CLIENT_DOCUMENTS_ERROR:", error);
 
     return NextResponse.json(
       {
+        success: false,
         message: "Failed to fetch documents",
         error: error instanceof Error ? error.message : String(error),
       },

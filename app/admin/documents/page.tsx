@@ -109,7 +109,7 @@ export default function DocumentsPage() {
         <div className="flex gap-2 flex-wrap mb-6">
           {[
             { key: "all", label: "All Files" },
-            { key: "cases", label: "By Case" },
+            { key: "cases", label: "By Matter" },
             { key: "status", label: "By Status" },
             { key: "mine", label: "My Uploads" },
           ].map((t) => (
@@ -195,7 +195,7 @@ export default function DocumentsPage() {
               <thead>
                 <tr className="border-b text-left text-[#5F021F]">
                   <th className="p-3">Name</th>
-                  <th className="p-3">Case</th>
+                  <th className="p-3">Matter</th>
                   <th className="p-3">Uploader</th>
                   <th className="p-3">Status</th>
                   <th className="p-3">File</th>

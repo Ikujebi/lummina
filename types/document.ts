@@ -1,18 +1,29 @@
 export interface ClientDocument {
   id: string;
-  title: string;
-  description?: string;
+
+  name: string;
+
   fileUrl: string;
-  fileType: string;
+
+  status: string;
+
+  uploadedBy: string;
+
+  folderPath?: string | null;
+
+  previewUrl?: string | null;
+
+  externalId?: string | null;
+
   createdAt: string;
-  size?: number;
+
   matter?: {
     id: string;
     title?: string;
     caseNumber?: string;
   } | null;
 
-  uploadedBy?: {
+  uploader?: {
     id: string;
     name: string;
   } | null;

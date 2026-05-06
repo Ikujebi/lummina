@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { Gyahegi } from "@/app/fonts";
+
 import Image from "next/image";
 import Logo from "@/public/img/Lummina2.png";
-import Wordlo from "@/public/img/logo1.png";
 import { Bell, Menu } from "lucide-react";
 
 type User = {
@@ -68,15 +69,11 @@ export default function Topbar({
         </div>
 
         <div className="flex flex-col">
-          <div className="relative md:w-28 md:h-12">
-            <Image
-              src={Wordlo} // or Logo if that's your import name
-              alt="Lummina"
-              fill
-              priority
-              className="object-contain"
-            />
-          </div>
+          <span
+            className={`${Gyahegi.className} font-bold text-md md:text-md tracking-wider text-[#5F021F] leading-none pb-1`}
+          >
+            LUMMINA
+          </span>
 
           <span className="text-[10px] font-medium text-[#FFA500] tracking-[0.2em] uppercase hidden md:block">
             Law Portal

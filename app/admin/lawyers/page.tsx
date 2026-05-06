@@ -27,23 +27,28 @@ export default function LawyersPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [message, setMessage] = useState<string | null>(null);
 
+  // ✅ FIXED: fetch inside useEffect (no ESLint warning)
   useEffect(() => {
+    const fetchLawyers = async () => {
+      setLoading(true);
+
+      try {
+        const res = await fetch("/api/admin/users");
+        const data = await res.json();
+
+        setLawyers(
+          data.users.filter((u: User) => u.role === "LAWYER"),
+        );
+      } catch (err) {
+        console.error(err);
+        setMessage("Failed to fetch lawyers");
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchLawyers();
   }, []);
-
-  async function fetchLawyers() {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/admin/users");
-      const data = await res.json();
-      setLawyers(data.users.filter((u: User) => u.role === "LAWYER"));
-    } catch (err) {
-      console.error(err);
-      setMessage("Failed to fetch lawyers");
-    } finally {
-      setLoading(false);
-    }
-  }
 
   const addLawyer = async () => {
     if (!newLawyerName || !newLawyerEmail || !newLawyerPassword) {
@@ -94,9 +99,6 @@ export default function LawyersPage() {
         body: JSON.stringify({
           email: inviteEmail,
           role: "LAWYER",
-          expiresAt: new Date(
-            Date.now() + 7 * 24 * 60 * 60 * 1000,
-          ).toISOString(),
         }),
       });
 
@@ -121,21 +123,21 @@ export default function LawyersPage() {
 
   return (
     <div className="flex flex-col gap-4 md:p-4">
-      {/* Inline message */}
+      {/* Message */}
       {message && (
-        <div className="flex flex-col gap-2 border rounded bg-[#F7E7CE] w-full max-w-[16rem] md:max-w-[600px] mx-auto p-4 text-sm sm:text-base overflow-x-auto">
+        <div className="flex flex-col gap-2 border rounded bg-[#F7E7CE] w-full max-w-[600px] mx-auto p-4 text-sm">
           {message}
         </div>
       )}
 
       {/* Header */}
-      <section className="flex flex-col sm:flex-row flex-wrap justify-between items-start sm:items-center gap-3 sm:gap-0">
-        <div className="w-full sm:max-w-[70%] break-words">
+      <section className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div className="w-full sm:max-w-[70%]">
           <h1 className="text-xl sm:text-2xl font-semibold text-[#5F021F]">
             Lawyers
           </h1>
           <p className="text-xs md:text-sm text-[#5F021F]/70">
-            Manage all lawyers in the system, add new ones or send Invite.
+            Manage all lawyers in the system, add new ones or send invite.
           </p>
         </div>
 
@@ -149,7 +151,7 @@ export default function LawyersPage() {
 
           <button
             onClick={() => setShowInviteForm((prev) => !prev)}
-            className="bg-[#021F5F]/90 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded hover:bg-[#03287a]"
+            className="bg-[#021F5F]/90 text-white px-3 sm:px-4 py-2 rounded hover:bg-[#03287a]"
           >
             Invite Lawyer
           </button>
@@ -158,39 +160,37 @@ export default function LawyersPage() {
 
       {/* Add Lawyer Form */}
       {showForm && (
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-end w-full">
-          <div className="flex flex-col gap-2 w-[54%] sm:w-auto">
-            <input
-              type="text"
-              placeholder="Name"
-              value={newLawyerName}
-              onChange={(e) => setNewLawyerName(e.target.value)}
-              className="px-3 py-2 border rounded"
-            />
+        <div className="flex flex-col gap-2 w-full sm:w-96 border p-4 rounded">
+          <input
+            type="text"
+            placeholder="Name"
+            value={newLawyerName}
+            onChange={(e) => setNewLawyerName(e.target.value)}
+            className="px-3 py-2 border rounded"
+          />
 
-            <input
-              type="email"
-              placeholder="Email"
-              value={newLawyerEmail}
-              onChange={(e) => setNewLawyerEmail(e.target.value)}
-              className="px-3 py-2 border rounded"
-            />
+          <input
+            type="email"
+            placeholder="Email"
+            value={newLawyerEmail}
+            onChange={(e) => setNewLawyerEmail(e.target.value)}
+            className="px-3 py-2 border rounded"
+          />
 
-            <input
-              type="password"
-              placeholder="Password"
-              value={newLawyerPassword}
-              onChange={(e) => setNewLawyerPassword(e.target.value)}
-              className="px-3 py-2 border rounded"
-            />
+          <input
+            type="password"
+            placeholder="Password"
+            value={newLawyerPassword}
+            onChange={(e) => setNewLawyerPassword(e.target.value)}
+            className="px-3 py-2 border rounded"
+          />
 
-            <button
-              onClick={addLawyer}
-              className="bg-[#5F021F] text-white px-4 py-2 rounded"
-            >
-              Add Lawyer
-            </button>
-          </div>
+          <button
+            onClick={addLawyer}
+            className="bg-[#5F021F] text-white px-4 py-2 rounded"
+          >
+            Add Lawyer
+          </button>
         </div>
       )}
 
@@ -238,90 +238,49 @@ export default function LawyersPage() {
       ) : (
         <UsersTable
           users={filteredLawyers}
-
-          /* =======================
-             APPROVE (UNCHANGED)
-          ======================= */
           onApprove={async (id) => {
-            try {
-              await approveUser(id);
+            await approveUser(id);
 
-              setLawyers((prev) =>
-                prev.map((u) =>
-                  u.id === id ? { ...u, isApproved: true } : u,
-                ),
-              );
+            setLawyers((prev) =>
+              prev.map((u) =>
+                u.id === id ? { ...u, isApproved: true } : u,
+              ),
+            );
 
-              setMessage("User approved successfully");
-            } catch (err) {
-              console.error(err);
-              setMessage("Failed to approve user");
-            }
+            setMessage("User approved successfully");
           }}
-
-          /* =======================
-             EDIT (NOW REAL BACKEND)
-          ======================= */
           onSave={async (updatedUser) => {
-            try {
-              const res = await fetch(`/api/admin/users/${updatedUser.id}`, {
-                method: "PUT",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  name: updatedUser.name,
-                  email: updatedUser.email,
-                  role: updatedUser.role,
-                  isApproved: updatedUser.isApproved,
-                }),
-              });
+            const res = await fetch(`/api/admin/users/${updatedUser.id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(updatedUser),
+            });
 
-              const data = await res.json();
+            const data = await res.json();
 
-              if (!res.ok) {
-                setMessage(data.error || "Failed to update user");
-                return;
-              }
-
-              setLawyers((prev) =>
-                prev.map((u) =>
-                  u.id === updatedUser.id ? data.user : u
-                )
-              );
-
-              setMessage("User updated successfully");
-            } catch (err) {
-              console.error(err);
-              setMessage("Failed to update user");
+            if (!res.ok) {
+              setMessage(data.error);
+              return;
             }
+
+            setLawyers((prev) =>
+              prev.map((u) =>
+                u.id === updatedUser.id ? data.user : u,
+              ),
+            );
+
+            setMessage("User updated successfully");
           }}
-
-          /* =======================
-             DELETE (NOW REAL BACKEND)
-          ======================= */
           onDelete={async (id) => {
-            try {
-              const res = await fetch(`/api/admin/users/${id}`, {
-                method: "DELETE",
-              });
+            await fetch(`/api/admin/users/${id}`, {
+              method: "DELETE",
+            });
 
-              const data = await res.json();
+            setLawyers((prev) =>
+              prev.filter((u) => u.id !== id),
+            );
 
-              if (!res.ok) {
-                setMessage(data.error || "Failed to delete user");
-                return;
-              }
-
-              setLawyers((prev) =>
-                prev.filter((u) => u.id !== id),
-              );
-
-              setMessage("User deleted successfully");
-            } catch (err) {
-              console.error(err);
-              setMessage("Failed to delete user");
-            }
+            setMessage("User deleted successfully");
           }}
         />
       )}

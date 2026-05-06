@@ -2,29 +2,18 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { randomUUID } from "crypto";
-// import nodemailer from "nodemailer";
-import { Prisma } from "@prisma/client"
-import { Resend } from "resend"
+import { Prisma } from "@prisma/client";
+import { Resend } from "resend";
 
 // --- Types ---
 interface InvitationBody {
   id?: string;
   email?: string;
   role?: "ADMIN" | "LAWYER" | "CLIENT";
-  expiresAt?: string;
 }
 
-// Nodemailer transporter
-/* const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT),
-  secure: Number(process.env.SMTP_PORT) === 465,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-}); */
 const resend = new Resend(process.env.RESEND_API_KEY);
+
 // --- Helper: Require admin ---
 async function requireAdmin() {
   const user = await getCurrentUser();
@@ -53,12 +42,12 @@ export async function GET() {
 // --- POST: Create invitation & send email ---
 export async function POST(req: Request) {
   try {
-    const admin = await requireAdmin(); // ✅ get admin user
+    const admin = await requireAdmin();
 
     const body: InvitationBody = await req.json();
-    const { email, role, expiresAt } = body;
+    const { email, role } = body;
 
-    if (!email || !role || !expiresAt) {
+    if (!email || !role) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -67,58 +56,47 @@ export async function POST(req: Request) {
 
     const token = randomUUID();
 
+    // ✅ FIXED: 24 HOUR EXPIRY (server controlled)
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
     const invitation = await prisma.invitation.create({
       data: {
         email,
         role,
         token,
-        expiresAt: new Date(expiresAt),
-          userId: admin.id,// ✅ FIXED
-      }as Prisma.InvitationUncheckedCreateInput, 
+        expiresAt,
+        userId: admin.id,
+      } as Prisma.InvitationUncheckedCreateInput,
     });
 
     const invitationLink = `${process.env.NEXT_PUBLIC_BASE_URL}/register?token=${token}`;
 
-   /*  await transporter.sendMail({
-      from: `"Lummina Law" <${process.env.SMTP_USER}>`,
+    const { data, error } = await resend.emails.send({
+      from: "Lummina Law <noreply@legal.lumminalaw.com>",
       to: email,
       subject: "You're invited to Lummina Law",
-      html: `
-        <p>Hello,</p>
-        <p>You have been invited to join Lummina Law as a <strong>${role}</strong>.</p>
-        <p>Click the link below to accept your invitation:</p>
-        <a href="${invitationLink}">${invitationLink}</a>
-        <p>This link expires on ${new Date(expiresAt).toLocaleString()}.</p>
-        <p>Thanks,<br/>Lummina Law Team</p>
-      `,
-    }); */
-
-
-    const { data, error } = await resend.emails.send({
-  from: "Lummina Law <onboarding@resend.dev>",
-  to: email,
-  subject: "You're invited to Lummina Law",
-  text: `
+      text: `
 You have been invited as a ${role}.
 
 ${invitationLink}
 
-Expires: ${new Date(expiresAt).toLocaleString()}
-  `,
-  html: `
-    <p>Hello,</p>
-    <p>You have been invited to join Lummina Law as a <strong>${role}</strong>.</p>
-    <p><a href="${invitationLink}">Accept Invitation</a></p>
-    <p>Expires: ${new Date(expiresAt).toLocaleString()}</p>
-  `,
-});
+Expires: ${expiresAt.toLocaleString()}
+      `,
+      html: `
+        <p>Hello,</p>
+        <p>You have been invited to join Lummina Law as a <strong>${role}</strong>.</p>
+        <p><a href="${invitationLink}">Accept Invitation</a></p>
+        <p>Expires: ${expiresAt.toLocaleString()}</p>
+      `,
+    });
 
-console.log("📧 RESEND RESPONSE:", data);
-console.log("❌ RESEND ERROR:", error);
+    console.log("📧 RESEND RESPONSE:", data);
+    console.log("❌ RESEND ERROR:", error);
 
-if (error) {
-  throw new Error(error.message);
-}
+    if (error) {
+      throw new Error(error.message);
+    }
+
     return NextResponse.json({
       message: "Invitation created and email sent",
       invitation,
@@ -138,19 +116,18 @@ export async function PATCH(req: Request) {
     await requireAdmin();
 
     const body: InvitationBody = await req.json();
-    const { id, expiresAt } = body;
+    const { id } = body;
 
-    if (!id)
+    if (!id) {
       return NextResponse.json(
         { error: "Missing invitation ID" },
         { status: 400 }
       );
+    }
 
     const invitation = await prisma.invitation.update({
       where: { id },
-      data: {
-        expiresAt: expiresAt ? new Date(expiresAt) : undefined,
-      },
+      data: {},
     });
 
     return NextResponse.json({
@@ -173,11 +150,12 @@ export async function DELETE(req: Request) {
 
     const { id } = await req.json();
 
-    if (!id)
+    if (!id) {
       return NextResponse.json(
         { error: "Missing invitation ID" },
         { status: 400 }
       );
+    }
 
     await prisma.invitation.delete({
       where: { id },
