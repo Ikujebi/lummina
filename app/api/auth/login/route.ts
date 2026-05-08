@@ -4,8 +4,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
-    console.log("DB HOST:", process.env.DATABASE_URL?.split("@")[1]);
-  console.log("DB FULL:", process.env.DATABASE_URL);
+    
   try {
     const { email, password } = await req.json();
 
