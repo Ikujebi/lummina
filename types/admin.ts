@@ -83,16 +83,17 @@ export type Case ={
 
 export type MatterRequest = {
   id: string;
-  subject: string | null;
-  recipient: string | null;
-  status: string;
-  sentAt: string | Date;
 
-  data: {
-    clientId?: string;
-    title?: string;
-    description?: string;
-  };
+  title: string;
+  description?: string | null;
+
+  status: "PENDING" | "OPEN" | "IN_PROGRESS" | "CLOSED";
+
+  caseNumber: string;
+
+  createdAt?: string;
+
+  clientId: string;
 
   client?: {
     id: string;

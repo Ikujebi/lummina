@@ -3,14 +3,22 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 
-// simple case number generator
+// ============================================
+// GENERATE CASE NUMBER
+// ============================================
 async function generateCaseNumber() {
   const year = new Date().getFullYear();
   const prefix = `LUM-${year}`;
 
   const last = await prisma.matter.findFirst({
-    where: { caseNumber: { startsWith: prefix } },
-    orderBy: { caseNumber: "desc" },
+    where: {
+      caseNumber: {
+        startsWith: prefix,
+      },
+    },
+    orderBy: {
+      caseNumber: "desc",
+    },
   });
 
   let next = 1;
@@ -23,11 +31,17 @@ async function generateCaseNumber() {
   return `${prefix}-${String(next).padStart(4, "0")}`;
 }
 
+// ============================================
+// APPROVE MATTER REQUEST
+// ============================================
 export async function POST(
   req: Request,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // ============================================
+    // AUTH
+    // ============================================
     const user = await getCurrentUser();
 
     if (!user || user.role !== "ADMIN") {
@@ -37,8 +51,13 @@ export async function POST(
       );
     }
 
-    const { id: requestId } = await context.params;
-    const { lawyerId } = await req.json();
+    // ============================================
+    // PARAMS
+    // ============================================
+    const { id: requestId } = await params;
+
+    const body = await req.json();
+    const lawyerId = body.lawyerId;
 
     if (!lawyerId) {
       return NextResponse.json(
@@ -47,10 +66,17 @@ export async function POST(
       );
     }
 
-    // 1. fetch request
+    // ============================================
+    // FIND PENDING MATTER
+    // ============================================
     const request = await prisma.matter.findUnique({
-      where: { id: requestId },
-      include: { client: true },
+      where: {
+        id: requestId,
+      },
+      include: {
+        client: true,
+        lawyer: true,
+      },
     });
 
     if (!request) {
@@ -60,21 +86,39 @@ export async function POST(
       );
     }
 
-    // 2. validate lawyer
-    const lawyer = await prisma.user.findUnique({
-      where: { id: lawyerId },
-    });
-
-    if (!lawyer || lawyer.role !== "LAWYER") {
+    // ============================================
+    // ENSURE IT IS PENDING
+    // ============================================
+    if (request.status !== "PENDING") {
       return NextResponse.json(
-        { error: "Invalid lawyer" },
+        { error: "This request has already been processed" },
         { status: 400 }
       );
     }
 
-    // 3. convert request → case
+    // ============================================
+    // VALIDATE LAWYER
+    // ============================================
+    const lawyer = await prisma.user.findUnique({
+      where: {
+        id: lawyerId,
+      },
+    });
+
+    if (!lawyer || lawyer.role !== "LAWYER") {
+      return NextResponse.json(
+        { error: "Invalid lawyer selected" },
+        { status: 400 }
+      );
+    }
+
+    // ============================================
+    // APPROVE REQUEST
+    // ============================================
     const matter = await prisma.matter.update({
-      where: { id: requestId },
+      where: {
+        id: requestId,
+      },
       data: {
         lawyerId,
         status: "OPEN",
@@ -86,14 +130,26 @@ export async function POST(
       },
     });
 
-    await logAudit(user.id, "APPROVE_REQUEST", "Matter", requestId);
+    // ============================================
+    // AUDIT LOG
+    // ============================================
+    await logAudit(
+      user.id,
+      "APPROVE_REQUEST",
+      "Matter",
+      matter.id
+    );
 
+    // ============================================
+    // RESPONSE
+    // ============================================
     return NextResponse.json({
-      message: "Request approved",
+      message: "Matter approved successfully",
       matter,
     });
-  } catch (err) {
-    console.error(err);
+
+  } catch (error) {
+    console.error("Approve matter error:", error);
 
     return NextResponse.json(
       { error: "Failed to approve request" },
