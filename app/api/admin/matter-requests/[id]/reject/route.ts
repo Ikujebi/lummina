@@ -4,35 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 
 // ============================================
-// GENERATE CASE NUMBER
-// ============================================
-async function generateCaseNumber() {
-  const year = new Date().getFullYear();
-  const prefix = `LUM-${year}`;
-
-  const last = await prisma.matter.findFirst({
-    where: {
-      caseNumber: {
-        startsWith: prefix,
-      },
-    },
-    orderBy: {
-      caseNumber: "desc",
-    },
-  });
-
-  let next = 1;
-
-  if (last?.caseNumber) {
-    const parts = last.caseNumber.split("-");
-    next = Number(parts[2] ?? 0) + 1;
-  }
-
-  return `${prefix}-${String(next).padStart(4, "0")}`;
-}
-
-// ============================================
-// APPROVE MATTER REQUEST
+// REJECT MATTER REQUEST
 // ============================================
 export async function POST(
   req: Request,
@@ -57,28 +29,11 @@ export async function POST(
     const { id: requestId } = params;
 
     // ============================================
-    // BODY
-    // ============================================
-    const body = await req.json();
-    const lawyerId = body.lawyerId;
-
-    if (!lawyerId) {
-      return NextResponse.json(
-        { error: "Lawyer is required" },
-        { status: 400 }
-      );
-    }
-
-    // ============================================
-    // FIND PENDING MATTER
+    // FIND REQUEST
     // ============================================
     const request = await prisma.matter.findUnique({
       where: {
         id: requestId,
-      },
-      include: {
-        client: true,
-        lawyer: true,
       },
     });
 
@@ -90,7 +45,7 @@ export async function POST(
     }
 
     // ============================================
-    // ENSURE IT IS PENDING
+    // ENSURE IT IS STILL PENDING
     // ============================================
     if (request.status !== "PENDING") {
       return NextResponse.json(
@@ -100,36 +55,14 @@ export async function POST(
     }
 
     // ============================================
-    // VALIDATE LAWYER
-    // ============================================
-    const lawyer = await prisma.user.findUnique({
-      where: {
-        id: lawyerId,
-      },
-    });
-
-    if (!lawyer || lawyer.role !== "LAWYER") {
-      return NextResponse.json(
-        { error: "Invalid lawyer selected" },
-        { status: 400 }
-      );
-    }
-
-    // ============================================
-    // APPROVE REQUEST
+    // REJECT REQUEST
     // ============================================
     const matter = await prisma.matter.update({
       where: {
         id: requestId,
       },
       data: {
-        lawyerId,
-        status: "OPEN",
-        caseNumber: await generateCaseNumber(),
-      },
-      include: {
-        client: true,
-        lawyer: true,
+        status: "CLOSED",
       },
     });
 
@@ -138,7 +71,7 @@ export async function POST(
     // ============================================
     await logAudit(
       user.id,
-      "APPROVE_REQUEST",
+      "REJECT_REQUEST",
       "Matter",
       matter.id
     );
@@ -147,15 +80,14 @@ export async function POST(
     // RESPONSE
     // ============================================
     return NextResponse.json({
-      message: "Matter approved successfully",
-      matter,
+      message: "Matter request rejected successfully",
     });
 
   } catch (error) {
-    console.error("Approve matter error:", error);
+    console.error("Reject matter error:", error);
 
     return NextResponse.json(
-      { error: "Failed to approve request" },
+      { error: "Failed to reject request" },
       { status: 500 }
     );
   }
