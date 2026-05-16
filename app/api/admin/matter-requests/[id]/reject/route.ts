@@ -1,19 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 
-// ============================================
-// REJECT MATTER REQUEST
-// ============================================
 export async function POST(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // ============================================
-    // AUTH
-    // ============================================
     const user = await getCurrentUser();
 
     if (!user || user.role !== "ADMIN") {
@@ -23,18 +17,12 @@ export async function POST(
       );
     }
 
-    // ============================================
-    // PARAMS
-    // ============================================
-    const { id: requestId } = params;
+    // ✅ IMPORTANT: match approve style
+    const { id: requestId } = await params;
 
-    // ============================================
     // FIND REQUEST
-    // ============================================
     const request = await prisma.matter.findUnique({
-      where: {
-        id: requestId,
-      },
+      where: { id: requestId },
     });
 
     if (!request) {
@@ -44,9 +32,6 @@ export async function POST(
       );
     }
 
-    // ============================================
-    // ENSURE IT IS STILL PENDING
-    // ============================================
     if (request.status !== "PENDING") {
       return NextResponse.json(
         { error: "This request has already been processed" },
@@ -54,21 +39,14 @@ export async function POST(
       );
     }
 
-    // ============================================
-    // REJECT REQUEST
-    // ============================================
+    // REJECT (CLOSE)
     const matter = await prisma.matter.update({
-      where: {
-        id: requestId,
-      },
+      where: { id: requestId },
       data: {
         status: "CLOSED",
       },
     });
 
-    // ============================================
-    // AUDIT LOG
-    // ============================================
     await logAudit(
       user.id,
       "REJECT_REQUEST",
@@ -76,9 +54,6 @@ export async function POST(
       matter.id
     );
 
-    // ============================================
-    // RESPONSE
-    // ============================================
     return NextResponse.json({
       message: "Matter request rejected successfully",
     });

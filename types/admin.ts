@@ -72,14 +72,20 @@ export type ReportSummary ={
   statusBreakdown: MatterStatusBreakdown[];
   monthlyMatters: MonthlyMatter[];
 }
-export type Case ={
+export type UserMini = {
+  id: string;
+  name: string;
+};
+
+export type Case = {
   id: string;
   title: string;
-  status: "OPEN" | "IN_PROGRESS" | "CLOSED";
-  lawyer: string;
-  client: string;
-  caseNumber: string;
-}
+  caseNumber?: string;
+  status: "OPEN" | "IN_PROGRESS" | "PENDING" | "CLOSED";
+
+  lawyer?: UserMini | null;
+  client?: UserMini | null;
+};
 
 export type MatterRequest = {
   id: string;

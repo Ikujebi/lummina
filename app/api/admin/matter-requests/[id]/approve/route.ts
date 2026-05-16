@@ -32,16 +32,14 @@ async function generateCaseNumber() {
 }
 
 // ============================================
-// APPROVE MATTER REQUEST
+// APPROVE MATTER REQUEST (emailLog based)
 // ============================================
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // ============================================
-    // AUTH
-    // ============================================
+    // ================= AUTH =================
     const user = await getCurrentUser();
 
     if (!user || user.role !== "ADMIN") {
@@ -51,14 +49,9 @@ export async function POST(
       );
     }
 
-    // ============================================
-    // PARAMS
-    // ============================================
-    const { id: requestId } = params;
+    // ================= PARAMS =================
+    const { id: requestId } = await params;
 
-    // ============================================
-    // BODY
-    // ============================================
     const body = await req.json();
     const lawyerId = body.lawyerId;
 
@@ -69,16 +62,10 @@ export async function POST(
       );
     }
 
-    // ============================================
-    // FIND PENDING MATTER
-    // ============================================
-    const request = await prisma.matter.findUnique({
+    // ================= FIND EMAIL LOG =================
+    const request = await prisma.emailLog.findUnique({
       where: {
         id: requestId,
-      },
-      include: {
-        client: true,
-        lawyer: true,
       },
     });
 
@@ -89,9 +76,6 @@ export async function POST(
       );
     }
 
-    // ============================================
-    // ENSURE IT IS PENDING
-    // ============================================
     if (request.status !== "PENDING") {
       return NextResponse.json(
         { error: "This request has already been processed" },
@@ -99,9 +83,24 @@ export async function POST(
       );
     }
 
-    // ============================================
-    // VALIDATE LAWYER
-    // ============================================
+    // ================= PARSE REQUEST DATA =================
+    const parsedBody =
+      typeof request.body === "string"
+        ? JSON.parse(request.body)
+        : request.body || {};
+
+    const clientId = parsedBody.clientId;
+    const title = parsedBody.title;
+    const description = parsedBody.description;
+
+    if (!clientId || !title) {
+      return NextResponse.json(
+        { error: "Invalid request payload" },
+        { status: 400 }
+      );
+    }
+
+    // ================= VALIDATE LAWYER =================
     const lawyer = await prisma.user.findUnique({
       where: {
         id: lawyerId,
@@ -115,14 +114,12 @@ export async function POST(
       );
     }
 
-    // ============================================
-    // APPROVE REQUEST
-    // ============================================
-    const matter = await prisma.matter.update({
-      where: {
-        id: requestId,
-      },
+    // ================= CREATE MATTER =================
+    const matter = await prisma.matter.create({
       data: {
+        title,
+        description,
+        clientId,
         lawyerId,
         status: "OPEN",
         caseNumber: await generateCaseNumber(),
@@ -133,9 +130,17 @@ export async function POST(
       },
     });
 
-    // ============================================
-    // AUDIT LOG
-    // ============================================
+    // ================= MARK EMAIL LOG AS PROCESSED =================
+    await prisma.emailLog.update({
+      where: {
+        id: requestId,
+      },
+      data: {
+        status: "APPROVED",
+      },
+    });
+
+    // ================= AUDIT LOG =================
     await logAudit(
       user.id,
       "APPROVE_REQUEST",
@@ -143,14 +148,11 @@ export async function POST(
       matter.id
     );
 
-    // ============================================
-    // RESPONSE
-    // ============================================
+    // ================= RESPONSE =================
     return NextResponse.json({
       message: "Matter approved successfully",
       matter,
     });
-
   } catch (error) {
     console.error("Approve matter error:", error);
 
