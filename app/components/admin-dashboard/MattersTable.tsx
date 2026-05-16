@@ -1,17 +1,20 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Table, Tag, Button, Typography, Space, Empty } from "antd";
+import { Table, Tag, Button, Space, Empty } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import type { Case } from "@/types/admin";
 
 const BRAND = "#5F021F";
 const ACCENT = "#FFD6A5";
 
-type SafeUser = {
-  id?: string;
-  name?: string;
-} | string | null;
+type SafeUser =
+  | {
+      id?: string;
+      name?: string;
+    }
+  | string
+  | null;
 
 export default function MattersTable({ cases }: { cases: Case[] }) {
   const router = useRouter();
@@ -28,29 +31,34 @@ export default function MattersTable({ cases }: { cases: Case[] }) {
       dataIndex: "title",
       key: "title",
       render: (value) => value ?? "—",
+      responsive: ["xs", "sm", "md", "lg", "xl"],
     },
     {
       title: "Lawyer",
       dataIndex: "lawyer",
       key: "lawyer",
       render: (lawyer) => getName(lawyer),
+      responsive: ["sm", "md", "lg", "xl"],
     },
     {
       title: "Client",
       dataIndex: "client",
       key: "client",
       render: (client) => getName(client),
+      responsive: ["md", "lg", "xl"],
     },
     {
       title: "Case Number",
       dataIndex: "caseNumber",
       key: "caseNumber",
+      responsive: ["md", "lg", "xl"],
       render: (value) => value ?? "—",
     },
     {
       title: "Status",
       dataIndex: "status",
       key: "status",
+      responsive: ["xs", "sm", "md", "lg", "xl"],
       render: (status: string) => (
         <Tag
           color={
@@ -68,6 +76,7 @@ export default function MattersTable({ cases }: { cases: Case[] }) {
     {
       title: "Action",
       key: "action",
+      responsive: ["xs", "sm", "md", "lg", "xl"],
       render: (_, record) => (
         <Space>
           <Button
@@ -109,6 +118,9 @@ export default function MattersTable({ cases }: { cases: Case[] }) {
           emptyText: <Empty description="No cases found" />,
         }}
         pagination={{ pageSize: 10 }}
+
+        // ✅ THIS IS THE KEY MOBILE FIX
+        scroll={{ x: "max-content" }}
       />
     </div>
   );
