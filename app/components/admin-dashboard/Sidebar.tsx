@@ -14,16 +14,28 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
   const pathname = usePathname();
 
   const menuItems: MenuItem[] = [
-    { label: "Dashboard", icon: "📊", href: "/admin/dashboard" },
-    { label: "Lawyers", icon: "👨‍⚖️", href: "/admin/lawyers" },
-    { label: "Clients", icon: "👥", href: "/admin/clients" },
-    { label: "Cases", icon: "📁", href: "/admin/cases" },
-    { label: "Reports", icon: "📄", href: "/admin/reports" },
-    { label: "Documents", icon: "📄", href: "/admin/documents" },
-    { label: "Notifications", icon: "🔔", href: "/admin/notifications" },
-    { label: "Settings", icon: "⚙️", href: "/admin/settings" },
-    { label: "Logout", icon: "🚪", isLogout: true },
-  ];
+  { label: "Dashboard", icon: "📊", href: "/admin/dashboard" },
+
+  { label: "Insights", icon: "📰", href: "/admin/insights" },
+
+  { label: "Activity", icon: "📈", href: "/admin/activity" },
+
+  { label: "Lawyers", icon: "👨‍⚖️", href: "/admin/lawyers" },
+
+  { label: "Clients", icon: "👥", href: "/admin/clients" },
+
+  { label: "Cases", icon: "📁", href: "/admin/cases" },
+
+  { label: "Reports", icon: "📄", href: "/admin/reports" },
+
+  { label: "Documents", icon: "📄", href: "/admin/documents" },
+
+  { label: "Notifications", icon: "🔔", href: "/admin/notifications" },
+
+  { label: "Settings", icon: "⚙️", href: "/admin/settings" },
+
+  { label: "Logout", icon: "🚪", isLogout: true },
+];
 
   const renderLink = (item: MenuItem) => {
     const isActive = item.href ? pathname === item.href : false;
