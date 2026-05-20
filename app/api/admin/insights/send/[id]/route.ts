@@ -1,21 +1,23 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { resend } from "@/lib/resend";
 
-interface Params {
-  params: {
+interface RouteContext {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export async function POST(
-  req: Request,
-  { params }: Params
+  req: NextRequest,
+  { params }: RouteContext
 ) {
   try {
+    const { id } = await params;
+
     const insight = await prisma.newsletter.findUnique({
       where: {
-        id: params.id,
+        id,
       },
     });
 
