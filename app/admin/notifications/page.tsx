@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Table, Spin } from "antd";
+import { Table, Spin, Tag, Typography } from "antd";
+
+const { Text } = Typography;
 
 interface AuditLog {
   id: string;
@@ -18,12 +20,15 @@ export default function AuditLogsTable() {
   useEffect(() => {
     const fetchLogs = async () => {
       setLoading(true);
+
       try {
         const res = await fetch("/api/admin/audit-logs");
-        const data: AuditLog[] = await res.json();
-        setLogs(data);
+        const data = await res.json();
+
+        setLogs(data || []);
       } catch (err) {
         console.error("Failed to fetch audit logs:", err);
+        setLogs([]);
       } finally {
         setLoading(false);
       }
@@ -33,14 +38,46 @@ export default function AuditLogsTable() {
   }, []);
 
   const columns = [
-    { title: "User", dataIndex: "user", key: "user" },
-    { title: "Action", dataIndex: "action", key: "action" },
-    { title: "Entity", dataIndex: "entity", key: "entity" },
+    {
+      title: "User",
+      dataIndex: "user",
+      key: "user",
+      render: (user: string) => (
+        <Text strong>{user || "System"}</Text>
+      ),
+    },
+
+    {
+      title: "Action",
+      dataIndex: "action",
+      key: "action",
+      render: (action: string) => {
+        let color = "default";
+
+        if (action.includes("CLOSE")) color = "red";
+        if (action.includes("ASSIGN")) color = "blue";
+        if (action.includes("CREATE")) color = "green";
+        if (action.includes("UPDATE")) color = "orange";
+
+        return <Tag color={color}>{action}</Tag>;
+      },
+    },
+
+    {
+      title: "Entity",
+      dataIndex: "entity",
+      key: "entity",
+      render: (entity: string) => (
+        <Tag color="geekblue">{entity}</Tag>
+      ),
+    },
+
     {
       title: "Time",
       dataIndex: "createdAt",
       key: "createdAt",
-      render: (text: string) => new Date(text).toLocaleString(),
+      render: (text: string) =>
+        text ? new Date(text).toLocaleString() : "-",
     },
   ];
 
@@ -51,6 +88,9 @@ export default function AuditLogsTable() {
         columns={columns}
         rowKey="id"
         pagination={{ pageSize: 10 }}
+        locale={{
+          emptyText: "No audit logs available",
+        }}
       />
     </Spin>
   );

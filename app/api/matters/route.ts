@@ -1,4 +1,5 @@
 // /pages/api/matters/routes.ts
+
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
@@ -8,16 +9,33 @@ interface MatterBody {
   id?: string;
   title?: string;
   description?: string;
-  status?: "OPEN" | "IN_PROGRESS" | "PENDING" | "CLOSED";
+  status?:
+    | "OPEN"
+    | "IN_PROGRESS"
+    | "PENDING"
+    | "PENDING_CLOSURE"
+    | "CLOSED";
   clientId?: string;
   lawyerId?: string;
 }
 
-// ----------------------------
-// GET: List all matters for the current user
-// ----------------------------
+// ===============================
+// STATUS FLOW RULES (SOURCE OF TRUTH)
+// ===============================
+const allowedTransitions: Record<string, string[]> = {
+  OPEN: ["IN_PROGRESS", "PENDING"],
+  IN_PROGRESS: ["PENDING", "PENDING_CLOSURE"],
+  PENDING: ["IN_PROGRESS", "PENDING_CLOSURE"],
+  PENDING_CLOSURE: ["CLOSED"],
+  CLOSED: [],
+};
+
+// ===============================
+// GET ALL MATTERS
+// ===============================
 export async function GET() {
   const user = await getCurrentUser();
+
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -39,11 +57,12 @@ export async function GET() {
   return NextResponse.json(matters);
 }
 
-// ----------------------------
-// POST: Create a new matter
-// ----------------------------
+// ===============================
+// CREATE MATTER
+// ===============================
 export async function POST(req: Request) {
   const user = await getCurrentUser();
+
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -63,7 +82,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    // ✅ FIX: generate required caseNumber
     const caseNumber = `CASE-${Date.now()}`;
 
     const matter = await prisma.matter.create({
@@ -90,6 +108,7 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     console.error(err);
+
     return NextResponse.json(
       { error: "Failed to create matter" },
       { status: 500 }
@@ -97,11 +116,12 @@ export async function POST(req: Request) {
   }
 }
 
-// ----------------------------
-// PATCH: Update an existing matter
-// ----------------------------
+// ===============================
+// UPDATE MATTER (WORKFLOW CONTROLLED)
+// ===============================
 export async function PATCH(req: Request) {
   const user = await getCurrentUser();
+
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -117,7 +137,9 @@ export async function PATCH(req: Request) {
       );
     }
 
-    const matter = await prisma.matter.findUnique({ where: { id } });
+    const matter = await prisma.matter.findUnique({
+      where: { id },
+    });
 
     if (!matter) {
       return NextResponse.json(
@@ -130,15 +152,86 @@ export async function PATCH(req: Request) {
       matter.lawyerId === user.id || matter.clientId === user.id;
 
     if (!canAccessMatter(user.role, userOwnsMatter)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 403 }
+      );
+    }
+
+    const currentStatus = matter.status;
+
+    // ===============================
+    // CLIENT RESTRICTION
+    // ===============================
+    if (user.role === "CLIENT") {
+      return NextResponse.json(
+        { error: "Clients cannot change matter status" },
+        { status: 403 }
+      );
+    }
+
+    let nextStatus = status ?? currentStatus;
+
+    // ===============================
+    // LAWYER RULE: cannot directly close
+    // ===============================
+    if (user.role === "LAWYER" && status === "CLOSED") {
+      nextStatus = "PENDING_CLOSURE";
+    }
+
+    // ===============================
+    // ADMIN RULE: only admin can close
+    // ===============================
+    if (status === "CLOSED") {
+      if (currentStatus !== "PENDING_CLOSURE") {
+        return NextResponse.json(
+          {
+            error:
+              "Matter must be pending closure before it can be closed",
+          },
+          { status: 400 }
+        );
+      }
+
+      if (user.role !== "ADMIN") {
+        return NextResponse.json(
+          { error: "Only admin can close matters" },
+          { status: 403 }
+        );
+      }
+
+      nextStatus = "CLOSED";
+    }
+
+    // ===============================
+    // VALIDATE TRANSITION
+    // ===============================
+    if (
+      nextStatus &&
+      !allowedTransitions[currentStatus]?.includes(nextStatus)
+    ) {
+      return NextResponse.json(
+        { error: "Invalid status transition" },
+        { status: 400 }
+      );
+    }
+
+    let message = "Matter updated";
+
+    if (nextStatus === "PENDING_CLOSURE") {
+      message = "Closure request submitted for admin approval";
+    }
+
+    if (nextStatus === "CLOSED") {
+      message = "Matter successfully closed by admin";
     }
 
     const updatedMatter = await prisma.matter.update({
       where: { id },
       data: {
-        title,
-        description,
-        status,
+        title: title ?? undefined,
+        description: description ?? undefined,
+        status: nextStatus,
       },
       include: {
         client: true,
@@ -150,11 +243,12 @@ export async function PATCH(req: Request) {
     });
 
     return NextResponse.json({
-      message: "Matter updated",
+      message,
       matter: updatedMatter,
     });
   } catch (err) {
     console.error(err);
+
     return NextResponse.json(
       { error: "Failed to update matter" },
       { status: 500 }
@@ -162,11 +256,12 @@ export async function PATCH(req: Request) {
   }
 }
 
-// ----------------------------
-// DELETE: Remove a matter
-// ----------------------------
+// ===============================
+// DELETE MATTER
+// ===============================
 export async function DELETE(req: Request) {
   const user = await getCurrentUser();
+
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -181,7 +276,9 @@ export async function DELETE(req: Request) {
       );
     }
 
-    const matter = await prisma.matter.findUnique({ where: { id } });
+    const matter = await prisma.matter.findUnique({
+      where: { id },
+    });
 
     if (!matter) {
       return NextResponse.json(
@@ -194,14 +291,22 @@ export async function DELETE(req: Request) {
       matter.lawyerId === user.id || matter.clientId === user.id;
 
     if (!canAccessMatter(user.role, userOwnsMatter)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 403 }
+      );
     }
 
-    await prisma.matter.delete({ where: { id } });
+    await prisma.matter.delete({
+      where: { id },
+    });
 
-    return NextResponse.json({ message: "Matter deleted" });
+    return NextResponse.json({
+      message: "Matter deleted",
+    });
   } catch (err) {
     console.error(err);
+
     return NextResponse.json(
       { error: "Failed to delete matter" },
       { status: 500 }

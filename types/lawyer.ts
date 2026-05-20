@@ -2,6 +2,7 @@ export type MatterStatus =
   | "OPEN"
   | "IN_PROGRESS"
   | "PENDING"
+  | "PENDING_CLOSURE"
   | "CLOSED";
 
 export interface LawyerMatter {

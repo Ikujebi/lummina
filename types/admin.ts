@@ -81,10 +81,13 @@ export type Case = {
   id: string;
   title: string;
   caseNumber?: string;
-  status: "OPEN" | "IN_PROGRESS" | "PENDING" | "CLOSED";
+  status: "OPEN" | "IN_PROGRESS" | "PENDING" | "PENDING_CLOSURE" | "CLOSED";
 
   lawyer?: UserMini | null;
   client?: UserMini | null;
+  description?: string | null;
+
+  createdAt: string;
 };
 
 export type MatterRequest = {
@@ -93,7 +96,7 @@ export type MatterRequest = {
   title: string;
   description?: string | null;
 
-  status: "PENDING" | "OPEN" | "IN_PROGRESS" | "CLOSED";
+  status: "PENDING" | "OPEN" | "IN_PROGRESS" | "PENDING_CLOSURE" | "CLOSED";
 
   caseNumber: string;
 
@@ -106,3 +109,10 @@ export type MatterRequest = {
     name: string;
   } | null;
 };
+
+// export type CaseTransition = {
+//   from: MatterStatus;
+//   to: MatterStatus;
+//   role: "LAWYER" | "ADMIN";
+//   requiresApproval?: boolean;
+// };

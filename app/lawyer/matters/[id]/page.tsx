@@ -57,9 +57,9 @@ export default function MatterPage() {
 
   const [tab, setTab] = useState<Tab>("overview");
 
-  /* =========================
-     LOAD MATTER
-  ========================= */
+  // =========================
+  // LOAD MATTER
+  // =========================
   useEffect(() => {
     if (!id) return;
 
@@ -80,28 +80,25 @@ export default function MatterPage() {
     load();
   }, [id]);
 
-  /* =========================
-     ADD ACTIVITY
-  ========================= */
+  // =========================
+  // ADD ACTIVITY
+  // =========================
   async function addActivity() {
     if (!action || !matter) return;
 
     setSubmitting(true);
 
     try {
-      const res = await fetch(
-        `/api/matters/${id}/activity`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action,
-            details,
-            type: selectedType,
-            visibility,
-          }),
-        }
-      );
+      const res = await fetch(`/api/matters/${id}/activity`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action,
+          details,
+          type: selectedType,
+          visibility,
+        }),
+      });
 
       const data: { activity: MatterActivity } = await res.json();
 
@@ -123,9 +120,37 @@ export default function MatterPage() {
     }
   }
 
-  /* =========================
-     LOADING / ERROR STATES
-  ========================= */
+  // =========================
+  // STATUS UPDATE
+  // =========================
+  async function updateStatus(value: string) {
+    try {
+      const res = await fetch("/api/matters", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: matter?.id,
+          status: value,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error);
+      }
+
+      setMatter(data.matter);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // =========================
+  // LOADING STATES
+  // =========================
   if (!id) {
     return <div className="text-red-500">Invalid route</div>;
   }
@@ -143,14 +168,34 @@ export default function MatterPage() {
     return <div className="text-red-500">Matter not found</div>;
   }
 
+  // =========================
+  // STATUS COLOR
+  // =========================
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "OPEN":
+        return "green";
+      case "IN_PROGRESS":
+        return "blue";
+      case "PENDING":
+        return "gold";
+      case "PENDING_CLOSURE":
+        return "orange";
+      case "CLOSED":
+        return "red";
+      default:
+        return "default";
+    }
+  };
+
   return (
     <ConfigProvider
       theme={{
         token: {
           colorPrimary: "#5F021F",
-          colorInfo: "#5F021F",
-          colorSuccess: "#5F021F",
-          colorWarning: "#FFF4E0",
+          colorInfo: "#FFF4E0",
+          colorSuccess: "#22C55E",
+          colorWarning: "#faad14",
           borderRadius: 10,
         },
         components: {
@@ -174,9 +219,32 @@ export default function MatterPage() {
             <span>•</span>
             <span>Client: {matter.client.name}</span>
             <span>•</span>
-            <span className="text-[#5F021F] font-medium">
+
+            <Tag color={getStatusColor(matter.status)}>
               {matter.status}
+            </Tag>
+          </div>
+
+          {/* STATUS CONTROL */}
+          <div className="flex items-center gap-3 mt-3">
+            <span className="text-sm text-gray-500">
+              Update Matter Status:
             </span>
+
+            <Select
+              value={matter.status}
+              style={{ width: 220 }}
+              onChange={updateStatus}
+              options={[
+                { value: "OPEN", label: "Open" },
+                { value: "IN_PROGRESS", label: "In Progress" },
+                { value: "PENDING", label: "Pending" },
+                {
+                  value: "CLOSED",
+                  label: "Request Closure",
+                },
+              ]}
+            />
           </div>
         </div>
 
@@ -243,11 +311,6 @@ export default function MatterPage() {
                   onChange={setSelectedType}
                   size="small"
                   style={{ width: 120 }}
-                  classNames={{
-                    popup: {
-                      root: "activity-select-dropdown",
-                    },
-                  }}
                   options={[
                     { value: "FILING", label: "Filing" },
                     { value: "COURT", label: "Court" },
@@ -261,11 +324,6 @@ export default function MatterPage() {
                   onChange={setVisibility}
                   size="small"
                   style={{ width: 120 }}
-                  classNames={{
-                    popup: {
-                      root: "activity-select-dropdown",
-                    },
-                  }}
                   options={[
                     { value: "CLIENT", label: "Client" },
                     { value: "INTERNAL", label: "Internal" },
@@ -305,7 +363,7 @@ export default function MatterPage() {
               <Timeline
                 items={matter.activities.map((a) => ({
                   color: "#5F021F",
-                  content: (
+                  children: (
                     <Card size="small" style={{ marginBottom: 10 }}>
 
                       <div className="flex justify-between">
@@ -314,21 +372,29 @@ export default function MatterPage() {
                         </strong>
 
                         <div className="flex gap-2">
-                          <Tag color="#FFF4E0">
-                            {a.type}
-                          </Tag>
-
+                          <Tag color="#FFF4E0">{a.type}</Tag>
                           <Tag>{a.visibility}</Tag>
                         </div>
                       </div>
 
                       {a.details && (
-                        <div style={{ marginTop: 6, color: "#666" }}>
+                        <div
+                          style={{
+                            marginTop: 6,
+                            color: "#666",
+                          }}
+                        >
                           {a.details}
                         </div>
                       )}
 
-                      <div style={{ fontSize: 11, color: "#999", marginTop: 6 }}>
+                      <div
+                        style={{
+                          fontSize: 11,
+                          color: "#999",
+                          marginTop: 6,
+                        }}
+                      >
                         {new Date(a.createdAt).toLocaleString()}
                       </div>
 

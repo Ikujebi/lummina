@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Table, Tag, Button, Space, Empty } from "antd";
+import { Table, Tag, Button, Empty } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import type { Case } from "@/types/admin";
 
@@ -16,7 +16,12 @@ type SafeUser =
   | string
   | null;
 
-export default function MattersTable({ cases }: { cases: Case[] }) {
+type Props = {
+  cases: Case[];
+  onOpenCase?: (caseData: Case) => void; // modal (status)
+};
+
+export default function MattersTable({ cases, onOpenCase }: Props) {
   const router = useRouter();
 
   const getName = (value: SafeUser) => {
@@ -31,36 +36,36 @@ export default function MattersTable({ cases }: { cases: Case[] }) {
       dataIndex: "title",
       key: "title",
       render: (value) => value ?? "—",
-      responsive: ["xs", "sm", "md", "lg", "xl"],
     },
     {
       title: "Lawyer",
       dataIndex: "lawyer",
       key: "lawyer",
       render: (lawyer) => getName(lawyer),
-      responsive: ["sm", "md", "lg", "xl"],
     },
     {
       title: "Client",
       dataIndex: "client",
       key: "client",
       render: (client) => getName(client),
-      responsive: ["md", "lg", "xl"],
     },
     {
       title: "Case Number",
       dataIndex: "caseNumber",
       key: "caseNumber",
-      responsive: ["md", "lg", "xl"],
       render: (value) => value ?? "—",
     },
+
+    // =========================
+    // STATUS COLUMN (OPEN MODAL)
+    // =========================
     {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      responsive: ["xs", "sm", "md", "lg", "xl"],
-      render: (status: string) => (
+      render: (status: string, record) => (
         <Tag
+          style={{ cursor: "pointer" }}
           color={
             status === "OPEN"
               ? "green"
@@ -68,26 +73,36 @@ export default function MattersTable({ cases }: { cases: Case[] }) {
               ? "orange"
               : "red"
           }
+          onClick={() => {
+            console.log("STATUS CLICKED:", record.id);
+            onOpenCase?.(record);
+          }}
         >
           {status?.replace("_", " ") ?? "—"}
         </Tag>
       ),
     },
+
+    // =========================
+    // CHAT ACTION (SEPARATE)
+    // =========================
     {
       title: "Action",
       key: "action",
-      responsive: ["xs", "sm", "md", "lg", "xl"],
-      render: (_, record) => (
-        <Space>
+      render: (_, record) => {
+        return (
           <Button
             type="primary"
             style={{ background: BRAND, borderColor: BRAND }}
-            onClick={() => router.push(`/chat/${record.id}`)}
+            onClick={() => {
+              console.log("CHAT CLICKED:", record.id);
+              router.push(`/chat/${record.id}`);
+            }}
           >
             Open Chat
           </Button>
-        </Space>
-      ),
+        );
+      },
     },
   ];
 
@@ -118,8 +133,6 @@ export default function MattersTable({ cases }: { cases: Case[] }) {
           emptyText: <Empty description="No cases found" />,
         }}
         pagination={{ pageSize: 10 }}
-
-        // ✅ THIS IS THE KEY MOBILE FIX
         scroll={{ x: "max-content" }}
       />
     </div>
