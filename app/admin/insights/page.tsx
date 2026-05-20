@@ -70,7 +70,7 @@ export default function InsightsPage() {
 
         <Link
           href="/admin/insights/create"
-          className="bg-[#5F021F] text-white px-6 py-3 rounded-2xl font-semibold hover:bg-[#4A0118] transition"
+          className="bg-[#5F021F]/75 text-white px-6 py-3 rounded-2xl font-semibold hover:bg-[#4A0118] transition"
         >
           + Create Insight
         </Link>

@@ -168,7 +168,7 @@ export default function ActivityPage() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         {/* RECENT ACTIVITY */}
         <div className="xl:col-span-2 bg-white rounded-[32px] border border-[#5F021F]/10 shadow-sm overflow-hidden">
-          <div className="px-8 py-7 border-b border-[#5F021F]/10 bg-[#5F021F]">
+          <div className="px-8 py-7 border-b border-[#5F021F]/10 bg-[#5F021F]/75">
             <h2 className="text-2xl font-bold text-white">
               Recent Activity
             </h2>
@@ -249,7 +249,7 @@ export default function ActivityPage() {
 
                 <div className="h-3 bg-[#FFF4E0] rounded-full">
                   <div
-                    className="h-full bg-[#5F021F] rounded-full"
+                    className="h-full bg-[#5F021F]/80 rounded-full"
                     style={{
                       width: `${Math.min(
                         Math.max(metrics?.visitorGrowthPercent ?? 0, 0),
@@ -326,7 +326,7 @@ export default function ActivityPage() {
             <div key={day.date} className="flex-1 flex flex-col items-center">
               <div className="h-32 flex items-end">
                 <div
-                  className="w-4 rounded-full bg-[#5F021F] transition-all"
+                  className="w-4 rounded-full bg-[#5F021F]/80 transition-all"
                   style={{ height: `${height}%` }}
                 />
               </div>
@@ -370,7 +370,7 @@ export default function ActivityPage() {
           >
             {/* LEFT */}
             <div className="flex items-center gap-3">
-              <div className="w-6 h-6 flex items-center justify-center text-xs font-bold text-white bg-[#5F021F] rounded-full">
+              <div className="w-6 h-6 flex items-center justify-center text-xs font-bold text-white bg-[#5F021F]/75 rounded-full">
                 {index + 1}
               </div>
 

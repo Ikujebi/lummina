@@ -136,7 +136,7 @@ export default function EditInsightPage() {
       <div className="max-w-5xl mx-auto bg-white rounded-3xl border border-[#5F021F]/10 shadow-xl overflow-hidden">
 
         {/* HEADER */}
-        <div className="bg-[#5F021F] px-8 py-8 text-white">
+        <div className="bg-[#5F021F]/75 px-8 py-8 text-white">
           <p className="uppercase tracking-widest text-[#F4C430] text-xs font-semibold">
             Lummina Insights
           </p>
@@ -215,7 +215,7 @@ export default function EditInsightPage() {
             <button
               onClick={handleSave}
               disabled={loading}
-              className="px-6 py-4 rounded-2xl bg-[#5F021F] text-white font-semibold"
+              className="px-6 py-4 rounded-2xl bg-[#5F021F]/75 text-white font-semibold hover:bg-[#4A0118]"
             >
               {loading ? "Saving..." : "Save Changes"}
             </button>
