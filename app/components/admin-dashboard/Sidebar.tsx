@@ -18,7 +18,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
 
   { label: "Insights", icon: "📰", href: "/admin/insights" },
 
-  { label: "Activity", icon: "📈", href: "/admin/activity" },
+  { label: "Website Activity", icon: "📈", href: "/admin/activity" },
 
   { label: "Lawyers", icon: "👨‍⚖️", href: "/admin/lawyers" },
 
