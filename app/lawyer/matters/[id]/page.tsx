@@ -384,7 +384,7 @@ export default function MatterPage() {
         {tab === "overview" && (
           <div className="grid md:grid-cols-2 gap-4">
 
-            <Card title="Case Summary">
+            <Card title="Matter Summary">
               <Text>
                 {matter.description ||
                   "No description available for this matter."}
@@ -394,7 +394,7 @@ export default function MatterPage() {
             <Card style={{ background: "#FFF4E0" }}>
               <div className="space-y-2 text-sm">
                 <p>
-                  Case No: {matter.caseNumber}
+                  Matter No: {matter.caseNumber}
                 </p>
 
                 <p>
