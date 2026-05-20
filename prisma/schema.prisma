@@ -19,6 +19,7 @@ enum MatterStatus {
   OPEN
   IN_PROGRESS
   PENDING
+  PENDING_CLOSURE
   CLOSED
 }
 
