@@ -28,7 +28,7 @@ export default function ChartsSection({
         datasets: [
           {
             data: doughnutData.values,
-            backgroundColor: ["#5F021F", "#FFA500", "#F7E7CE"],
+            backgroundColor: ["#22C55E", "#FFA500", "#F7E7CE", "#5F021F]/75"],
             borderWidth: 0,
           },
         ],
