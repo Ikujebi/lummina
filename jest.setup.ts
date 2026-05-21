@@ -1,32 +1,21 @@
 import "@testing-library/jest-dom";
 
-global.fetch = jest.fn() as jest.MockedFunction<typeof fetch>;
+// Polyfill only what MSW actually needs
+import { TextEncoder, TextDecoder } from "util";
 
-global.MessageChannel = class {
-  port1: MessagePort;
-  port2: MessagePort;
+global.TextEncoder = TextEncoder as any;
+global.TextDecoder = TextDecoder as any;
 
-  constructor() {
-    const dummyPort = {
-      postMessage: () => {},
-      start: () => {},
-      close: () => {},
-      onmessage: null,
-      onmessageerror: null,
-      addEventListener: () => {},
-      removeEventListener: () => {},
-      dispatchEvent: () => false,
-    } as MessagePort;
-
-    this.port1 = dummyPort;
-    this.port2 = dummyPort;
-  }
-
-  postMessage() {}
-  start() {}
-  close() {}
-} as unknown as typeof MessageChannel;
-
-beforeEach(() => {
-  jest.clearAllMocks();
-});
+// BroadcastChannel polyfill (MSW uses it)
+if (typeof global.BroadcastChannel === "undefined") {
+  global.BroadcastChannel = class {
+    onmessage = null;
+    postMessage() {}
+    close() {}
+    addEventListener() {}
+    removeEventListener() {}
+    dispatchEvent() {
+      return true;
+    }
+  } as any;
+}
