@@ -14,11 +14,12 @@ const { confirm } = Modal;
 
 interface UsersTableProps {
   users: User[];
-  onApprove: (userId: string) => void;
+  onApprove: (user: User) => void;
   onSave: (user: User) => void;
-  onDelete: (userId: string) => void;
+  onDelete: (user: User) => void;
 }
 
+// --- Desktop Table Component ---
 interface TableProps {
   users: User[];
   editingKey: string | null;
@@ -28,14 +29,12 @@ interface TableProps {
   edit: (user: User) => void;
   save: (id: string) => void;
   cancel: () => void;
-  onApprove: (id: string) => void;
-  onDelete: (id: string) => void;
+  onApprove: (user: User) => void;
+  onDelete: (user: User) => void;
 }
 
-// --- Desktop Table Component ---
 const DesktopTable: React.FC<TableProps> = ({
   users,
- 
   editedUser,
   isEditing,
   handleChange,
@@ -56,31 +55,27 @@ const DesktopTable: React.FC<TableProps> = ({
             <th className="border p-2">Actions</th>
           </tr>
         </thead>
+
         <tbody>
           {users.map((user) => (
-            <tr key={user.id} className="hover:bg-[#FFEAB3]">
-              <td className="border p-2">
-                {isEditing(user) ? (
-                  <Input
-                    value={editedUser.name}
-                    onChange={(e) => handleChange("name", e.target.value)}
-                    style={{ backgroundColor: "#FFF4E0" }}
-                  />
-                ) : (
-                  user.name
-                )}
-              </td>
+            <tr
+              key={user.id}
+              data-testid={`user-row-${user.id}`}
+              className="hover:bg-[#FFEAB3]"
+            >
+              <td className="border p-2">{user.name}</td>
+
               <td className="border p-2">
                 {isEditing(user) ? (
                   <Input
                     value={editedUser.email}
                     onChange={(e) => handleChange("email", e.target.value)}
-                    style={{ backgroundColor: "#FFF4E0" }}
                   />
                 ) : (
                   user.email
                 )}
               </td>
+
               <td className="border p-2">
                 {isEditing(user) ? (
                   <Input
@@ -88,12 +83,12 @@ const DesktopTable: React.FC<TableProps> = ({
                     onChange={(e) =>
                       handleChange("role", e.target.value as User["role"])
                     }
-                    style={{ backgroundColor: "#FFF4E0" }}
                   />
                 ) : (
                   user.role
                 )}
               </td>
+
               <td className="border p-2">
                 {isEditing(user) ? (
                   <div className="flex gap-2">
@@ -104,18 +99,23 @@ const DesktopTable: React.FC<TableProps> = ({
                   <div className="flex gap-2 flex-wrap">
                     {!user.isApproved && (
                       <Button
-                        onClick={() => onApprove(user.id)}
+                        onClick={() => onApprove(user)}
                         icon={<CheckCircleOutlined />}
                         style={{ color: "green" }}
                       >
                         Approve
                       </Button>
                     )}
-                    <Button onClick={() => edit(user)} icon={<EditOutlined />}>
+
+                    <Button
+                      onClick={() => edit(user)}
+                      icon={<EditOutlined />}
+                    >
                       Edit
                     </Button>
+
                     <Button
-                      onClick={() => {
+                      onClick={() =>
                         confirm({
                           title: "Are you sure you want to delete this user?",
                           icon: (
@@ -126,17 +126,9 @@ const DesktopTable: React.FC<TableProps> = ({
                           okText: "Yes",
                           okType: "danger",
                           cancelText: "No",
-                          width: "90%",
-                          style: {
-                            left: "5vw",
-                            top: "20vh",
-                            maxWidth: "90vw",
-                          },
-                          onOk() {
-                            onDelete(user.id);
-                          },
-                        });
-                      }}
+                          onOk: () => onDelete(user),
+                        })
+                      }
                       icon={<DeleteOutlined />}
                       style={{ color: "red" }}
                     >
@@ -153,10 +145,9 @@ const DesktopTable: React.FC<TableProps> = ({
   </div>
 );
 
-// --- Mobile Cards Component ---
+// --- Mobile Cards ---
 const MobileCards: React.FC<TableProps> = ({
   users,
- 
   editedUser,
   isEditing,
   handleChange,
@@ -168,21 +159,11 @@ const MobileCards: React.FC<TableProps> = ({
 }) => (
   <div className="block md:hidden w-full max-w-[400px] mx-auto">
     {users.map((user) => (
-      <div
-        key={user.id}
-        className="bg-[#FFF4E0] p-4 mb-3 rounded shadow"
-      >
+      <div key={user.id} className="bg-[#FFF4E0] p-4 mb-3 rounded shadow">
         <div className="mb-2">
-          <strong>Name:</strong>{" "}
-          {isEditing(user) ? (
-            <Input
-              value={editedUser.name}
-              onChange={(e) => handleChange("name", e.target.value)}
-            />
-          ) : (
-            user.name
-          )}
+          <strong>Name:</strong> {user.name}
         </div>
+
         <div className="mb-2">
           <strong>Email:</strong>{" "}
           {isEditing(user) ? (
@@ -194,6 +175,7 @@ const MobileCards: React.FC<TableProps> = ({
             user.email
           )}
         </div>
+
         <div className="mb-2">
           <strong>Role:</strong>{" "}
           {isEditing(user) ? (
@@ -207,16 +189,18 @@ const MobileCards: React.FC<TableProps> = ({
             user.role
           )}
         </div>
+
         <div className="flex gap-2 flex-wrap mt-2">
           {!user.isApproved && (
             <Button
               icon={<CheckCircleOutlined />}
-              onClick={() => onApprove(user.id)}
+              onClick={() => onApprove(user)}
               style={{ color: "green" }}
             >
               Approve
             </Button>
           )}
+
           {isEditing(user) ? (
             <>
               <Button onClick={() => save(user.id)}>Save</Button>
@@ -227,20 +211,21 @@ const MobileCards: React.FC<TableProps> = ({
               <Button icon={<EditOutlined />} onClick={() => edit(user)}>
                 Edit
               </Button>
+
               <Button
                 icon={<DeleteOutlined />}
                 onClick={() =>
                   confirm({
                     title: "Are you sure you want to delete this user?",
-                    icon: <ExclamationCircleOutlined style={{ color: "#FA8C16" }} />,
+                    icon: (
+                      <ExclamationCircleOutlined
+                        style={{ color: "#FA8C16" }}
+                      />
+                    ),
                     okText: "Yes",
                     okType: "danger",
                     cancelText: "No",
-                    width: "90%",
-                    style: { left: "5vw", top: "20vh", maxWidth: "90vw" },
-                    onOk() {
-                      onDelete(user.id);
-                    },
+                    onOk: () => onDelete(user),
                   })
                 }
                 style={{ color: "red" }}
@@ -255,6 +240,7 @@ const MobileCards: React.FC<TableProps> = ({
   </div>
 );
 
+// --- MAIN COMPONENT ---
 export default function UsersTable({
   users,
   onApprove,
@@ -272,11 +258,16 @@ export default function UsersTable({
   };
 
   const save = (id: string) => {
-    if (editedUser) {
-      onSave({ ...editedUser, id } as User);
-      setEditingKey(null);
-      setEditedUser({});
-    }
+    const original = users.find((u) => u.id === id);
+    if (!original) return;
+
+    onSave({
+      ...original,
+      ...editedUser,
+    });
+
+    setEditingKey(null);
+    setEditedUser({});
   };
 
   const cancel = () => {
@@ -302,6 +293,7 @@ export default function UsersTable({
         onApprove={onApprove}
         onDelete={onDelete}
       />
+
       <MobileCards
         users={users}
         editingKey={editingKey}
