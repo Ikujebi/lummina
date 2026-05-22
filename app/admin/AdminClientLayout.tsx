@@ -141,10 +141,13 @@ export default function AdminSidebarWrapper({ children }: { children: React.Reac
       </header>
 
       {/* ================= BODY ================= */}
-      <div className="flex flex-1">
-        <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
-        <main className="flex-1 p-6 sm:p-10">{children}</main>
-      </div>
+     <div className="flex h-screen overflow-hidden">
+  <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
+
+  <main className="flex-1 overflow-y-auto p-6 sm:p-10">
+    {children}
+  </main>
+</div>
 
       <footer className="text-center p-4 text-sm text-[#5F021F]/70 bg-[#FFF4E0]">
         © LexTrust Nigeria — Admin Portal.
