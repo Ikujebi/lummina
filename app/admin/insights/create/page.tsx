@@ -18,35 +18,40 @@ export default function CreateInsightPage() {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    setForm({
-      ...form,
+    setForm((prev) => ({
+      ...prev,
       [e.target.name]: e.target.value,
-    });
+    }));
   };
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
-      setForm({ ...form, coverImage: e.target.files[0] });
+      setForm((prev) => ({
+        ...prev,
+        coverImage: e.target.files![0],
+      }));
     }
   };
 
-  // 🔹 SAVE DRAFT
+  // ---------------- SAVE DRAFT ----------------
   const saveDraft = async () => {
     try {
       setAction("saving");
 
       const res = await fetch("/api/admin/insights", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
           published: false,
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to save draft");
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to save draft");
+      }
 
       alert("Draft saved successfully");
     } catch (err) {
@@ -57,23 +62,25 @@ export default function CreateInsightPage() {
     }
   };
 
-  // 🔹 PUBLISH
+  // ---------------- PUBLISH ----------------
   const publishInsight = async () => {
     try {
       setAction("publishing");
 
       const res = await fetch("/api/admin/insights", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
           published: true,
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to publish");
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to publish");
+      }
 
       alert("Insight published successfully");
     } catch (err) {
@@ -84,12 +91,12 @@ export default function CreateInsightPage() {
     }
   };
 
-  // 🔹 PUBLISH + SEND EMAIL
+  // ---------------- PUBLISH & SEND (FULL AUTOMATION) ----------------
   const publishAndSend = async () => {
     try {
       setAction("sending");
 
-      const res = await fetch("/api/admin/insights/send", {
+      const res = await fetch("/api/admin/insights/publish-and-send", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -97,12 +104,18 @@ export default function CreateInsightPage() {
         body: JSON.stringify(form),
       });
 
-      if (!res.ok) throw new Error("Failed to send");
+      const data = await res.json();
 
-      alert("Insight published & sent to subscribers");
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to publish and send");
+      }
+
+      alert("Insight published and sent successfully");
     } catch (err) {
       console.error(err);
-      alert("Error sending insight");
+      alert(
+        err instanceof Error ? err.message : "Error sending insight"
+      );
     } finally {
       setAction("idle");
     }
@@ -112,20 +125,14 @@ export default function CreateInsightPage() {
 
   return (
     <div className="min-h-screen bg-[#FFF7E7] p-6 md:p-10">
-
       <div className="max-w-5xl mx-auto bg-white rounded-3xl border border-[#5F021F]/10 shadow-xl overflow-hidden">
 
         {/* HEADER */}
         <div className="bg-[#5F021F]/75 px-8 py-8 text-white">
-
-          <h1 className="text-3xl font-bold">
-            Create Insight
-          </h1>
-
+          <h1 className="text-3xl font-bold">Create Insight</h1>
           <p className="text-white/70 mt-2">
             Draft and distribute professional legal publications.
           </p>
-
         </div>
 
         {/* FORM */}
@@ -205,9 +212,7 @@ export default function CreateInsightPage() {
           </div>
 
         </div>
-
       </div>
-
     </div>
   );
 }
