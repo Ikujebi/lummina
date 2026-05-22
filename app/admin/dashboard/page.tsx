@@ -10,7 +10,6 @@ import { Spin } from "antd";
 import { User } from "@/types/admin";
 import { approveUser, deleteUser, updateUser } from "@/lib/api/users";
 
-
 // ================= TYPES =================
 interface Widget {
   label: string;
@@ -25,8 +24,6 @@ interface Alert {
   meta: string;
   actionText: string;
 }
-
-
 
 interface ChartPoint {
   date: string;
@@ -66,24 +63,21 @@ export default function AdminDashboard() {
           fetch("/api/admin/reports?period=month"),
         ]);
 
-        // ===== STATS =====
         if (!statsRes.ok) throw new Error("Stats failed");
         const statsData: Widget[] = await statsRes.json();
         setWidgets(statsData);
 
-        // ===== ALERTS =====
         if (!alertsRes.ok) throw new Error("Alerts failed");
         const alertsData: Alert[] = await alertsRes.json();
         setAlerts(alertsData);
 
-        // ===== USERS =====
         if (!usersRes.ok) throw new Error("Users failed");
         const usersData: { success: boolean; users: User[] } =
           await usersRes.json();
+
         if (!usersData.success) throw new Error("Invalid users response");
         setUsers(usersData.users);
 
-        // ===== REPORTS =====
         if (!reportsRes.ok) throw new Error("Reports failed");
 
         const data: {
@@ -93,7 +87,6 @@ export default function AdminDashboard() {
           statusCounts: StatusCount[];
         } = await reportsRes.json();
 
-        // 🚫 STRICT: require statusCounts from backend
         if (!data.statusCounts) {
           throw new Error("Missing statusCounts from backend");
         }
@@ -101,7 +94,6 @@ export default function AdminDashboard() {
         const getStatusValue = (status: StatusCount["status"]) =>
           data.statusCounts.find((s) => s.status === status)?._count ?? 0;
 
-        // ===== Doughnut =====
         const doughnut = {
           labels: ["Open", "In Progress", "Pending", "Closed"],
           values: [
@@ -112,13 +104,11 @@ export default function AdminDashboard() {
           ],
         };
 
-        // ===== Line =====
         const line = data.chartData.map((d) => ({
           label: d.date,
           value: d.newCases,
         }));
-console.log("Line chart data:", line);
-        // ===== Progress (NO FAKE DIVISION) =====
+
         const progress =
           data.newCases === 0
             ? 0
@@ -127,9 +117,6 @@ console.log("Line chart data:", line);
         setChartData({ doughnut, line, progress });
       } catch (err) {
         console.error("Dashboard fetch error:", err);
-
-        // 🚫 DO NOT inject fake data
-        // just keep state empty
       } finally {
         setLoading(false);
       }
@@ -138,69 +125,67 @@ console.log("Line chart data:", line);
     fetchAll();
   }, []);
 
-  // ================= FILTER USERS =================
   const filteredUsers = users.filter(
     (user) =>
       user.name.toLowerCase().includes(search.toLowerCase()) ||
       user.email.toLowerCase().includes(search.toLowerCase())
   );
 
-    // ================= APPROVE HANDLER =================
-  const handleApprove = async (userId: string) => {
-  try {
-    const res = await approveUser(userId);
+  // ================= FIXED HANDLERS =================
 
-    setUsers((prev) =>
-      prev.map((user) =>
-        user.id === userId ? { ...user, isApproved: true } : user
-      )
-    );
+  const handleApprove = async (user: User) => {
+    try {
+      await approveUser(user.id);
 
-    console.log(res.message);
-  } catch (err) {
-    console.error("Approve error:", err);
-  }
-};
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === user.id ? { ...u, isApproved: true } : u
+        )
+      );
+    } catch (err) {
+      console.error("Approve error:", err);
+    }
+  };
 
-
-    // ================= SAVE HANDLER =================
   const handleSave = async (user: User) => {
-  try {
-    const res = await updateUser({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    });
+    try {
+      const res = await updateUser({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      });
 
-    setUsers((prev) =>
-      prev.map((u) => (u.id === user.id ? { ...u, ...user } : u))
-    );
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === user.id ? { ...u, ...user } : u
+        )
+      );
 
-    console.log(res);
-  } catch (err) {
-    console.error("Save error:", err);
-  }
-};
+      console.log(res);
+    } catch (err) {
+      console.error("Save error:", err);
+    }
+  };
 
+  const handleDelete = async (user: User) => {
+    try {
+      await deleteUser(user.id);
 
-  
-  // ================= DELETE HANDLER =================
-  const handleDelete = async (userId: string) => {
-  try {
-    await deleteUser(userId);
+      setUsers((prev) =>
+        prev.filter((u) => u.id !== user.id)
+      );
+    } catch (err) {
+      console.error("Delete error:", err);
+    }
+  };
 
-    setUsers((prev) => prev.filter((u) => u.id !== userId));
-  } catch (err) {
-    console.error("Delete error:", err);
-  }
-};
   // ================= UI =================
   return (
     <Spin spinning={loading} size="large">
-      <div className="">
-        {/* ===== HERO ===== */}
-        <section className="flex flex-col lg:flex-row justify-between items-start lg:items-center  mb-6 w-full">
+      <div>
+
+        <section className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 w-full">
           <div>
             <p className="uppercase text-xs tracking-widest text-[#FFA500] mb-1">
               System Overview
@@ -210,8 +195,7 @@ console.log("Line chart data:", line);
             </h1>
           </div>
 
-          {/* Search */}
-          <div className="flex gap-3  sm:w-auto">
+          <div className="flex gap-3 sm:w-auto">
             <label className="relative flex items-center bg-[#FFF4E0] rounded-xl px-4 py-2 w-full sm:w-64">
               🔍
               <input
@@ -219,44 +203,30 @@ console.log("Line chart data:", line);
                 placeholder="Search users, cases..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="ml-2 bg-transparent outline-none  w-full text-[#5F021F]"
+                className="ml-2 bg-transparent outline-none w-full text-[#5F021F]"
               />
             </label>
           </div>
         </section>
 
-        {/* ===== STATS ===== */}
-        <div className=" mb-6">
         <StatsWidgets widgets={widgets} />
-</div>
-        {/* ===== CHARTS ===== */}
-        <div className=" mb-6">
+
         <ChartsSection
           doughnutData={chartData.doughnut}
           lineData={chartData.line}
           progress={chartData.progress}
-        /></div>
+        />
 
-        {/* ===== USERS ===== */}
-    <div className=" mb-6">
-  <div className="overflow-x-auto w-full">
-    <div className="">
-      <UsersTable
-        users={filteredUsers}
-        onApprove={handleApprove}
-        onSave={handleSave}
-        onDelete={handleDelete}
-      />
-    </div>
-  </div>
-</div>
-        {/* ===== REPORTS ===== */}
-        <div className=" mb-6">
-        <ReportsSection /></div>
-        {/* ===== ALERTS ===== */}
-        <div className=" mb-6">
+        <UsersTable
+          users={filteredUsers}
+          onApprove={handleApprove}
+          onSave={handleSave}
+          onDelete={handleDelete}
+        />
+
+        <ReportsSection />
         <AlertsPanel alerts={alerts} />
-        </div>
+
       </div>
     </Spin>
   );

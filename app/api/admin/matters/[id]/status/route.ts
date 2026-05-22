@@ -16,7 +16,7 @@ const LAWYER_ALLOWED_STATUSES: MatterStatus[] = [
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -24,6 +24,8 @@ export async function PATCH(
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const { id } = await params;
 
     const { status } = await req.json();
 
@@ -55,7 +57,7 @@ export async function PATCH(
     }
 
     const matter = await prisma.matter.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!matter) {
@@ -66,7 +68,7 @@ export async function PATCH(
     }
 
     const updated = await prisma.matter.update({
-      where: { id: params.id },
+      where: { id },
       data: { status },
       include: {
         client: true,

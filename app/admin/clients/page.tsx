@@ -67,7 +67,6 @@ export default function ClientsPage() {
       setInviteExpiry("");
       setOpenInvite(false);
 
-      // optional: refresh clients list
       await fetchClients();
     } catch (err) {
       console.error("Invite failed:", err);
@@ -108,25 +107,39 @@ export default function ClientsPage() {
       ) : (
         <UsersTable
           users={filteredClients}
-          onApprove={async (id) => {
-            await approveUser(id);
+
+          // ✅ FIXED HERE
+          onApprove={async (user) => {
+            await approveUser(user.id);
+
             setClients((prev) =>
               prev.map((u) =>
-                u.id === id ? { ...u, isApproved: true } : u
+                u.id === user.id
+                  ? { ...u, isApproved: true }
+                  : u
               )
             );
           }}
+
           onSave={async (updatedUser) => {
             await updateUser(updatedUser);
+
             setClients((prev) =>
               prev.map((u) =>
-                u.id === updatedUser.id ? updatedUser : u
+                u.id === updatedUser.id
+                  ? updatedUser
+                  : u
               )
             );
           }}
-          onDelete={async (id) => {
-            await deleteUser(id);
-            setClients((prev) => prev.filter((u) => u.id !== id));
+
+          // ✅ FIXED HERE
+          onDelete={async (user) => {
+            await deleteUser(user.id);
+
+            setClients((prev) =>
+              prev.filter((u) => u.id !== user.id)
+            );
           }}
         />
       )}
