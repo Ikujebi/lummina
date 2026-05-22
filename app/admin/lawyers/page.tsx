@@ -238,12 +238,14 @@ export default function LawyersPage() {
       ) : (
         <UsersTable
           users={filteredLawyers}
-          onApprove={async (id) => {
-            await approveUser(id);
+          onApprove={async (user) => {
+            await approveUser(user.id);
 
             setLawyers((prev) =>
               prev.map((u) =>
-                u.id === id ? { ...u, isApproved: true } : u,
+                u.id === user.id
+                  ? { ...u, isApproved: true }
+                  : u,
               ),
             );
 
@@ -271,13 +273,13 @@ export default function LawyersPage() {
 
             setMessage("User updated successfully");
           }}
-          onDelete={async (id) => {
-            await fetch(`/api/admin/users/${id}`, {
+          onDelete={async (user) => {
+            await fetch(`/api/admin/users/${user.id}`, {
               method: "DELETE",
             });
 
             setLawyers((prev) =>
-              prev.filter((u) => u.id !== id),
+              prev.filter((u) => u.id !== user.id),
             );
 
             setMessage("User deleted successfully");
