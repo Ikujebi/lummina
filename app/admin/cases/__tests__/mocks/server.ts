@@ -22,6 +22,24 @@ export const server = setupServer(
     });
   }),
 
+  // ---------------- cases ----------------
+  http.get("*/api/cases", () => {
+    return HttpResponse.json({
+      matters: [
+        {
+          id: "c1",
+          title: "Case A",
+          status: "OPEN",
+        },
+        {
+          id: "c2",
+          title: "Case B",
+          status: "PENDING",
+        },
+      ],
+    });
+  }),
+
   // ---------------- approve ----------------
   http.post("*/api/admin/matter-requests/:id/approve", () => {
     return HttpResponse.json({
@@ -37,9 +55,14 @@ export const server = setupServer(
     return HttpResponse.json({ ok: true });
   }),
 
-  // fallback (Crucial for identifying endpoint mismatches)
+  // ---------------- fallback ----------------
   http.all("*", ({ request }) => {
-    console.warn(`⚠️ [MSW] Unhandled ${request.method} request to: ${request.url}`);
-    return new HttpResponse(null, { status: 404 });
+    console.warn(
+      `⚠️ [MSW] Unhandled ${request.method} request to: ${request.url}`
+    );
+
+    return new HttpResponse(null, {
+      status: 404,
+    });
   })
 );

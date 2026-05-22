@@ -130,54 +130,87 @@ export default function SettingsPage() {
      CLOUDINARY UPLOAD
   ========================= */
   async function handleImageUpload(
-    file: File
-  ) {
-    try {
-      setUploading(true);
+  file: File
+) {
+  try {
+    setUploading(true);
 
-      const formData = new FormData();
+    const formData = new FormData();
 
-      formData.append("file", file);
+    formData.append("file", file);
 
-      const res = await fetch(
-        "/api/upload",
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(
-          data.error || "Upload failed"
-        );
+    const uploadRes = await fetch(
+      "/api/upload",
+      {
+        method: "POST",
+        body: formData,
       }
+    );
 
-      setProfile((prev) => ({
-        ...prev,
-        profilePicture: data.fileUrl,
-      }));
+    const uploadData =
+      await uploadRes.json();
 
-      setPreview(data.fileUrl);
-
-      setMessage({
-        text:
-          "Profile picture uploaded successfully",
-        type: "success",
-      });
-    } catch (err) {
-      console.error(err);
-
-      setMessage({
-        text: "Image upload failed",
-        type: "error",
-      });
-    } finally {
-      setUploading(false);
+    if (!uploadRes.ok) {
+      throw new Error(
+        uploadData.error ||
+          "Upload failed"
+      );
     }
+
+    // UPDATE PROFILE IN DB IMMEDIATELY
+    const updatedProfile = {
+      name: profile.name,
+      email: profile.email,
+      profilePicture:
+        uploadData.fileUrl,
+    };
+
+    const saveRes = await fetch(
+      "/api/admin/profile",
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+        body: JSON.stringify(
+          updatedProfile
+        ),
+      }
+    );
+
+    const saveData =
+      await saveRes.json();
+
+    if (!saveData.success) {
+      throw new Error(
+        saveData.error ||
+          "Failed to save profile"
+      );
+    }
+
+    setProfile(saveData.admin);
+
+    setPreview(
+      uploadData.fileUrl
+    );
+
+    setMessage({
+      text:
+        "Profile picture updated successfully",
+      type: "success",
+    });
+  } catch (err) {
+    console.error(err);
+
+    setMessage({
+      text: "Image upload failed",
+      type: "error",
+    });
+  } finally {
+    setUploading(false);
   }
+}
 
   /* =========================
      FILE CHANGE
@@ -407,7 +440,8 @@ export default function SettingsPage() {
                   adminPhoto
                 }
                 alt="Admin profile"
-                fill
+                width={100}
+                height={100}
                 className="rounded-full object-cover border-4 border-white shadow-xl"
               />
 
