@@ -202,7 +202,7 @@ export default function LawyersPage() {
             placeholder="Lawyer's Email"
             value={inviteEmail}
             onChange={(e) => setInviteEmail(e.target.value)}
-            className="px-3 py-2 border rounded"
+            className="px-3 py-2 border rounded text-[#5F021F]"
           />
 
           <div className="flex gap-2 mt-2">
