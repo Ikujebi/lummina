@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, ChangeEvent } from "react";
-
+import { uploadToCloudinary } from "@/lib/cloudinary/uploadToCloudinary";
 import Image from "next/image";
 
 import { Eye, EyeOff, Camera, Loader2, ShieldCheck } from "lucide-react";
@@ -104,78 +104,104 @@ export default function SettingsPage() {
   /* =========================
      CLOUDINARY UPLOAD
   ========================= */
-  async function handleImageUpload(file: File) {
-    try {
-      setUploading(true);
+ async function handleImageUpload(file: File) {
+  const localPreview = URL.createObjectURL(file);
+  const previousImage = profile.profilePicture;
 
-      const formData = new FormData();
+  setPreview(localPreview);
 
-      formData.append("file", file);
+  try {
+    setUploading(true);
 
-      const uploadRes = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
+    /* =========================
+       1. GET SIGNATURE
+    ========================= */
+    const signRes = await fetch("/api/cloudinary/sign");
+    const signData = await signRes.json();
 
-      const uploadData = await uploadRes.json();
+    if (!signRes.ok) {
+      throw new Error("Failed to get upload signature");
+    }
 
-      if (!uploadRes.ok) {
-        throw new Error(uploadData.error || "Upload failed");
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("api_key", signData.apiKey);
+    formData.append("timestamp", signData.timestamp);
+    formData.append("signature", signData.signature);
+    formData.append("folder", "profile_pictures");
+
+    /* =========================
+       2. CLOUDINARY UPLOAD (USING LIB)
+    ========================= */
+
+    const cloudData = await uploadToCloudinary(
+      `https://api.cloudinary.com/v1_1/${signData.cloudName}/image/upload`,
+      formData,
+      (percent) => {
+        // optional: you can hook a progress bar here
+        console.log("Upload progress:", percent);
       }
+    );
 
-      // UPDATE PROFILE IN DB IMMEDIATELY
-      const updatedProfile = {
+    if (!cloudData?.secure_url) {
+      throw new Error("Upload failed");
+    }
+
+    /* =========================
+       3. SAVE TO BACKEND
+    ========================= */
+    const saveRes = await fetch("/api/admin/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         name: profile.name,
         email: profile.email,
-        profilePicture: uploadData.fileUrl,
-      };
+        profilePicture: cloudData.secure_url,
+        profilePicturePublicId: cloudData.public_id,
+      }),
+    });
 
-      const saveRes = await fetch("/api/admin/profile", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedProfile),
-      });
+    const saveData = await saveRes.json();
 
-      const saveData = await saveRes.json();
-
-      if (!saveData.success) {
-        throw new Error(saveData.error || "Failed to save profile");
-      }
-
-      setProfile(saveData.admin);
-
-      setPreview(uploadData.fileUrl);
-
-      setMessage({
-        text: "Profile picture updated successfully",
-        type: "success",
-      });
-    } catch (err) {
-      console.error(err);
-
-      setMessage({
-        text: "Image upload failed",
-        type: "error",
-      });
-    } finally {
-      setUploading(false);
+    if (!saveData.success) {
+      throw new Error(saveData.error || "Failed to save profile");
     }
+
+    setProfile(saveData.admin);
+    setPreview(cloudData.secure_url);
+
+    setMessage({
+      text: "Profile picture updated successfully",
+      type: "success",
+    });
+
+    URL.revokeObjectURL(localPreview);
+  } catch (err) {
+    console.error(err);
+
+    setPreview(previousImage || "");
+
+    setMessage({
+      text: "Upload failed. Reverted to previous image.",
+      type: "error",
+    });
+
+    URL.revokeObjectURL(localPreview);
+  } finally {
+    setUploading(false);
   }
+}
 
-  /* =========================
-     FILE CHANGE
-  ========================= */
-  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+/* =========================
+   FILE CHANGE (IMPROVED SAFETY)
+========================= */
+const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
 
-    if (!file) return;
+  if (!file) return;
 
-    setPreview(URL.createObjectURL(file));
-
-    await handleImageUpload(file);
-  };
+  await handleImageUpload(file);
+};
 
   /* =========================
      UPDATE PROFILE
