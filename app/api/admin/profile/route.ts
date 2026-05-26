@@ -1,5 +1,3 @@
-// app/api/admin/profile/route.ts
-
 import { prisma } from "@/lib/prisma";
 import { hashPassword, comparePassword } from "@/lib/hash";
 import { NextRequest, NextResponse } from "next/server";
@@ -47,7 +45,7 @@ export async function GET() {
   }
 }
 
-/* ================= PATCH PROFILE ================= */
+/* ================= PATCH PROFILE (FIXED) ================= */
 export async function PATCH(req: NextRequest) {
   try {
     const currentUser = await getCurrentUser();
@@ -61,19 +59,26 @@ export async function PATCH(req: NextRequest) {
 
     const body = await req.json();
 
+    const { profilePicture, profilePicturePublicId } = body;
+
+    if (!profilePicture) {
+      return NextResponse.json(
+        { success: false, error: "Profile picture is required" },
+        { status: 400 }
+      );
+    }
+
     const updated = await prisma.user.update({
       where: { id: currentUser.id },
       data: {
-        name: body.name,
-        email: body.email,
-        profilePicture: body.profilePicture,
-        profilePicturePublicId: body.profilePicturePublicId,
+        profilePicture,
+        profilePicturePublicId,
       },
     });
 
     await logAudit(
       currentUser.id,
-      "UPDATE",
+      "UPDATE_PROFILE_PICTURE",
       "AdminProfile",
       currentUser.id
     );
