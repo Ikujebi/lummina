@@ -41,6 +41,14 @@ export function useImageUpload() {
       const signRes = await fetch("/api/cloudinary/sign");
       const signData = await signRes.json();
 
+      console.log(
+  "Cloudinary URL:",
+  `https://api.cloudinary.com/v1_1/${signData.cloudName}/image/upload`
+);
+
+console.log("signData:", signData);
+
+
       if (!signRes.ok) {
         throw new Error(signData?.error || "Failed to get upload signature");
       }
