@@ -23,7 +23,7 @@ export function useImageUpload() {
   async function uploadImage(
     file: File,
     profile: AdminProfile,
-    setProfile: Dispatch<SetStateAction<AdminProfile>>
+    setProfile: Dispatch<SetStateAction<AdminProfile>>,
   ) {
     const localPreview = URL.createObjectURL(file);
     const previousImage = profile.profilePicture;
@@ -51,7 +51,7 @@ export function useImageUpload() {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("api_key", signData.apiKey);
-      formData.append("timestamp", signData.timestamp);
+      formData.append("timestamp", String(signData.timestamp));
       formData.append("signature", signData.signature);
       formData.append("folder", "profile_pictures");
 
@@ -63,7 +63,7 @@ export function useImageUpload() {
         formData,
         (percent: number) => {
           setUploadProgress(percent);
-        }
+        },
       );
 
       if (!cloudData?.secure_url) {

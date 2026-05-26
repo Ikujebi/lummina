@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 
+export const runtime = "nodejs";
+
 export async function GET() {
   const timestamp = Math.round(Date.now() / 1000);
 
@@ -10,8 +12,8 @@ export async function GET() {
 
   const folder = "profile_pictures";
 
-  // IMPORTANT: MUST be alphabetical string
-  const signatureString = `folder=${folder}&timestamp=${timestamp}`;
+  const signatureString =
+    `folder=${folder}&timestamp=${timestamp}`;
 
   const signature = crypto
     .createHash("sha1")
