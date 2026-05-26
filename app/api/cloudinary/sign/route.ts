@@ -20,10 +20,9 @@ export async function GET() {
 
     const folder = "profile_pictures";
 
-    // IMPORTANT: parameters must be in consistent order
-    const signatureString = `folder=${folder}&timestamp=${timestamp}`;
+    // ✅ MUST be alphabetical order
+    const signatureString = `timestamp=${timestamp}&folder=${folder}`;
 
-    // IMPORTANT: must use HMAC (NOT createHash)
     const signature = crypto
       .createHmac("sha1", apiSecret)
       .update(signatureString)
