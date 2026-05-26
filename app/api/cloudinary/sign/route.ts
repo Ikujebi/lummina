@@ -10,18 +10,19 @@ export async function GET() {
 
   const folder = "profile_pictures";
 
-  // IMPORTANT: MUST be alphabetical string
+  // MUST be consistent with request params
   const signatureString = `folder=${folder}&timestamp=${timestamp}`;
 
+  // ✅ CORRECT Cloudinary signing method
   const signature = crypto
-    .createHash("sha1")
-    .update(signatureString + apiSecret)
+    .createHmac("sha1", apiSecret)
+    .update(signatureString)
     .digest("hex");
 
   return NextResponse.json({
     timestamp,
     signature,
     apiKey,
-    cloudName,
+    cloudName: cloudName.replace(/"/g, "").trim(),
   });
 }
