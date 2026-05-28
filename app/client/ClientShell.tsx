@@ -12,15 +12,18 @@ export default function ClientShell({
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#F7e7ce] flex lg:grid lg:grid-cols-[260px_1fr]">
-      {/* Sidebar */}
-      <Sidebar
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
+    <div className="min-h-screen bg-[#F7e7ce] flex">
+
+      {/* FIXED SIDEBAR */}
+      <div className="hidden lg:block lg:fixed lg:inset-y-0 lg:w-[260px]">
+        <Sidebar
+          open={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+        />
+      </div>
 
       {/* Content Area */}
-      <div className="flex flex-col w-full min-h-screen">
+      <div className="flex flex-col w-full min-h-screen lg:ml-[260px]">
 
         {/* Topbar */}
         <Topbar

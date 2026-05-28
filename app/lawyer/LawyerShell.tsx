@@ -17,12 +17,12 @@ export default function LawyerShell({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F7E7CE]">
+    <div className="min-h-screen bg-[#F7E7CE] flex flex-col">
 
       {/* HEADER */}
-      <header className="sticky top-0 z-10 flex items-center justify-between px-4 sm:px-8 py-4 bg-[#5F021F] shadow">
+      <header className="sticky top-0 z-20 flex items-center justify-between px-4 sm:px-8 py-4 bg-[#5F021F] shadow">
 
-        {/* LEFT: Menu + Logo */}
+        {/* LEFT */}
         <div className="flex items-center gap-3">
 
           {/* Hamburger */}
@@ -51,7 +51,7 @@ export default function LawyerShell({
 
         </div>
 
-        {/* RIGHT: Profile */}
+        {/* RIGHT */}
         <div className="flex items-center gap-3 text-[#F7E7CE] font-semibold ml-auto">
 
           <div className="w-9 h-9 rounded-full overflow-hidden bg-[#F7E7CE]/20 flex items-center justify-center border border-[#F7E7CE]/30">
@@ -79,16 +79,16 @@ export default function LawyerShell({
       </header>
 
       {/* BODY */}
-      <div className="flex flex-1">
+      <div className="flex flex-1 relative">
 
-        {/* DESKTOP SIDEBAR */}
-        <div className="hidden lg:block">
+        {/* FIXED DESKTOP SIDEBAR */}
+        <aside className="hidden lg:fixed lg:inset-y-0 lg:top-[72px] lg:flex lg:w-72 lg:flex-col bg-[#FFF4E0] border-r border-[#5F021F]/10">
           <Sidebar />
-        </div>
+        </aside>
 
         {/* MOBILE DRAWER */}
         {open && (
-          <div className="fixed inset-0 z-30 flex">
+          <div className="fixed inset-0 z-30 flex lg:hidden">
 
             {/* overlay */}
             <div
@@ -96,24 +96,24 @@ export default function LawyerShell({
               onClick={() => setOpen(false)}
             />
 
-            {/* sidebar */}
-            <div className="w-72 bg-[#FFF4E0] p-6">
+            {/* drawer */}
+            <div className="w-72 bg-[#FFF4E0] p-6 overflow-y-auto">
               <Sidebar onClose={() => setOpen(false)} />
             </div>
 
           </div>
         )}
 
-        {/* CONTENT + FOOTER */}
-        <div className="flex flex-col flex-1 min-h-full">
+        {/* CONTENT AREA */}
+        <div className="flex flex-col flex-1 lg:ml-72 min-h-[calc(100vh-72px)]">
 
           {/* PAGE CONTENT */}
-          <main className="flex-1 p-6 sm:p-10">
+          <main className="flex-1 p-6 sm:p-10 overflow-x-hidden">
             {children}
           </main>
 
           {/* FOOTER */}
-          <footer className="text-center p-4 text-xs sm:text-sm text-[#5F021F]/70 bg-[#FFF4E0]">
+          <footer className="text-center p-4 text-xs sm:text-sm text-[#5F021F]/70 bg-[#FFF4E0] border-t border-[#5F021F]/10">
             © 2026 Lummina Law Management System. All rights reserved.
           </footer>
 
