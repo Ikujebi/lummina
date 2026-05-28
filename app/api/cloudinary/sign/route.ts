@@ -8,6 +8,8 @@ export async function GET() {
   const apiKey = process.env.CLOUDINARY_API_KEY!;
   const apiSecret = process.env.CLOUDINARY_API_SECRET!;
 
+
+  
   const folder = "profile_pictures";
 
   // IMPORTANT: MUST be alphabetical string
@@ -17,6 +19,14 @@ export async function GET() {
     .createHash("sha1")
     .update(signatureString + apiSecret)
     .digest("hex");
+
+    console.log({
+  cloudName,
+  apiKey,
+  apiSecretLength: apiSecret.length,
+  signatureString,
+  generatedSignature: signature,
+});
 
   return NextResponse.json({
     timestamp,
