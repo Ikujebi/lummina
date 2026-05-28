@@ -15,13 +15,11 @@ export async function POST(req: Request) {
     const file = data.get("file") as File;
 
     if (!file) {
-      return NextResponse.json(
-        { error: "No file provided" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
-
-   
+    if (!file.type) {
+      return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
+    }
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
@@ -36,8 +34,8 @@ export async function POST(req: Request) {
     const resourceType: "image" | "video" | "raw" = isImage
       ? "image"
       : isVideo
-      ? "video"
-      : "raw";
+        ? "video"
+        : "raw";
 
     // =========================
     // 2. Safe filename handling
@@ -54,34 +52,32 @@ export async function POST(req: Request) {
     // =========================
     // 3. Upload to Cloudinary
     // =========================
-    const result: UploadApiResponse = await new Promise(
-      (resolve, reject) => {
-        const uploadStream = cloudinary.uploader.upload_stream(
-          {
-            folder: "chat_uploads",
+    const result: UploadApiResponse = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: "chat_uploads",
 
-            // 🔥 CRITICAL FIX
-            resource_type: resourceType,
+          // 🔥 CRITICAL FIX
+          resource_type: resourceType,
 
-            // safe + unique ID
-            public_id: publicId,
+          // safe + unique ID
+          public_id: publicId,
 
-            // 🔥 CRITICAL FIX for DOCX/XLSX/ZIP/etc
-            format: isRaw ? fileExt : undefined,
+          // 🔥 CRITICAL FIX for DOCX/XLSX/ZIP/etc
+          format: isRaw ? fileExt : undefined,
 
-            // optional: force download behavior for raw files
-            flags: isRaw ? "attachment" : undefined,
-          },
-          (error, result) => {
-            if (error) return reject(error);
-            if (!result) return reject(new Error("No upload result"));
-            resolve(result);
-          }
-        );
+          // optional: force download behavior for raw files
+          flags: isRaw ? "attachment" : undefined,
+        },
+        (error, result) => {
+          if (error) return reject(error);
+          if (!result) return reject(new Error("No upload result"));
+          resolve(result);
+        },
+      );
 
-        uploadStream.end(buffer);
-      }
-    );
+      uploadStream.end(buffer);
+    });
 
     // =========================
     // 4. Response
@@ -92,11 +88,14 @@ export async function POST(req: Request) {
       fileName: file.name,
       resourceType: result.resource_type,
     });
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("Upload error:", err);
+
     return NextResponse.json(
-      { error: "Upload failed" },
-      { status: 500 }
+      {
+        error: err instanceof Error ? err.message : "Upload failed",
+      },
+      { status: 500 },
     );
   }
 }

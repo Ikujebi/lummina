@@ -1,16 +1,15 @@
-// app/api/admin/profile/route.ts
 import { prisma } from "@/lib/prisma";
 import { hashPassword, comparePassword } from "@/lib/hash";
 import { NextRequest, NextResponse } from "next/server";
 import { logAudit } from "@/lib/audit";
 import { getCurrentUser } from "@/lib/auth";
 
-// ================= GET admin profile =================
+/* ================= GET PROFILE ================= */
 export async function GET() {
   try {
     const currentUser = await getCurrentUser();
 
-    if (!currentUser) {
+    if (!currentUser?.id) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
         { status: 401 }
@@ -24,6 +23,7 @@ export async function GET() {
         name: true,
         email: true,
         profilePicture: true,
+        profilePicturePublicId: true,
       },
     });
 
@@ -34,10 +34,7 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      admin,
-    });
+    return NextResponse.json({ success: true, admin });
   } catch (err) {
     console.error("GET /admin/profile error:", err);
 
@@ -48,41 +45,43 @@ export async function GET() {
   }
 }
 
-// ================= PATCH update profile info =================
+/* ================= PATCH PROFILE (FIXED) ================= */
 export async function PATCH(req: NextRequest) {
   try {
     const currentUser = await getCurrentUser();
 
-    if (!currentUser) {
+    if (!currentUser?.id) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
         { status: 401 }
       );
     }
 
-    const { name, email, profilePicture } = await req.json();
+    const body = await req.json();
 
-    const admin = await prisma.user.findUnique({
-      where: { id: currentUser.id },
-    });
+    const { profilePicture, profilePicturePublicId } = body;
 
-    if (!admin) {
+    if (!profilePicture) {
       return NextResponse.json(
-        { success: false, error: "Admin not found" },
-        { status: 404 }
+        { success: false, error: "Profile picture is required" },
+        { status: 400 }
       );
     }
 
     const updated = await prisma.user.update({
       where: { id: currentUser.id },
       data: {
-        name,
-        email,
         profilePicture,
+        profilePicturePublicId,
       },
     });
 
-    await logAudit(currentUser.id, "UPDATE", "AdminProfile", currentUser.id);
+    await logAudit(
+      currentUser.id,
+      "UPDATE_PROFILE_PICTURE",
+      "AdminProfile",
+      currentUser.id
+    );
 
     return NextResponse.json({
       success: true,
@@ -98,12 +97,12 @@ export async function PATCH(req: NextRequest) {
   }
 }
 
-// ================= PUT update password =================
+/* ================= PUT PASSWORD ================= */
 export async function PUT(req: NextRequest) {
   try {
     const currentUser = await getCurrentUser();
 
-    if (!currentUser) {
+    if (!currentUser?.id) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
         { status: 401 }
@@ -123,7 +122,10 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    const isValid = await comparePassword(currentPassword, admin.password);
+    const isValid = await comparePassword(
+      currentPassword,
+      admin.password
+    );
 
     if (!isValid) {
       return NextResponse.json(
@@ -139,9 +141,17 @@ export async function PUT(req: NextRequest) {
       data: { password: hashedPassword },
     });
 
-    await logAudit(currentUser.id, "UPDATE_PASSWORD", "AdminProfile", currentUser.id);
+    await logAudit(
+      currentUser.id,
+      "UPDATE_PASSWORD",
+      "AdminProfile",
+      currentUser.id
+    );
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      message: "Password updated successfully",
+    });
   } catch (err) {
     console.error("PUT /admin/profile error:", err);
 
