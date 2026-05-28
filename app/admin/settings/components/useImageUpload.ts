@@ -28,7 +28,6 @@ export function useImageUpload() {
     const localPreview = URL.createObjectURL(file);
     const previousImage = profile.profilePicture;
 
-    // reset UI state
     setPreview(localPreview);
     setUploading(true);
     setUploadProgress(0);
@@ -39,19 +38,30 @@ export function useImageUpload() {
          1. GET SIGNATURE
       ========================= */
       const signRes = await fetch("/api/cloudinary/sign");
-      const signData = await signRes.json();
-
-      console.log(
-  "Cloudinary URL:",
-  `https://api.cloudinary.com/v1_1/${signData.cloudName}/image/upload`
-);
-
-console.log("signData:", signData);
-
 
       if (!signRes.ok) {
-        throw new Error(signData?.error || "Failed to get upload signature");
+        const err = await signRes.json();
+        throw new Error(err?.error || "Failed to get upload signature");
       }
+
+      const signData = await signRes.json();
+
+      console.log("Cloudinary URL:", 
+        `https://api.cloudinary.com/v1_1/${signData.cloudName}/image/upload`
+      );
+
+      console.log("signData:", signData);
+
+      /* =========================
+         DEBUG: SIGN vs UPLOAD TIME
+      ========================= */
+      const now = Math.floor(Date.now() / 1000);
+
+      console.log("SIGN VS UPLOAD TIME CHECK:", {
+        signTimestamp: signData.timestamp,
+        now,
+        diffSeconds: now - signData.timestamp,
+      });
 
       /* =========================
          2. FORM DATA
@@ -117,12 +127,12 @@ console.log("signData:", signData);
 
       setPreview(previousImage || "");
 
-    console.error("UPLOAD ERROR:", err);
+      console.error("UPLOAD ERROR:", err);
 
-setMessage({
-  type: "error",
-  text: JSON.stringify(err, null, 2),
-});
+      setMessage({
+        type: "error",
+        text: JSON.stringify(err, null, 2),
+      });
 
       URL.revokeObjectURL(localPreview);
     } finally {
