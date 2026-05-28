@@ -396,6 +396,8 @@ model Newsletter {
   authorId String?
   author   User?   @relation(fields: [authorId], references: [id])
 
+ views    NewsletterView[]
+ 
   @@map("Newsletter")
 }
 
@@ -428,4 +430,19 @@ model WebsiteActivity {
   @@index([createdAt])
   @@index([userId])
   @@map("WebsiteActivity")
+}
+
+model NewsletterView {
+  id           String   @id @default(uuid())
+  newsletterId String
+  newsletter   Newsletter @relation(fields: [newsletterId], references: [id], onDelete: Cascade)
+
+  viewedAt     DateTime @default(now())
+
+  // optional (very useful later)
+  ipAddress    String?
+  userAgent    String?
+
+  @@index([newsletterId])
+  @@index([viewedAt])
 }

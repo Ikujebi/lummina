@@ -20,7 +20,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="flex flex-col w-[260px] bg-[#FFF4E0] border-r p-6 gap-2 h-screen fixed lg:relative z-20">
+    <aside className="flex flex-col w-[260px] bg-[#FFF4E0]  p-6 gap-2 h-screen fixed lg:relative z-20">
 
       {/* mobile close button */}
       {onClose && (

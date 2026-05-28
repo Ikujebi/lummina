@@ -82,7 +82,7 @@ export default function LawyerShell({
       <div className="flex flex-1 relative">
 
         {/* FIXED DESKTOP SIDEBAR */}
-        <aside className="hidden lg:fixed lg:inset-y-0 lg:top-[72px] lg:flex lg:w-72 lg:flex-col bg-[#FFF4E0] border-r border-[#5F021F]/10">
+        <aside className="hidden lg:fixed lg:inset-y-0 lg:top-[72px] lg:flex lg:w-72 lg:flex-col bg-[#FFF4E0] ">
           <Sidebar />
         </aside>
 
