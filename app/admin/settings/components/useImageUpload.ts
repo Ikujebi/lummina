@@ -117,13 +117,12 @@ console.log("signData:", signData);
 
       setPreview(previousImage || "");
 
-      setMessage({
-        type: "error",
-        text:
-          err instanceof Error
-            ? err.message
-            : "Upload failed. Please try again.",
-      });
+    console.error("UPLOAD ERROR:", err);
+
+setMessage({
+  type: "error",
+  text: JSON.stringify(err, null, 2),
+});
 
       URL.revokeObjectURL(localPreview);
     } finally {
