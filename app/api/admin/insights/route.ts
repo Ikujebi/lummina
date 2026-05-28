@@ -7,11 +7,35 @@ export async function GET() {
       orderBy: {
         createdAt: "desc",
       },
+      include: {
+        _count: {
+          select: {
+            views: true, // comes from NewsletterView relation
+          },
+        },
+      },
     });
 
-    return NextResponse.json(insights);
+    const formatted = insights.map((item) => ({
+      id: item.id,
+      title: item.title,
+      slug: item.slug,
+      summary: item.summary,
+      content: item.content,
+      coverImage: item.coverImage,
+      published: item.published,
+      publishedAt: item.publishedAt,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+      authorId: item.authorId,
+
+      // REAL analytics (NOT fake field)
+      views: item._count.views,
+    }));
+
+    return NextResponse.json(formatted);
   } catch (error) {
-    console.error(error);
+    console.error("GET_INSIGHTS_ERROR:", error);
 
     return NextResponse.json(
       { error: "Failed to fetch insights" },
@@ -49,7 +73,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(insight);
   } catch (error) {
-    console.error(error);
+    console.error("CREATE_INSIGHT_ERROR:", error);
 
     return NextResponse.json(
       { error: "Failed to create insight" },

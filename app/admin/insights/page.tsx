@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 
 interface Insight {
   id: string;
@@ -22,6 +23,7 @@ export default function InsightsPage() {
       const res = await fetch("/api/admin/insights");
       const data = await res.json();
 
+      // ✅ IMPORTANT: no transformation, backend is source of truth
       setInsights(data);
     } catch (error) {
       console.error(error);
@@ -30,13 +32,9 @@ export default function InsightsPage() {
     }
   };
 
- useEffect(() => {
-  const load = async () => {
-    await fetchInsights();
-  };
-
-  load();
-}, []);
+  useEffect(() => {
+    fetchInsights();
+  }, []);
 
   const handleSend = async (id: string) => {
     try {
@@ -57,12 +55,8 @@ export default function InsightsPage() {
 
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-10">
-
         <div>
-          <h1 className="text-3xl font-bold text-[#5F021F]">
-            Insights
-          </h1>
-
+          <h1 className="text-3xl font-bold text-[#5F021F]">Insights</h1>
           <p className="text-[#5F021F]/70 mt-2">
             Manage publications, drafts, and newsletter distribution.
           </p>
@@ -74,7 +68,6 @@ export default function InsightsPage() {
         >
           + Create Insight
         </Link>
-
       </div>
 
       {/* LIST */}
@@ -92,18 +85,18 @@ export default function InsightsPage() {
             No insights found
           </div>
         ) : (
-          insights.map((item) => (
-            <div
+          insights.map((item, index) => (
+            <motion.div
               key={item.id}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, delay: index * 0.05 }}
               className="bg-white rounded-3xl border border-[#5F021F]/10 p-6 shadow-sm hover:shadow-xl transition"
             >
-
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
 
                 <div>
-
                   <div className="flex items-center gap-3 mb-3">
-
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold ${
                         item.status === "Published"
@@ -117,7 +110,6 @@ export default function InsightsPage() {
                     <span className="text-sm text-[#5F021F]/60">
                       {item.date}
                     </span>
-
                   </div>
 
                   <h2 className="text-2xl font-bold text-[#5F021F]">
@@ -125,13 +117,11 @@ export default function InsightsPage() {
                   </h2>
 
                   <p className="text-[#5F021F]/60 mt-2">
-                    {item.views.toLocaleString()} views
+                    {Number(item.views).toLocaleString()} views
                   </p>
-
                 </div>
 
                 <div className="flex gap-3">
-
                   <Link
                     href={`/admin/insights/${item.id}`}
                     className="px-5 py-3 rounded-xl border border-[#5F021F]/20 text-[#5F021F] font-semibold hover:bg-[#FFF4E0]"
@@ -145,17 +135,14 @@ export default function InsightsPage() {
                   >
                     Send
                   </button>
-
                 </div>
 
               </div>
-
-            </div>
+            </motion.div>
           ))
         )}
 
       </div>
-
     </div>
   );
 }
