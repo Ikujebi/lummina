@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 
+export const runtime = "nodejs";
+
 export async function GET() {
   const timestamp = Math.round(Date.now() / 1000);
 
@@ -8,25 +10,34 @@ export async function GET() {
   const apiKey = process.env.CLOUDINARY_API_KEY!;
   const apiSecret = process.env.CLOUDINARY_API_SECRET!;
 
-
-  
   const folder = "profile_pictures";
 
-  // IMPORTANT: MUST be alphabetical string
-  const signatureString = `folder=${folder}&timestamp=${timestamp}`;
+  const params = {
+    folder,
+    timestamp,
+  };
 
+  // canonical string (safer than manual concatenation)
+  const signatureString = Object.keys(params)
+    .sort()
+    .map((key) => `${key}=${params[key as keyof typeof params]}`)
+    .join("&");
+
+  // IMPORTANT: hash ONLY secret, not concatenation
   const signature = crypto
-    .createHash("sha1")
-    .update(signatureString + apiSecret)
+    .createHmac("sha1", apiSecret)
+    .update(signatureString)
     .digest("hex");
 
-    console.log({
-  cloudName,
-  apiKey,
-  apiSecretLength: apiSecret.length,
-  signatureString,
-  generatedSignature: signature,
-});
+  console.log("=== CLOUDINARY SIGN DEBUG ===");
+  console.log({
+    cloudName,
+    apiKey,
+    apiSecretLength: apiSecret?.length,
+    apiSecretPreview: apiSecret?.slice(0, 4) + "****",
+    signatureString,
+    generatedSignature: signature,
+  });
 
   return NextResponse.json({
     timestamp,
