@@ -14,21 +14,31 @@ export default function ClientShell({
   return (
     <div className="min-h-screen bg-[#F7e7ce] flex lg:grid lg:grid-cols-[260px_1fr]">
       {/* Sidebar */}
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
 
       {/* Content Area */}
-      <div className="flex flex-col w-full">
+      <div className="flex flex-col w-full min-h-screen">
+
         {/* Topbar */}
-        <Topbar onToggleSidebar={() => setSidebarOpen((prev) => !prev)} />
+        <Topbar
+          onToggleSidebar={() =>
+            setSidebarOpen((prev) => !prev)
+          }
+        />
 
         {/* Page Content */}
         <main className="flex-1 pt-20 px-6 md:px-10 flex flex-col gap-8">
           {children}
         </main>
 
+        {/* Footer */}
         <footer className="text-center p-4 text-xs sm:text-sm text-[#5F021F]/70 bg-[#FFF4E0]">
           © 2026 Lummina Law Management System. All rights reserved.
         </footer>
+
       </div>
     </div>
   );

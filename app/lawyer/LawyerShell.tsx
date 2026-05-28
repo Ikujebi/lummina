@@ -18,10 +18,13 @@ export default function LawyerShell({
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F7E7CE]">
+
       {/* HEADER */}
       <header className="sticky top-0 z-10 flex items-center justify-between px-4 sm:px-8 py-4 bg-[#5F021F] shadow">
+
         {/* LEFT: Menu + Logo */}
         <div className="flex items-center gap-3">
+
           {/* Hamburger */}
           <button
             className="lg:hidden text-[#F7E7CE]"
@@ -45,10 +48,12 @@ export default function LawyerShell({
           <div className="hidden sm:block font-bold text-[#F7E7CE]">
             Lummina Lawyer Portal
           </div>
+
         </div>
 
-        {/* RIGHT: Profile (FORCED RIGHT ON ALL SCREENS) */}
+        {/* RIGHT: Profile */}
         <div className="flex items-center gap-3 text-[#F7E7CE] font-semibold ml-auto">
+
           <div className="w-9 h-9 rounded-full overflow-hidden bg-[#F7E7CE]/20 flex items-center justify-center border border-[#F7E7CE]/30">
             {user?.profilePicture ? (
               <Image
@@ -65,12 +70,17 @@ export default function LawyerShell({
             )}
           </div>
 
-          {/* Hide name on mobile */}
-          <div className="hidden sm:block">{user?.name ?? "Unknown User"}</div>
+          <div className="hidden sm:block">
+            {user?.name ?? "Unknown User"}
+          </div>
+
         </div>
+
       </header>
 
+      {/* BODY */}
       <div className="flex flex-1">
+
         {/* DESKTOP SIDEBAR */}
         <div className="hidden lg:block">
           <Sidebar />
@@ -79,6 +89,7 @@ export default function LawyerShell({
         {/* MOBILE DRAWER */}
         {open && (
           <div className="fixed inset-0 z-30 flex">
+
             {/* overlay */}
             <div
               className="flex-1 bg-black/40"
@@ -89,16 +100,27 @@ export default function LawyerShell({
             <div className="w-72 bg-[#FFF4E0] p-6">
               <Sidebar onClose={() => setOpen(false)} />
             </div>
+
           </div>
         )}
 
-        {/* PAGE CONTENT */}
-        <main className="flex-1 p-6 sm:p-10">{children}</main>
+        {/* CONTENT + FOOTER */}
+        <div className="flex flex-col flex-1 min-h-full">
 
-        <footer className="text-center p-4 text-xs sm:text-sm text-[#5F021F]/70 bg-[#FFF4E0]">
-          © 2026 Lummina Law Management System. All rights reserved.
-        </footer>
+          {/* PAGE CONTENT */}
+          <main className="flex-1 p-6 sm:p-10">
+            {children}
+          </main>
+
+          {/* FOOTER */}
+          <footer className="text-center p-4 text-xs sm:text-sm text-[#5F021F]/70 bg-[#FFF4E0]">
+            © 2026 Lummina Law Management System. All rights reserved.
+          </footer>
+
+        </div>
+
       </div>
+
     </div>
   );
 }
