@@ -2,37 +2,55 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
+import { X } from "lucide-react";
 
 interface Insight {
   id: string;
   title: string;
-  status: "Published" | "Draft";
   date: string;
+  summary: string;
+  status: "Published" | "Draft";
   views: number;
+  sent?: boolean;
+  coverImage?: string | null;
 }
 
 export default function InsightsPage() {
   const [insights, setInsights] = useState<Insight[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const fetchInsights = async () => {
-    try {
-      setLoading(true);
-
-      const res = await fetch("/api/admin/insights");
-      const data = await res.json();
-
-      // ✅ IMPORTANT: no transformation, backend is source of truth
-      setInsights(data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [selected, setSelected] = useState<Insight | null>(null);
 
   useEffect(() => {
+    const fetchInsights = async () => {
+      try {
+        setLoading(true);
+
+        const res = await fetch("/api/admin/insights");
+        const data = await res.json();
+
+        const formatted = data.map((item: any) => ({
+          id: item.id,
+          title: item.title,
+          summary: item.summary,
+          date: item.publishedAt
+            ? new Date(item.publishedAt).toLocaleDateString()
+            : new Date(item.createdAt).toLocaleDateString(),
+          views: item.views ?? 0,
+          status: item.published ? "Published" : "Draft",
+          sent: item.sent ?? false,
+          coverImage: item.coverImage ?? null,
+        }));
+
+        setInsights(formatted);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchInsights();
   }, []);
 
@@ -44,9 +62,10 @@ export default function InsightsPage() {
 
       const data = await res.json();
 
-      alert(data.success ? "Insight sent successfully" : "Failed to send");
-    } catch (error) {
-      console.error(error);
+      alert(data.success ? "Sent successfully" : "Failed to send");
+    } catch (err) {
+      console.error(err);
+      alert("Error sending insight");
     }
   };
 
@@ -56,93 +75,176 @@ export default function InsightsPage() {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-10">
         <div>
-          <h1 className="text-3xl font-bold text-[#5F021F]">Insights</h1>
+          <h1 className="text-3xl font-bold text-[#5F021F]">
+            Insights
+          </h1>
+
           <p className="text-[#5F021F]/70 mt-2">
-            Manage publications, drafts, and newsletter distribution.
+            Preview exactly how clients see your newsletters
           </p>
         </div>
 
         <Link
           href="/admin/insights/create"
-          className="bg-[#5F021F]/75 text-white px-6 py-3 rounded-2xl font-semibold hover:bg-[#4A0118] transition"
+          className="bg-[#5F021F]/75 text-white px-6 py-3 rounded-2xl font-semibold hover:bg-[#4A0118]"
         >
           + Create Insight
         </Link>
       </div>
 
-      {/* LIST */}
-      <div className="grid gap-6">
+      {/* GRID */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-10">
 
         {loading ? (
           [1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="h-28 bg-white animate-pulse rounded-3xl border border-[#5F021F]/10"
-            />
+            <div key={i} className="h-64 bg-white animate-pulse rounded-2xl" />
           ))
         ) : insights.length === 0 ? (
-          <div className="text-center py-20 text-[#5F021F]/60">
+          <div className="text-center text-[#5F021F]/60 col-span-2">
             No insights found
           </div>
         ) : (
-          insights.map((item, index) => (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, delay: index * 0.05 }}
-              className="bg-white rounded-3xl border border-[#5F021F]/10 p-6 shadow-sm hover:shadow-xl transition"
-            >
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          insights.map((insight, index) => {
 
-                <div>
-                  <div className="flex items-center gap-3 mb-3">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        item.status === "Published"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-yellow-100 text-yellow-700"
-                      }`}
-                    >
-                      {item.status}
-                    </span>
+            // ✅ DEBUG LOG (correct place)
+            console.log("COVER IMAGE:", insight.coverImage);
 
-                    <span className="text-sm text-[#5F021F]/60">
-                      {item.date}
-                    </span>
+            return (
+              <motion.div
+                key={insight.id}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, delay: index * 0.05 }}
+                className="relative bg-[#5F021F]/90 text-white p-8 rounded-2xl shadow-xl"
+              >
+
+                {/* IMAGE */}
+                {insight.coverImage && (
+                  <div className="mb-4 relative w-full h-48">
+                    <Image
+                      src={insight.coverImage}
+                      alt={insight.title}
+                      fill
+                      className="object-cover rounded-xl"
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                    />
                   </div>
+                )}
 
-                  <h2 className="text-2xl font-bold text-[#5F021F]">
-                    {item.title}
-                  </h2>
+                {/* CLIENT VIEW */}
+                <h3 className="text-2xl font-semibold mb-2">
+                  {insight.title}
+                </h3>
 
-                  <p className="text-[#5F021F]/60 mt-2">
-                    {Number(item.views).toLocaleString()} views
-                  </p>
-                </div>
+                <p className="text-sm text-gray-300 mb-4">
+                  Published: {insight.date}
+                </p>
 
-                <div className="flex gap-3">
+                <div className="h-[2px] w-12 bg-[#F4C430] my-4" />
+
+                <p className="text-gray-200 leading-relaxed">
+                  {insight.summary}
+                </p>
+
+                <button
+                  onClick={() => setSelected(insight)}
+                  className="mt-6 bg-[#F4C430] text-[#5F021F] px-5 py-2 rounded-lg"
+                >
+                  Preview Full →
+                </button>
+
+                {/* ADMIN OVERLAY */}
+                <div className="absolute top-4 right-4 flex gap-2">
+
+                  <button
+                    onClick={() => handleSend(insight.id)}
+                    disabled={
+                      insight.status === "Draft" || insight.sent === true
+                    }
+                    className={`px-3 py-1 rounded text-sm ${
+                      insight.status === "Draft" || insight.sent
+                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        : "bg-white text-[#5F021F]"
+                    }`}
+                  >
+                    Send
+                  </button>
+
                   <Link
-                    href={`/admin/insights/${item.id}`}
-                    className="px-5 py-3 rounded-xl border border-[#5F021F]/20 text-[#5F021F] font-semibold hover:bg-[#FFF4E0]"
+                    href={`/admin/insights/${insight.id}`}
+                    className="bg-[#F4C430] text-[#5F021F] px-3 py-1 rounded text-sm"
                   >
                     Edit
                   </Link>
 
-                  <button
-                    onClick={() => handleSend(item.id)}
-                    className="px-5 py-3 rounded-xl bg-[#F4C430] text-[#5F021F] font-semibold hover:bg-[#ffd95c]"
-                  >
-                    Send
-                  </button>
                 </div>
 
-              </div>
-            </motion.div>
-          ))
+                {/* METRICS */}
+                <p className="absolute bottom-4 right-4 text-xs text-white/60">
+                  {insight.views ?? 0} views
+                </p>
+
+              </motion.div>
+            );
+          })
         )}
 
-      </div>
+      </section>
+
+      {/* MODAL */}
+      {selected && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
+
+          <div className="absolute inset-0" onClick={() => setSelected(null)} />
+
+          <div className="relative bg-white rounded-3xl max-w-3xl w-full shadow-2xl overflow-hidden animate-modalFade">
+
+            <div className="bg-[#5F021F] text-white px-8 py-6 relative">
+              <button
+                onClick={() => setSelected(null)}
+                className="absolute top-4 right-4 text-white/80"
+              >
+                <X size={22} />
+              </button>
+
+              <h2 className="text-2xl font-bold">
+                {selected.title}
+              </h2>
+
+              <p className="text-white/70 text-sm mt-1">
+                {selected.date}
+              </p>
+            </div>
+
+            <div className="p-8 space-y-6 text-gray-800">
+              <p className="text-lg">{selected.summary}</p>
+
+              <div className="text-sm text-gray-500 border-t pt-4">
+                Admin preview mode — this is how users experience the content.
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      <style jsx>{`
+        @keyframes modalFade {
+          from {
+            opacity: 0;
+            transform: translateY(20px) scale(0.98);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        .animate-modalFade {
+          animation: modalFade 0.3s ease-out;
+        }
+      `}</style>
+
     </div>
   );
 }
