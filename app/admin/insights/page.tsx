@@ -94,7 +94,6 @@ export default function InsightsPage() {
           </div>
         ) : (
           insights.map((insight, index) => {
-            // ✅ DEBUG LOG (correct place)
             console.log("COVER IMAGE:", insight.coverImage);
 
             return (
@@ -140,12 +139,15 @@ export default function InsightsPage() {
 
                 {/* ADMIN OVERLAY */}
                 <div className="absolute top-4 right-4 flex gap-2">
-                  <button
-                    onClick={() => handleSend(insight.id)}
-                    className="px-3 py-1 rounded text-sm bg-white text-[#5F021F]"
-                  >
-                    Send
-                  </button>
+                  {/* ONLY CHANGE IS HERE */}
+                  {insight.status !== "Published" && (
+                    <button
+                      onClick={() => handleSend(insight.id)}
+                      className="px-3 py-1 rounded text-sm bg-white text-[#5F021F]"
+                    >
+                      Send
+                    </button>
+                  )}
 
                   <Link
                     href={`/admin/insights/${insight.id}`}

@@ -47,7 +47,7 @@ export async function POST(
       if (!subscriber.email) continue;
 
       const response = await resend.emails.send({
-        from: "Lummina Law <onboarding@resend.dev>", // TEMP FIX
+        from: "Lummina Law <onboarding@resend.dev>",
         to: subscriber.email,
         subject: insight.title,
         html: `
@@ -73,13 +73,21 @@ export async function POST(
         `,
       });
 
-      console.log("RESEND RESPONSE:", response);
+      
 
       if (response.error) {
-        console.error("RESEND ERROR:", response.error);
         throw new Error(response.error.message);
       }
     }
+
+    // ✅ FIX: mark as sent AFTER successful email loop
+    await prisma.newsletter.update({
+      where: { id },
+      data: {
+        sent: true,
+        sentAt: new Date(),
+      },
+    });
 
     return NextResponse.json({
       success: true,
