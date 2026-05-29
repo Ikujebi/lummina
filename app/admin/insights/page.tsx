@@ -5,17 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
+import type { InsightApiResponse, Insight } from "@/types/InsightApiResponse";
 
-interface Insight {
-  id: string;
-  title: string;
-  date: string;
-  summary: string;
-  status: "Published" | "Draft";
-  views: number;
-  sent?: boolean;
-  coverImage?: string | null;
-}
 
 export default function InsightsPage() {
   const [insights, setInsights] = useState<Insight[]>([]);
@@ -30,7 +21,7 @@ export default function InsightsPage() {
         const res = await fetch("/api/admin/insights");
         const data = await res.json();
 
-        const formatted = data.map((item: any) => ({
+        const formatted = (data as InsightApiResponse[]).map((item) => ({
           id: item.id,
           title: item.title,
           summary: item.summary,
@@ -38,7 +29,9 @@ export default function InsightsPage() {
             ? new Date(item.publishedAt).toLocaleDateString()
             : new Date(item.createdAt).toLocaleDateString(),
           views: item.views ?? 0,
-          status: item.published ? "Published" : "Draft",
+          status: (item.published ? "Published" : "Draft") as
+            | "Published"
+            | "Draft",
           sent: item.sent ?? false,
           coverImage: item.coverImage ?? null,
         }));
@@ -71,13 +64,10 @@ export default function InsightsPage() {
 
   return (
     <div className="p-6 md:p-10 bg-[#FFF7E7] min-h-screen">
-
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-10">
         <div>
-          <h1 className="text-3xl font-bold text-[#5F021F]">
-            Insights
-          </h1>
+          <h1 className="text-3xl font-bold text-[#5F021F]">Insights</h1>
 
           <p className="text-[#5F021F]/70 mt-2">
             Preview exactly how clients see your newsletters
@@ -94,7 +84,6 @@ export default function InsightsPage() {
 
       {/* GRID */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-10">
-
         {loading ? (
           [1, 2, 3].map((i) => (
             <div key={i} className="h-64 bg-white animate-pulse rounded-2xl" />
@@ -105,7 +94,6 @@ export default function InsightsPage() {
           </div>
         ) : (
           insights.map((insight, index) => {
-
             // ✅ DEBUG LOG (correct place)
             console.log("COVER IMAGE:", insight.coverImage);
 
@@ -117,7 +105,6 @@ export default function InsightsPage() {
                 transition={{ duration: 0.25, delay: index * 0.05 }}
                 className="relative bg-[#5F021F]/90 text-white p-8 rounded-2xl shadow-xl"
               >
-
                 {/* IMAGE */}
                 {insight.coverImage && (
                   <div className="mb-4 relative w-full h-48">
@@ -132,9 +119,7 @@ export default function InsightsPage() {
                 )}
 
                 {/* CLIENT VIEW */}
-                <h3 className="text-2xl font-semibold mb-2">
-                  {insight.title}
-                </h3>
+                <h3 className="text-2xl font-semibold mb-2">{insight.title}</h3>
 
                 <p className="text-sm text-gray-300 mb-4">
                   Published: {insight.date}
@@ -155,7 +140,6 @@ export default function InsightsPage() {
 
                 {/* ADMIN OVERLAY */}
                 <div className="absolute top-4 right-4 flex gap-2">
-
                   <button
                     onClick={() => handleSend(insight.id)}
                     className="px-3 py-1 rounded text-sm bg-white text-[#5F021F]"
@@ -169,29 +153,24 @@ export default function InsightsPage() {
                   >
                     Edit
                   </Link>
-
                 </div>
 
                 {/* METRICS */}
                 <p className="absolute bottom-4 right-4 text-xs text-white/60">
                   {insight.views ?? 0} views
                 </p>
-
               </motion.div>
             );
           })
         )}
-
       </section>
 
       {/* MODAL */}
       {selected && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
-
           <div className="absolute inset-0" onClick={() => setSelected(null)} />
 
           <div className="relative bg-white rounded-3xl max-w-3xl w-full shadow-2xl overflow-hidden animate-modalFade">
-
             <div className="bg-[#5F021F] text-white px-8 py-6 relative">
               <button
                 onClick={() => setSelected(null)}
@@ -200,13 +179,9 @@ export default function InsightsPage() {
                 <X size={22} />
               </button>
 
-              <h2 className="text-2xl font-bold">
-                {selected.title}
-              </h2>
+              <h2 className="text-2xl font-bold">{selected.title}</h2>
 
-              <p className="text-white/70 text-sm mt-1">
-                {selected.date}
-              </p>
+              <p className="text-white/70 text-sm mt-1">{selected.date}</p>
             </div>
 
             <div className="p-8 space-y-6 text-gray-800">
@@ -216,7 +191,6 @@ export default function InsightsPage() {
                 Admin preview mode — this is how users experience the content.
               </div>
             </div>
-
           </div>
         </div>
       )}
@@ -237,7 +211,6 @@ export default function InsightsPage() {
           animation: modalFade 0.3s ease-out;
         }
       `}</style>
-
     </div>
   );
 }
