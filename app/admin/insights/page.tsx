@@ -158,14 +158,7 @@ export default function InsightsPage() {
 
                   <button
                     onClick={() => handleSend(insight.id)}
-                    disabled={
-                      insight.status === "Draft" || insight.sent === true
-                    }
-                    className={`px-3 py-1 rounded text-sm ${
-                      insight.status === "Draft" || insight.sent
-                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                        : "bg-white text-[#5F021F]"
-                    }`}
+                    className="px-3 py-1 rounded text-sm bg-white text-[#5F021F]"
                   >
                     Send
                   </button>
