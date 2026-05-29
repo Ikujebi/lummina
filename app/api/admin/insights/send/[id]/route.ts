@@ -15,10 +15,10 @@ export async function POST(
   try {
     const { id } = await params;
 
+    console.log("SEND INSIGHT TRIGGERED:", id);
+
     const insight = await prisma.newsletter.findUnique({
-      where: {
-        id,
-      },
+      where: { id },
     });
 
     if (!insight) {
@@ -28,16 +28,26 @@ export async function POST(
       );
     }
 
-    const subscribers =
-      await prisma.newsletterSubscriber.findMany({
-        where: {
-          active: true,
-        },
+    console.log("INSIGHT FOUND:", insight.title);
+
+    const subscribers = await prisma.newsletterSubscriber.findMany({
+      where: { active: true },
+    });
+
+    console.log("SUBSCRIBERS COUNT:", subscribers.length);
+
+    if (!subscribers.length) {
+      return NextResponse.json({
+        success: false,
+        message: "No active subscribers",
       });
+    }
 
     for (const subscriber of subscribers) {
-      await resend.emails.send({
-        from: "Lummina Law <insights@yourdomain.com>",
+      if (!subscriber.email) continue;
+
+      const response = await resend.emails.send({
+        from: "Lummina Law <onboarding@resend.dev>", // TEMP FIX
         to: subscriber.email,
         subject: insight.title,
         html: `
@@ -62,13 +72,21 @@ export async function POST(
           </div>
         `,
       });
+
+      console.log("RESEND RESPONSE:", response);
+
+      if (response.error) {
+        console.error("RESEND ERROR:", response.error);
+        throw new Error(response.error.message);
+      }
     }
 
     return NextResponse.json({
       success: true,
+      sent: subscribers.length,
     });
   } catch (error) {
-    console.error(error);
+    console.error("SEND INSIGHT FAILED:", error);
 
     return NextResponse.json(
       { error: "Failed to send insight" },
