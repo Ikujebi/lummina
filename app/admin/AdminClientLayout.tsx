@@ -4,10 +4,13 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "../components/admin-dashboard/Sidebar";
 import Image from "next/image";
+import Link from "next/link"; // ✅ FIX 1: added import
 import adminPhoto from "@/public/img/careers.jpg";
 import { BellOutlined } from "@ant-design/icons";
 import { Dropdown, Badge, Spin } from "antd";
 import type { MenuProps } from "antd";
+import Lummina2 from "@/public/img/Lummina2.png";
+
 
 interface AdminProfile {
   id: string;
@@ -35,7 +38,6 @@ export default function AdminSidebarWrapper({
 
   const router = useRouter();
 
-  // ================= FETCH ADMIN ON MOUNT =================
   useEffect(() => {
     async function fetchAdmin() {
       try {
@@ -56,7 +58,6 @@ export default function AdminSidebarWrapper({
     fetchAdmin();
   }, []);
 
-  // ================= LISTEN FOR PROFILE UPDATES =================
   useEffect(() => {
     const handleProfileUpdate = async () => {
       try {
@@ -81,7 +82,6 @@ export default function AdminSidebarWrapper({
     };
   }, []);
 
-  // ================= FETCH NOTIFICATIONS =================
   useEffect(() => {
     async function fetchNotifications() {
       setLoadingNotifications(true);
@@ -99,7 +99,6 @@ export default function AdminSidebarWrapper({
     fetchNotifications();
   }, []);
 
-  // ================= LOGOUT LISTENER =================
   useEffect(() => {
     const handleStorageChange = () => {
       if (!localStorage.getItem("isLoggedIn")) {
@@ -112,7 +111,6 @@ export default function AdminSidebarWrapper({
       window.removeEventListener("storage", handleStorageChange);
   }, [router]);
 
-  // ================= NOTIFICATION MENU =================
   const notificationMenu: MenuProps = {
     items: loadingNotifications
       ? [
@@ -153,7 +151,6 @@ export default function AdminSidebarWrapper({
 
   return (
     <>
-      {/* ================= TOP BAR ================= */}
       <header className="sticky top-0 z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between px-6 sm:px-8 py-4 bg-[#5F021F] shadow">
         <div className="flex items-center gap-3">
           <button
@@ -163,13 +160,20 @@ export default function AdminSidebarWrapper({
             ☰
           </button>
 
-          <div className="font-semibold text-[#F7E7CE] text-lg">
-            Lummina Nigeria
+          <div className="font-semibold bg-[#F7E7CE]/40 shadow-xl text-lg rounded-xl">
+            <Link href="/" onClick={() => setSidebarOpen(false)}> {/* ✅ FIX 2 */}
+              <Image
+                src={Lummina2}
+                alt="Lummina Logo"
+                width={100}
+                height={50}
+                className="h-13 object-contain"
+              />
+            </Link>
           </div>
         </div>
 
         <div className="flex items-center gap-4">
-          {/* NOTIFICATIONS */}
           <Dropdown
             menu={notificationMenu}
             trigger={["click"]}
@@ -179,13 +183,10 @@ export default function AdminSidebarWrapper({
               count={notifications.filter((n) => !n.read).length}
               size="small"
             >
-              <BellOutlined
-                style={{ fontSize: 22, color: "#F7E7CE" }}
-              />
+              <BellOutlined style={{ fontSize: 22, color: "#F7E7CE" }} />
             </Badge>
           </Dropdown>
 
-          {/* ADMIN PROFILE */}
           <Image
             src={admin?.profilePicture || adminPhoto}
             alt="Admin photo"
@@ -195,26 +196,20 @@ export default function AdminSidebarWrapper({
           />
 
           <div className="text-[#F7E7CE]">
-            <p className="font-semibold">
-              {admin?.name || "Admin User"}
-            </p>
-            <p className="text-xs opacity-80">
-              System Administrator
-            </p>
+            <p className="font-semibold">{admin?.name || "Admin User"}</p>
+            <p className="text-xs opacity-80">System Administrator</p>
           </div>
         </div>
       </header>
 
-      {/* ================= BODY ================= */}
-     <div className="flex h-screen overflow-hidden">
-  <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
+      <div className="flex h-screen overflow-hidden">
+        <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
 
-  <main className="flex-1 overflow-y-auto p-6 sm:p-10">
-    {children}
-  </main>
-</div>
+        <main className="flex-1 overflow-y-auto p-6 sm:p-10">
+          {children}
+        </main>
+      </div>
 
-      {/* ================= FOOTER ================= */}
       <footer className="text-center p-4 text-xs sm:text-sm text-[#5F021F]/70 bg-[#FFF4E0]">
         © 2026 Lummina Law Management System. All rights reserved.
       </footer>

@@ -212,7 +212,7 @@ export default function InsightsPage() {
 
               <p className="text-gray-200">{insight.summary}</p>
 
-              <div className="absolute top-4 right-4 flex gap-2">
+              <div className="absolute top-1 right-4 flex gap-2">
                 {!insight.published && (
                   <button
                     onClick={() => handlePublish(insight.id)}
