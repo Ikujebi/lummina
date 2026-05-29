@@ -35,6 +35,7 @@ export default function ProfileHeader({
             src={preview || profile.profilePicture || defaultAvatar}
             alt="profile"
             fill
+            loading="lazy"
             sizes="(max-width: 640px) 5rem, (max-width: 1024px) 6rem, 7rem"
             className="rounded-full object-cover"
           />

@@ -165,6 +165,7 @@ export default function AdminSidebarWrapper({
                 alt="Lummina Logo"
                 width={100}
                 height={50}
+                loading="eager"
                 sizes="(max-width: 640px) 3.2rem, 4rem"
                 className="h-13 w-[4.5rem] object-contain"
               />
