@@ -54,25 +54,14 @@ export async function GET() {
     .join("&");
 
   // Optional debug (safe for production logs)
-  console.log("SIGN INPUT CHECK:", {
-    folder,
-    timestamp,
-    signatureString,
-  });
+  
 
   const signature = crypto
     .createHash("sha1")
     .update(signatureString + apiSecret)
     .digest("hex");
 
-  console.log("=== CLOUDINARY SIGN DEBUG ===");
-  console.log({
-    cloudName,
-    apiKey,
-    apiSecretLength: apiSecret.length,
-    signatureString,
-    generatedSignature: signature,
-  });
+ 
 
   return NextResponse.json({
     timestamp,
