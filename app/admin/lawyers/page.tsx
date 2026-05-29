@@ -210,7 +210,7 @@ export default function LawyersPage() {
               onClick={inviteLawyer}
               className="bg-[#5F021F] text-white px-4 py-2 rounded"
             >
-              Send Invite
+              Send Invite 
             </button>
 
             <button
@@ -223,7 +223,7 @@ export default function LawyersPage() {
         </div>
       )}
 
-      {/* Search */}
+      {/* Search input*/}
       <input
         type="search"
         placeholder="Search lawyers..."
