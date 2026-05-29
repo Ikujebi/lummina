@@ -229,7 +229,7 @@ export default function LawyersPage() {
         placeholder="Search lawyers..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="px-4 py-2 border rounded-xl"
+        className="px-4 py-2 border rounded-xl text-[#5F021F] outline-none focus:outline-none focus:ring-0"
       />
 
       {/* Table */}
