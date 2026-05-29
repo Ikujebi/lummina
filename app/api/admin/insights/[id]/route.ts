@@ -1,23 +1,55 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+interface RouteContext {
+  params: Promise<{ id: string }>;
+}
+
+/**
+ * DELETE /api/admin/insights/[id]
+ */
+export async function DELETE(
+  req: NextRequest,
+  { params }: RouteContext
+) {
   try {
-    const insights = await prisma.newsletter.findMany({
-      where: {
-        published: true,
-      },
-      orderBy: {
-        publishedAt: "desc",
-      },
+    const { id } = await params;
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: "Missing insight id" },
+        { status: 400 }
+      );
+    }
+
+    const existing = await prisma.newsletter.findUnique({
+      where: { id },
+      select: { id: true },
     });
 
-    return NextResponse.json(insights);
+    if (!existing) {
+      return NextResponse.json(
+        { success: false, error: "Insight not found" },
+        { status: 404 }
+      );
+    }
+
+    await prisma.newsletter.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "Insight deleted successfully",
+    });
   } catch (error) {
-    console.error(error);
+    console.error("DELETE_INSIGHT_ERROR:", error);
 
     return NextResponse.json(
-      { error: "Failed to fetch insights" },
+      {
+        success: false,
+        error: "Failed to delete insight",
+      },
       { status: 500 }
     );
   }

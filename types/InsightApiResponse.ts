@@ -8,7 +8,7 @@ export type InsightApiResponse = {
   views?: number;
   sent?: boolean;
   coverImage?: string | null;
-}
+};
 
 export type Insight = {
   id: string;
@@ -18,5 +18,6 @@ export type Insight = {
   status: "Published" | "Draft";
   views: number;
   sent?: boolean;
+  published?: boolean; // ✅ ADD THIS
   coverImage?: string | null;
 };

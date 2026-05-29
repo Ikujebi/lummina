@@ -10,7 +10,7 @@ export async function GET() {
       include: {
         _count: {
           select: {
-            views: true, // comes from NewsletterView relation
+            views: true,
           },
         },
       },
@@ -29,8 +29,11 @@ export async function GET() {
       updatedAt: item.updatedAt,
       authorId: item.authorId,
 
-      // REAL analytics (NOT fake field)
+      // REAL analytics
       views: item._count.views,
+
+      // ✅ FIX: include sent status
+      sent: item.sent,
     }));
 
     return NextResponse.json(formatted);
@@ -81,3 +84,4 @@ export async function POST(req: Request) {
     );
   }
 }
+
