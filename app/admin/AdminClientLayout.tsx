@@ -11,7 +11,6 @@ import { Dropdown, Badge, Spin } from "antd";
 import type { MenuProps } from "antd";
 import Lummina2 from "@/public/img/Lummina2.png";
 
-
 interface AdminProfile {
   id: string;
   name: string;
@@ -107,8 +106,7 @@ export default function AdminSidebarWrapper({
     };
 
     window.addEventListener("storage", handleStorageChange);
-    return () =>
-      window.removeEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, [router]);
 
   const notificationMenu: MenuProps = {
@@ -125,28 +123,28 @@ export default function AdminSidebarWrapper({
           },
         ]
       : notifications.length === 0
-      ? [
-          {
-            key: "empty",
-            label: "No notifications",
-            disabled: true,
-          },
-        ]
-      : notifications.map((n) => ({
-          key: n.id,
-          label: (
-            <div
-              className={`text-sm ${
-                n.read ? "text-gray-400" : "font-medium"
-              }`}
-            >
-              {n.message}
-              <div className="text-xs text-gray-500">
-                {new Date(n.createdAt).toLocaleString()}
+        ? [
+            {
+              key: "empty",
+              label: "No notifications",
+              disabled: true,
+            },
+          ]
+        : notifications.map((n) => ({
+            key: n.id,
+            label: (
+              <div
+                className={`text-sm ${
+                  n.read ? "text-gray-400" : "font-medium"
+                }`}
+              >
+                {n.message}
+                <div className="text-xs text-gray-500">
+                  {new Date(n.createdAt).toLocaleString()}
+                </div>
               </div>
-            </div>
-          ),
-        })),
+            ),
+          })),
   };
 
   return (
@@ -161,13 +159,14 @@ export default function AdminSidebarWrapper({
           </button>
 
           <div className="font-semibold bg-[#F7E7CE]/40 shadow-xl text-lg rounded-xl">
-            <Link href="/" onClick={() => setSidebarOpen(false)}> 
+            <Link href="/" onClick={() => setSidebarOpen(false)}>
               <Image
                 src={Lummina2}
                 alt="Lummina Logo"
                 width={100}
                 height={50}
-                className="h-13 object-contain"
+                sizes="(max-width: 640px) 3.2rem, 4rem"
+                className="h-13 w-[4.5rem] object-contain"
               />
             </Link>
           </div>
@@ -205,9 +204,7 @@ export default function AdminSidebarWrapper({
       <div className="flex h-screen overflow-hidden">
         <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
 
-        <main className="flex-1 overflow-y-auto p-6 sm:p-10">
-          {children}
-        </main>
+        <main className="flex-1 overflow-y-auto p-6 sm:p-10">{children}</main>
       </div>
 
       <footer className="text-center p-4 text-xs sm:text-sm text-[#5F021F]/70 bg-[#FFF4E0]">
