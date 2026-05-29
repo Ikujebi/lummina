@@ -35,7 +35,7 @@ export default function ProfileForm({
               name: e.target.value,
             })
           }
-          className="w-full h-12 px-4 rounded-2xl border border-gray-200 bg-[#FAFAFA] focus:outline-none focus:ring-2 focus:ring-[#FFA500]"
+          className="w-full h-12 px-4 rounded-2xl border border-gray-200 bg-[#FAFAFA] focus:outline-none focus:ring-2 focus:ring-[#FFA500] text-[#5F021F]"
         />
       </div>
 

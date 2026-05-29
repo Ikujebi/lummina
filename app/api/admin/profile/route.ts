@@ -59,26 +59,28 @@ export async function PATCH(req: NextRequest) {
 
     const body = await req.json();
 
-    const { profilePicture, profilePicturePublicId } = body;
-
-    if (!profilePicture) {
-      return NextResponse.json(
-        { success: false, error: "Profile picture is required" },
-        { status: 400 }
-      );
-    }
+    const {
+      name,
+      email,
+      profilePicture,
+      profilePicturePublicId,
+    } = body;
 
     const updated = await prisma.user.update({
       where: { id: currentUser.id },
       data: {
-        profilePicture,
-        profilePicturePublicId,
+        ...(name && { name }),
+        ...(email && { email }),
+        ...(profilePicture && { profilePicture }),
+        ...(profilePicturePublicId && {
+          profilePicturePublicId,
+        }),
       },
     });
 
     await logAudit(
       currentUser.id,
-      "UPDATE_PROFILE_PICTURE",
+      "UPDATE_PROFILE",
       "AdminProfile",
       currentUser.id
     );

@@ -161,7 +161,7 @@ export default function AdminSidebarWrapper({
           </button>
 
           <div className="font-semibold bg-[#F7E7CE]/40 shadow-xl text-lg rounded-xl">
-            <Link href="/" onClick={() => setSidebarOpen(false)}> {/* ✅ FIX 2 */}
+            <Link href="/" onClick={() => setSidebarOpen(false)}> 
               <Image
                 src={Lummina2}
                 alt="Lummina Logo"
