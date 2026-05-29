@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import UsersTable from "../../components/admin-dashboard/UsersTable";
+import UsersTable from "../../components/admin-dashboard/users/UsersTable";
 import { approveUser } from "@/lib/api/users";
 import { message } from "antd";
 

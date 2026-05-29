@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import StatsWidgets from "../../components/admin-dashboard/StatsWidgets";
-import UsersTable from "../../components/admin-dashboard/UsersTable";
+import UsersTable from "../../components/admin-dashboard/users/UsersTable";
 import ReportsSection from "../../components/admin-dashboard/ReportsSection";
 import AlertsPanel from "../../components/admin-dashboard/AlertsPanel";
 import ChartsSection from "../../components/dashboard/ChartsSection";
