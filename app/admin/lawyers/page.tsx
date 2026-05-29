@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import UsersTable from "../../components/admin-dashboard/UsersTable";
 import { approveUser } from "@/lib/api/users";
+import { message } from "antd";
 
 interface User {
   id: string;
@@ -25,9 +26,7 @@ export default function LawyersPage() {
   const [newLawyerPassword, setNewLawyerPassword] = useState("");
 
   const [inviteEmail, setInviteEmail] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
 
-  // ✅ FIXED: fetch inside useEffect (no ESLint warning)
   useEffect(() => {
     const fetchLawyers = async () => {
       setLoading(true);
@@ -41,7 +40,7 @@ export default function LawyersPage() {
         );
       } catch (err) {
         console.error(err);
-        setMessage("Failed to fetch lawyers");
+        message.error("Failed to fetch lawyers");
       } finally {
         setLoading(false);
       }
@@ -52,7 +51,7 @@ export default function LawyersPage() {
 
   const addLawyer = async () => {
     if (!newLawyerName || !newLawyerEmail || !newLawyerPassword) {
-      setMessage("Please fill all fields");
+      message.warning("Please fill all fields");
       return;
     }
 
@@ -76,19 +75,19 @@ export default function LawyersPage() {
         setNewLawyerEmail("");
         setNewLawyerPassword("");
         setShowForm(false);
-        setMessage("Lawyer added successfully");
+        message.success("Lawyer added successfully");
       } else {
-        setMessage(data.error || "Failed to add lawyer");
+        message.error(data.error || "Failed to add lawyer");
       }
     } catch (err) {
       console.error(err);
-      setMessage("Failed to add lawyer");
+      message.error("Failed to add lawyer");
     }
   };
 
   const inviteLawyer = async () => {
     if (!inviteEmail) {
-      setMessage("Please enter an email");
+      message.warning("Please enter an email");
       return;
     }
 
@@ -105,15 +104,15 @@ export default function LawyersPage() {
       const data = await res.json();
 
       if (data.invitation) {
-        setMessage("Invitation sent successfully");
+        message.success("Invitation sent successfully");
         setInviteEmail("");
         setShowInviteForm(false);
       } else {
-        setMessage(data.error || "Failed to send invitation");
+        message.error(data.error || "Failed to send invitation");
       }
     } catch (err) {
       console.error(err);
-      setMessage("Failed to send invitation");
+      message.error("Failed to send invitation");
     }
   };
 
@@ -123,13 +122,6 @@ export default function LawyersPage() {
 
   return (
     <div className="flex flex-col gap-4 md:p-4">
-      {/* Message */}
-      {message && (
-        <div className="flex flex-col gap-2 border rounded bg-[#F7E7CE] w-full max-w-[600px] mx-auto p-4 text-sm">
-          {message}
-        </div>
-      )}
-
       {/* Header */}
       <section className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div className="w-full sm:max-w-[70%]">
@@ -202,7 +194,7 @@ export default function LawyersPage() {
             placeholder="Lawyer's Email"
             value={inviteEmail}
             onChange={(e) => setInviteEmail(e.target.value)}
-            className="px-3 py-2 border rounded text-[#5F021F]"
+            className="px-3 py-2 border rounded text-[#5F021F]  outline-none focus:outline-none focus:ring-0"
           />
 
           <div className="flex gap-2 mt-2">
@@ -210,7 +202,7 @@ export default function LawyersPage() {
               onClick={inviteLawyer}
               className="bg-[#5F021F] text-white px-4 py-2 rounded"
             >
-              Send Invite 
+              Send Invite
             </button>
 
             <button
@@ -223,13 +215,13 @@ export default function LawyersPage() {
         </div>
       )}
 
-      {/* Search input*/}
+      {/* Search */}
       <input
         type="search"
         placeholder="Search lawyers..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="px-4 py-2 border rounded-xl text-[#5F021F] outline-none focus:outline-none focus:ring-0"
+        className="px-4 py-2 border rounded-xl text-[#5F021F] outline-none focus:ring-0"
       />
 
       {/* Table */}
@@ -243,13 +235,11 @@ export default function LawyersPage() {
 
             setLawyers((prev) =>
               prev.map((u) =>
-                u.id === user.id
-                  ? { ...u, isApproved: true }
-                  : u,
+                u.id === user.id ? { ...u, isApproved: true } : u,
               ),
             );
 
-            setMessage("User approved successfully");
+            message.success("User approved successfully");
           }}
           onSave={async (updatedUser) => {
             const res = await fetch(`/api/admin/users/${updatedUser.id}`, {
@@ -261,7 +251,7 @@ export default function LawyersPage() {
             const data = await res.json();
 
             if (!res.ok) {
-              setMessage(data.error);
+              message.error(data.error);
               return;
             }
 
@@ -271,7 +261,7 @@ export default function LawyersPage() {
               ),
             );
 
-            setMessage("User updated successfully");
+            message.success("User updated successfully");
           }}
           onDelete={async (user) => {
             await fetch(`/api/admin/users/${user.id}`, {
@@ -282,7 +272,7 @@ export default function LawyersPage() {
               prev.filter((u) => u.id !== user.id),
             );
 
-            setMessage("User deleted successfully");
+            message.success("User deleted successfully");
           }}
         />
       )}
