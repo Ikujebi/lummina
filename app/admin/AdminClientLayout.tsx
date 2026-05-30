@@ -84,7 +84,7 @@ export default function AdminClientLayout({
           setOpen={setSidebarOpen}
         />
 
-        <main className="flex-1 overflow-y-auto p-6 sm:p-10">
+        <main className="flex-1  p-6 sm:p-10 overflow-y-auto no-scrollbar">
           {children}
         </main>
       </div>

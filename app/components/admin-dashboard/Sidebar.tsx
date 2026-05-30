@@ -57,11 +57,10 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
       >
         <Link
           href={item.href!}
-          className={`flex items-center gap-2 px-4 py-3 rounded-xl font-semibold transition-all duration-200 ${
-            isActive
-              ? "bg-[#FFD6A5] text-[#5F021F]"
-              : "text-[#5F021F]/80 hover:bg-[#FFE8B2]"
-          }`}
+          className={`flex items-center gap-2 px-4 py-[.56rem] md:py-3 rounded-xl font-semibold transition-all duration-200 ${isActive
+            ? "bg-[#FFD6A5] text-[#5F021F]"
+            : "text-[#5F021F]/80 hover:bg-[#FFE8B2]"
+            }`}
           onClick={() => setOpen(false)}
         >
           {item.icon} {item.label}
@@ -109,10 +108,10 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
       </AnimatePresence>
 
       {/* DESKTOP */}
-      <aside className="hidden lg:flex flex-col p-6 bg-[#FFF4E0] border-r border-[#5F021F]/10 min-w-[260px]">
-        <nav className="flex flex-col gap-3">
-          {menuItems.map(renderLink)}
-        </nav>
+      <aside className="hidden lg:flex flex-col fixed top-0 left-0 h-screen w-[260px] p-6 bg-[#FFF4E0] border-r border-[#5F021F]/10 ">        
+      <nav className="flex flex-col gap-3">
+        {menuItems.map(renderLink)}
+      </nav>
       </aside>
     </>
   );
