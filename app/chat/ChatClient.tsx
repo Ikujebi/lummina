@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import Pusher from "pusher-js";
 import { Message } from "@/types/chat";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/app/hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 

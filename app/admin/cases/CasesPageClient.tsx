@@ -5,7 +5,7 @@ import type { Case, Lawyer, MatterRequest } from "@/types/admin";
 import { Select, Button, Divider } from "antd";
 import MattersTable from "../../components/admin-dashboard/MattersTable";
 import MatterActionModal from "../../components/admin-dashboard/MatterActionModal";
-import { useCases } from "@/app/hooks/useCases";
+import { useCases } from "@/hooks/useCases";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import "./cases.css";
 
