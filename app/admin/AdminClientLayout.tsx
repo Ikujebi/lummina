@@ -76,6 +76,7 @@ export default function AdminClientLayout({
         notifications={notifications}
         notificationMenu={notificationMenu}
       />
+      
 
       <div className="flex h-screen overflow-hidden">
         <Sidebar

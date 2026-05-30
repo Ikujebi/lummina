@@ -93,7 +93,7 @@ export default function ChartsSection({
 
   // ================= UI =================
   return (
-    <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
+    <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full my-5">
 
       {/* Doughnut */}
       <div className="bg-white p-6 rounded-2xl shadow h-[350px]">
