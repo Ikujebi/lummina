@@ -15,12 +15,10 @@ export default function ClientShell({
     <div className="min-h-screen bg-[#F7e7ce] flex">
 
       {/* FIXED SIDEBAR */}
-      <div className="hidden lg:block lg:fixed lg:inset-y-0 lg:w-[260px]">
-        <Sidebar
-          open={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-        />
-      </div>
+    <Sidebar
+  open={sidebarOpen}
+  onClose={() => setSidebarOpen(false)}
+/>
 
       {/* Content Area */}
       <div className="flex flex-col w-full min-h-screen lg:ml-[260px]">
