@@ -125,7 +125,7 @@ export default function Sidebar({ open, onClose }: Props) {
                           overflow-hidden
                           ${
                             isActive
-                              ? "bg-[#FFA500] text-white shadow-lg"
+                              ? "bg-[#5F021F] text-white shadow-lg"
                               : "text-gray-700 hover:bg-[#F7E7CE] hover:text-[#5F021F]"
                           }
                         `}
