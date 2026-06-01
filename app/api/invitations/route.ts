@@ -9,6 +9,7 @@ interface InvitationBody {
   id?: string;
   email?: string;
   role?: "ADMIN" | "LAWYER" | "CLIENT";
+   expiresAt?: string;
 }
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -40,40 +41,77 @@ export async function POST(req: Request) {
     const admin = await requireAdmin();
 
     const body: InvitationBody = await req.json();
-    const { email, role } = body;
 
-    if (!email || !role) {
+    const { email, role, expiresAt } = body;
+
+    if (!email || !role || !expiresAt) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
+    const expiryDate = new Date(expiresAt);
+
+    if (isNaN(expiryDate.getTime())) {
+      return NextResponse.json(
+        { error: "Invalid expiry date" },
+        { status: 400 }
+      );
+    }
+
+    if (expiryDate <= new Date()) {
+      return NextResponse.json(
+        { error: "Expiry date must be in the future" },
+        { status: 400 }
+      );
+    }
+
     const token = randomUUID();
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     const invitation = await prisma.invitation.create({
       data: {
         email,
         role,
         token,
-        expiresAt,
+        expiresAt: expiryDate,
         userId: admin.id,
       } as Prisma.InvitationUncheckedCreateInput,
     });
 
-    const invitationLink = `${process.env.NEXT_PUBLIC_BASE_URL}/register?token=${token}`;
+    const invitationLink =
+      `${process.env.NEXT_PUBLIC_BASE_URL}/register?token=${token}`;
 
     const { error } = await resend.emails.send({
       from: "Lummina Law <noreply@legal.lumminalaw.com>",
       to: email,
       subject: "You're invited to Lummina Law",
-      text: `You have been invited as a ${role}.\n\n${invitationLink}`,
+      text: `
+You have been invited as a ${role}.
+
+Accept Invitation:
+${invitationLink}
+
+This invitation expires on ${expiryDate.toLocaleString()}.
+      `,
       html: `
         <p>Hello,</p>
-        <p>You have been invited to join Lummina Law as a <strong>${role}</strong>.</p>
-        <p><a href="${invitationLink}">Accept Invitation</a></p>
-        <p>Expires: ${expiresAt.toLocaleString()}</p>
+
+        <p>
+          You have been invited to join Lummina Law as a
+          <strong>${role}</strong>.
+        </p>
+
+        <p>
+          <a href="${invitationLink}">
+            Accept Invitation
+          </a>
+        </p>
+
+        <p>
+          <strong>Expires:</strong>
+          ${expiryDate.toLocaleString()}
+        </p>
       `,
     });
 
@@ -85,7 +123,9 @@ export async function POST(req: Request) {
       message: "Invitation created and email sent",
       invitation,
     });
-  } catch {
+  } catch (error) {
+    console.error("INVITATION_CREATE_ERROR:", error);
+
     return NextResponse.json(
       { error: "Failed to create invitation" },
       { status: 500 }

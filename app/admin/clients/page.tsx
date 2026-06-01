@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import UsersTable from "../../components/admin-dashboard/users/UsersTable";
 import { User } from "@/types/admin";
 import { approveUser, deleteUser, updateUser } from "@/lib/api/users";
-
+import { message, Modal } from "antd";
 export default function ClientsPage() {
   const [clients, setClients] = useState<User[]>([]);
   const [search, setSearch] = useState("");
@@ -15,6 +15,7 @@ export default function ClientsPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteExpiry, setInviteExpiry] = useState("");
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     fetchClients();
@@ -29,7 +30,7 @@ export default function ClientsPage() {
 
       const usersArray: User[] = Array.isArray(data)
         ? data
-        : data.users ?? [];
+        : (data.users ?? []);
 
       setClients(usersArray.filter((u) => u.role === "CLIENT"));
     } catch (err) {
@@ -40,49 +41,67 @@ export default function ClientsPage() {
   }
 
   const filteredClients = clients.filter((u) =>
-    (u.name ?? "").toLowerCase().includes(search.toLowerCase())
+    (u.name ?? "").toLowerCase().includes(search.toLowerCase()),
   );
 
-  async function sendInvite() {
-    if (!inviteEmail || !inviteExpiry) return;
+async function sendInvite() {
+  setError("");
 
-    setSending(true);
-
-    try {
-      const res = await fetch("/api/invitations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: inviteEmail,
-          role: "CLIENT",
-          expiresAt: inviteExpiry,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error || "Failed");
-
-      setInviteEmail("");
-      setInviteExpiry("");
-      setOpenInvite(false);
-
-      await fetchClients();
-    } catch (err) {
-      console.error("Invite failed:", err);
-    } finally {
-      setSending(false);
-    }
+  if (!inviteEmail) {
+    setError("Email is required.");
+    return;
   }
+
+  if (!inviteExpiry) {
+    setError("Please select an invitation expiry date.");
+    return;
+  }
+
+  setSending(true);
+
+  try {
+    const res = await fetch("/api/invitations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: inviteEmail,
+        role: "CLIENT",
+        expiresAt: inviteExpiry,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to send invitation");
+    }
+
+    setInviteEmail("");
+    setInviteExpiry("");
+    setError("");
+    setOpenInvite(false);
+
+    message.success("Invitation sent successfully");
+
+    await fetchClients();
+  } catch (err) {
+    setError(
+      err instanceof Error
+        ? err.message
+        : "Failed to send invitation"
+    );
+
+    console.error("Invite failed:", err);
+  } finally {
+    setSending(false);
+  }
+}
 
   return (
     <div className="flex flex-col gap-6">
-
       {/* HEADER */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-[#5F021F]">
-          Clients
-        </h1>
+        <h1 className="text-2xl font-semibold text-[#5F021F]">Clients</h1>
 
         <button
           onClick={() => setOpenInvite(true)}
@@ -107,49 +126,72 @@ export default function ClientsPage() {
       ) : (
         <UsersTable
           users={filteredClients}
-
           // ✅ FIXED HERE
-          onApprove={async (user) => {
-            await approveUser(user.id);
+         onApprove={async (user) => {
+  try {
+    await approveUser(user.id);
 
-            setClients((prev) =>
-              prev.map((u) =>
-                u.id === user.id
-                  ? { ...u, isApproved: true }
-                  : u
-              )
-            );
-          }}
+    setClients((prev) =>
+      prev.map((u) =>
+        u.id === user.id
+          ? { ...u, isApproved: true }
+          : u
+      )
+    );
 
-          onSave={async (updatedUser) => {
-            await updateUser(updatedUser);
+    message.success("Client approved");
+  } catch {
+    message.error("Failed to approve client");
+  }
+}}
+         onSave={async (updatedUser) => {
+  try {
+    await updateUser(updatedUser);
 
-            setClients((prev) =>
-              prev.map((u) =>
-                u.id === updatedUser.id
-                  ? updatedUser
-                  : u
-              )
-            );
-          }}
+    setClients((prev) =>
+      prev.map((u) =>
+        u.id === updatedUser.id
+          ? updatedUser
+          : u
+      )
+    );
 
+    message.success("Client updated");
+  } catch {
+    message.error("Failed to update client");
+  }
+}}
           // ✅ FIXED HERE
           onDelete={async (user) => {
-            await deleteUser(user.id);
+  Modal.confirm({
+    title: "Delete Client",
+    content: `Are you sure you want to delete ${user.name}? This action cannot be undone.`,
+    okText: "Delete",
+    okType: "danger",
+    cancelText: "Cancel",
 
-            setClients((prev) =>
-              prev.filter((u) => u.id !== user.id)
-            );
-          }}
+    async onOk() {
+      try {
+        await deleteUser(user.id);
+
+        setClients((prev) =>
+          prev.filter((u) => u.id !== user.id)
+        );
+
+        message.success("Client deleted successfully");
+      } catch {
+        message.error("Failed to delete client");
+      }
+    },
+  });
+}}
         />
       )}
 
       {/* ================= INVITE MODAL ================= */}
       {openInvite && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-
           <div className="bg-white w-full max-w-md rounded-xl p-6 space-y-4">
-
             <h2 className="text-lg font-semibold text-[#5F021F]">
               Invite Client
             </h2>
@@ -162,15 +204,24 @@ export default function ClientsPage() {
               className="w-full border p-2 rounded-lg"
             />
 
-            <input
-              type="datetime-local"
-              value={inviteExpiry}
-              onChange={(e) => setInviteExpiry(e.target.value)}
-              className="w-full border p-2 rounded-lg"
-            />
+            <div>
+              <label className="block text-sm font-medium text-[#5F021F] mb-1">
+                Invitation Expiry Date
+              </label>
 
+              <input
+                type="datetime-local"
+                value={inviteExpiry}
+                onChange={(e) => setInviteExpiry(e.target.value)}
+                className="w-full border p-2 rounded-lg"
+              />
+            </div>
+            {error && (
+  <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
+    {error}
+  </p>
+)}
             <div className="flex justify-end gap-2">
-
               <button
                 onClick={() => setOpenInvite(false)}
                 className="px-4 py-2 rounded-lg border"
@@ -185,14 +236,10 @@ export default function ClientsPage() {
               >
                 {sending ? "Sending..." : "Send Invite"}
               </button>
-
             </div>
-
           </div>
-
         </div>
       )}
-
     </div>
   );
 }

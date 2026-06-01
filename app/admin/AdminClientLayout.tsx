@@ -20,10 +20,14 @@ export default function AdminClientLayout({
 
   const admin = useAdminProfile();
 
-  const { notifications, loadingNotifications } =
-    useNotifications();
+  const { notifications, loadingNotifications } = useNotifications();
 
   useAuthRedirect();
+
+  // ✅ FIX: prevent runtime crash if API returns non-array
+  const safeNotifications = Array.isArray(notifications)
+    ? notifications
+    : [];
 
   const notificationMenu: MenuProps = {
     items: loadingNotifications
@@ -39,7 +43,7 @@ export default function AdminClientLayout({
             disabled: true,
           },
         ]
-      : notifications.length === 0
+      : safeNotifications.length === 0
       ? [
           {
             key: "empty",
@@ -47,22 +51,18 @@ export default function AdminClientLayout({
             disabled: true,
           },
         ]
-      : notifications.map((notification) => ({
+      : safeNotifications.map((notification) => ({
           key: notification.id,
           label: (
             <div
               className={`text-sm ${
-                notification.read
-                  ? "text-gray-400"
-                  : "font-medium"
+                notification.read ? "text-gray-400" : "font-medium"
               }`}
             >
               {notification.message}
 
               <div className="text-xs text-gray-500">
-                {new Date(
-                  notification.createdAt
-                ).toLocaleString()}
+                {new Date(notification.createdAt).toLocaleString()}
               </div>
             </div>
           ),
@@ -74,28 +74,24 @@ export default function AdminClientLayout({
       <AdminHeader
         setSidebarOpen={setSidebarOpen}
         admin={admin}
-        notifications={notifications}
+        notifications={safeNotifications} // optional but safer
         notificationMenu={notificationMenu}
       />
 
       <div className="min-h-screen bg-[#F7E7CE] flex">
         {/* SIDEBAR */}
-        <Sidebar
-          open={sidebarOpen}
-          setOpen={setSidebarOpen}
-        />
+        <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
 
         {/* CONTENT AREA */}
         <div className="flex flex-col flex-1 lg:ml-[16.25rem]">
-<main className="flex-1 px-4 sm:px-6 md:px-8 lg:px-10 py-6">            {/* CENTERED CONTENT CONTAINER */}
+          <main className="flex-1 px-4 sm:px-6 md:px-8 lg:px-10 py-6">
             <div className="w-full max-w-7xl mx-auto">
               {children}
             </div>
           </main>
 
           <footer className="text-center p-4 text-xs sm:text-sm text-[#5F021F]/70 bg-[#FFF4E0] border-t border-[#5F021F]/10">
-            © 2026 Lummina Law Management System. All rights
-            reserved.
+            © 2026 Lummina Law Management System. All rights reserved.
           </footer>
         </div>
       </div>
