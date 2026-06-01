@@ -9,6 +9,7 @@ import {
   FileText,
   FolderOpen,
   BookOpen,
+  Bell,
   Settings,
 } from "lucide-react";
 import LogoutButton from "../LogoutButton";
@@ -137,6 +138,7 @@ export default function Sidebar({ open, onClose }: Props) {
     { label: "Documents", href: "/client/documents", icon: FileText },
     { label: "Matters", href: "/client/cases", icon: FolderOpen },
     { label: "Glossary", href: "/glossary", icon: BookOpen },
+    { label: "Notifications", href: "/notifications", icon: Bell },
     {
       label: "Request New Matter",
       href: "/client/matters/request",

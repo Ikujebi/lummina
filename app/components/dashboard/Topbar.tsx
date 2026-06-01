@@ -4,7 +4,7 @@ import { Gyahegi } from "@/app/fonts";
 import Image from "next/image";
 import Logo from "@/public/img/Lummina2.png";
 import { Bell, Menu } from "lucide-react";
-
+import { useRouter } from "next/navigation";
 import { useClientUser } from "@/context/ClientUserContext";
 
 type TopbarProps = {
@@ -17,7 +17,7 @@ export default function Topbar({
   onToggleSidebar,
 }: TopbarProps) {
   const { user } = useClientUser();
-
+const router = useRouter();
   const clientName = user?.name || "User";
   const userRole = user?.role || "Client";
 
@@ -53,6 +53,7 @@ export default function Topbar({
       <div className="flex items-center gap-2 md:gap-5">
         {/* Notifications */}
         <button
+        onClick={() => router.push("/notifications")}
           className="relative p-2.5 text-[#5F021F] hover:bg-[#5F021F]/5 rounded-xl transition-all group"
           aria-label={`${notifications} unread notifications`}
         >

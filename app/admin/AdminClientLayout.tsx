@@ -87,8 +87,7 @@ export default function AdminClientLayout({
 
         {/* CONTENT AREA */}
         <div className="flex flex-col flex-1 lg:ml-[16.25rem]">
-          <main className="flex-1 overflow-y-auto no-scrollbar px-4 sm:px-6 md:px-8 lg:px-10 py-6">
-            {/* CENTERED CONTENT CONTAINER */}
+<main className="flex-1 px-4 sm:px-6 md:px-8 lg:px-10 py-6">            {/* CENTERED CONTENT CONTAINER */}
             <div className="w-full max-w-7xl mx-auto">
               {children}
             </div>

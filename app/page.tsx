@@ -63,9 +63,9 @@ export default function SignInPage() {
   };
 
   return (
-    <main className="relative min-h-screen flex items-center justify-center px-6 overflow-hidden">
+    <main className="relative min-h-screen flex items-center justify-center px-6 overflow-hidden text-[#5F021F]/90">
 
-      {/* Background image (slightly softened, not dark) */}
+      {/* Background image */}
       <Image
         src={Bg}
         alt="Background"
@@ -74,10 +74,10 @@ export default function SignInPage() {
         className="object-cover -z-20 brightness-90 contrast-105 saturate-95"
       />
 
-      {/* Cream overlay (lighter + softer than before) */}
+      {/* Cream overlay */}
       <div className="absolute inset-0 bg-[#F6E9D2]/70 backdrop-blur-[2px] -z-10" />
 
-      {/* Subtle warm glow (reduced intensity) */}
+      {/* Subtle warm glow */}
       <div className="absolute w-[450px] h-[450px] bg-[#FFD580]/10 rounded-full blur-3xl top-[-120px] left-[-120px]" />
 
       {/* Card */}
@@ -108,7 +108,8 @@ export default function SignInPage() {
               value={form.email}
               onChange={handleChange}
               required
-              className="h-12 px-4 rounded-lg bg-white/70 border border-[#E6C98F]/40 text-[#5F021F] focus:outline-none focus:ring-2 focus:ring-[#5F021F]/50 transition"
+              /* FIXED HERE: Added dark:text-[#5F021F] text-[#5F021F] */
+              className="h-12 px-4 rounded-lg bg-white/70 border border-[#E6C98F]/40 text-[#5F021F] dark:text-[#5F021F] focus:outline-none focus:ring-2 focus:ring-[#5F021F]/50 transition"
             />
           </div>
 
@@ -122,7 +123,8 @@ export default function SignInPage() {
                 value={form.password}
                 onChange={handleChange}
                 required
-                className="w-full h-12 px-4 pr-12 rounded-lg bg-white/70 border border-[#E6C98F]/40 text-[#5F021F] focus:outline-none focus:ring-2 focus:ring-[#5F021F]/50 transition"
+                /* FIXED HERE: Added dark:text-[#5F021F] text-[#5F021F] */
+                className="w-full h-12 px-4 pr-12 rounded-lg bg-white/70 border border-[#E6C98F]/40 text-[#5F021F] dark:text-[#5F021F] focus:outline-none focus:ring-2 focus:ring-[#5F021F]/50 transition"
               />
               <button
                 type="button"

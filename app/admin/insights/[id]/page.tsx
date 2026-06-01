@@ -132,7 +132,7 @@ export default function EditInsightPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FFF7E7] p-6 md:p-10">
+    <div className="min-h-screen overflow-y-auto bg-[#FFF7E7] p-6 md:p-10">
       <div className="max-w-5xl mx-auto bg-white rounded-3xl border border-[#5F021F]/10 shadow-xl overflow-hidden">
 
         {/* HEADER */}

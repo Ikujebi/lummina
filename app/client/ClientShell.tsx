@@ -15,6 +15,7 @@ export default function ClientShell({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -37,6 +38,33 @@ export default function ClientShell({
     loadUser();
   }, []);
 
+  useEffect(() => {
+  let mounted = true;
+
+  (async () => {
+    try {
+      const res = await fetch("/api/notifications", {
+        credentials: "include",
+      });
+
+      if (!res.ok) return;
+
+      const data = await res.json();
+
+      if (!mounted) return;
+
+      setUnreadCount(data.unreadCount ?? 0);
+    } catch {
+      // silent fail
+    }
+  })();
+
+  return () => {
+    mounted = false;
+  };
+}, []);
+
+
   if (loading) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-[#F7e7ce]">
@@ -44,6 +72,8 @@ export default function ClientShell({
       </div>
     );
   }
+
+
 
   return (
     <ClientUserProvider initialUser={user!}>
@@ -58,6 +88,7 @@ export default function ClientShell({
         <div className="flex flex-col w-full h-screen lg:ml-[260px] overflow-hidden">
 
           <Topbar
+          notifications={unreadCount}
             onToggleSidebar={() =>
               setSidebarOpen((prev) => !prev)
             }
