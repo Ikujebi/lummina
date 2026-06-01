@@ -157,7 +157,7 @@ export default function CasesPage() {
   // RENDER
   // =========================
   return (
-    <div className="flex flex-col gap-6 px-3 sm:px-6">
+    <div className="flex flex-col gap-6 px-3 sm:px-6 text-[#5F021F]">
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h1 className="text-xl sm:text-2xl font-semibold text-[#5F021F]">
@@ -179,7 +179,7 @@ export default function CasesPage() {
         </h2>
 
         {requests.length === 0 ? (
-          <p className="text-gray-400 text-sm">No pending requests</p>
+          <p className="text-[#5F021F] text-sm">No pending requests</p>
         ) : (
           <div className="flex flex-col gap-4">
             {requests.map((request) => {
@@ -188,18 +188,18 @@ export default function CasesPage() {
               return (
                 <div
                   key={request.id}
-                  className="flex flex-col gap-3 border-b pb-4"
+                  className="flex flex-col gap-3 border-b pb-4 text-[#5F021F] "
                 >
                   <div>
                     <h3 className="font-medium text-[#5F021F]">
                       {request.title}
                     </h3>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-[#5F021F]">
                       {request.description || "No description"}
                     </p>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2 ">
                     <Select
                       placeholder="Assign lawyer"
                       value={selectedLawyerId}

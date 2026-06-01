@@ -101,7 +101,7 @@ async function sendInvite() {
     <div className="flex flex-col gap-6">
       {/* HEADER */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-[#5F021F]">Clients</h1>
+        <h1 className="text-2xl font-semibold ">Clients</h1>
 
         <button
           onClick={() => setOpenInvite(true)}
@@ -117,7 +117,7 @@ async function sendInvite() {
         placeholder="Search clients..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="px-4 py-2 rounded-xl border border-[#5F021F]/30 outline-none w-full sm:w-64"
+        className="px-4 py-2 rounded-xl border border-[#5F021F]/30 outline-none w-full sm:w-64 text-[#5F021F]"
       />
 
       {/* TABLE */}
@@ -190,9 +190,9 @@ async function sendInvite() {
 
       {/* ================= INVITE MODAL ================= */}
       {openInvite && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 text-[#5F021F]">
           <div className="bg-white w-full max-w-md rounded-xl p-6 space-y-4">
-            <h2 className="text-lg font-semibold text-[#5F021F]">
+            <h2 className="text-lg font-semibold ">
               Invite Client
             </h2>
 
@@ -201,11 +201,11 @@ async function sendInvite() {
               placeholder="Client email"
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
-              className="w-full border p-2 rounded-lg"
+              className="w-full border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5F021F]"
             />
 
             <div>
-              <label className="block text-sm font-medium text-[#5F021F] mb-1">
+              <label className="block text-sm font-medium  mb-1">
                 Invitation Expiry Date
               </label>
 
@@ -213,7 +213,7 @@ async function sendInvite() {
                 type="datetime-local"
                 value={inviteExpiry}
                 onChange={(e) => setInviteExpiry(e.target.value)}
-                className="w-full border p-2 rounded-lg"
+                className="w-full border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5F021F]"
               />
             </div>
             {error && (

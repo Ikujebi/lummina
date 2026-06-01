@@ -112,7 +112,9 @@ export default function MattersTable({ cases, onOpenCase }: Props) {
         border: "1px solid rgba(95,2,31,0.2)",
         borderRadius: 12,
         overflow: "hidden",
+        color: BRAND,
       }}
+      
     >
       <div
         style={{
@@ -134,6 +136,7 @@ export default function MattersTable({ cases, onOpenCase }: Props) {
         }}
         pagination={{ pageSize: 10 }}
         scroll={{ x: "max-content" }}
+        
       />
     </div>
   );
