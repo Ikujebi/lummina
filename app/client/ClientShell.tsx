@@ -98,7 +98,7 @@ export default function ClientShell({
             {children}
           </main>
 
-          <footer className="text-center p-4 text-xs sm:text-sm text-[#5F021F]/70 bg-[#FFF4E0]">
+          <footer className="text-center p-4 text-xs sm:text-sm text-[#5F021F]/70 bg-white mt-10">
             © 2026 Lummina Law Management System. All rights reserved.
           </footer>
         </div>
