@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { Camera, Eye, EyeOff, Loader2 } from "lucide-react";
+import { useClientImageUpload } from "@/hooks/useClientImageUpload";
 
 type User = {
   id: string;
@@ -33,8 +34,6 @@ export default function ClientSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const [uploadingImage, setUploadingImage] = useState(false);
-
   const [changingPassword, setChangingPassword] = useState(false);
 
   // PASSWORD STATE
@@ -48,7 +47,14 @@ export default function ClientSettingsPage() {
   const [showConfirm, setShowConfirm] = useState(false);
 
   const strength = getStrength(newPassword);
-
+  const {
+    uploadImage,
+    uploading,
+    preview,
+    setPreview,
+    uploadProgress,
+    message,
+  } = useClientImageUpload();
   useEffect(() => {
     async function load() {
       try {
@@ -69,6 +75,11 @@ export default function ClientSettingsPage() {
     load();
   }, []);
 
+  useEffect(() => {
+    if (user?.profilePicture) {
+      setPreview(user.profilePicture);
+    }
+  }, [user, setPreview]);
   function updateField(field: keyof User, value: string) {
     setUser((prev) => {
       if (!prev) return prev;
@@ -83,46 +94,12 @@ export default function ClientSettingsPage() {
   /* =======================
      IMAGE UPLOAD
   ======================= */
-  async function handleImageUpload(
-    e: React.ChangeEvent<HTMLInputElement>
-  ) {
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
 
     if (!file || !user) return;
 
-    try {
-      setUploadingImage(true);
-
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const uploadRes = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!uploadRes.ok) {
-        throw new Error("Failed to upload image");
-      }
-
-      const uploadData = await uploadRes.json();
-
-      setUser((prev) => {
-        if (!prev) return prev;
-
-        return {
-          ...prev,
-          profilePicture: uploadData.fileUrl,
-        };
-      });
-
-      alert("Profile picture uploaded successfully");
-    } catch (err) {
-      console.error(err);
-      alert("Failed to upload image");
-    } finally {
-      setUploadingImage(false);
-    }
+    await uploadImage(file, user, setUser);
   }
 
   /* =======================
@@ -201,9 +178,7 @@ export default function ClientSettingsPage() {
         throw new Error(data.error || "Failed");
       }
 
-      alert(
-        "Password updated successfully. Please log in again."
-      );
+      alert("Password updated successfully. Please log in again.");
 
       setCurrentPassword("");
       setNewPassword("");
@@ -220,24 +195,15 @@ export default function ClientSettingsPage() {
   }
 
   if (loading) {
-    return (
-      <p className="text-[#5F021F] font-medium">
-        Loading settings...
-      </p>
-    );
+    return <p className="text-[#5F021F] font-medium">Loading settings...</p>;
   }
 
   if (!user) {
-    return (
-      <p className="text-red-600">
-        Failed to load user
-      </p>
-    );
+    return <p className="text-red-600">Failed to load user</p>;
   }
 
   return (
     <div className="max-w-3xl space-y-8">
-
       {/* HEADER */}
       <div>
         <h1 className="text-3xl font-black tracking-tight text-[#5F021F]">
@@ -251,7 +217,6 @@ export default function ClientSettingsPage() {
 
       {/* ================= PROFILE ================= */}
       <div className="bg-white border border-gray-200 rounded-3xl shadow-sm overflow-hidden">
-
         <div className="border-b border-gray-100 px-6 py-5">
           <h2 className="text-lg font-bold text-[#5F021F]">
             Profile Information
@@ -259,17 +224,13 @@ export default function ClientSettingsPage() {
         </div>
 
         <div className="p-6 space-y-8">
-
           {/* PROFILE IMAGE */}
           <div className="flex items-center gap-5">
-
             <div className="relative">
-
               <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-[#FFA500]/20 shadow-md bg-[#5F021F]">
-
-                {user.profilePicture ? (
+                {preview || user.profilePicture ? (
                   <Image
-                    src={user.profilePicture}
+                    src={preview || user.profilePicture || ""}
                     alt={user.name}
                     width={112}
                     height={112}
@@ -280,7 +241,6 @@ export default function ClientSettingsPage() {
                     {user.email.charAt(0).toUpperCase()}
                   </div>
                 )}
-
               </div>
 
               <button
@@ -288,7 +248,7 @@ export default function ClientSettingsPage() {
                 onClick={() => fileInputRef.current?.click()}
                 className="absolute bottom-1 right-1 w-10 h-10 rounded-full bg-[#FFA500] text-[#5F021F] flex items-center justify-center shadow-lg hover:scale-105 transition"
               >
-                {uploadingImage ? (
+                {uploading ? (
                   <Loader2 size={18} className="animate-spin" />
                 ) : (
                   <Camera size={18} />
@@ -302,23 +262,42 @@ export default function ClientSettingsPage() {
                 className="hidden"
                 onChange={handleImageUpload}
               />
-
             </div>
 
             <div>
-              <h3 className="font-bold text-lg text-[#5F021F]">
-                {user.name}
-              </h3>
+              <h3 className="font-bold text-lg text-[#5F021F]">{user.name}</h3>
 
-              <p className="text-sm text-gray-500">
-                {user.email}
-              </p>
+              <p className="text-sm text-gray-500">{user.email}</p>
 
               <p className="text-xs text-gray-400 mt-2">
                 JPG, PNG or WEBP supported
               </p>
-            </div>
+              {message.text && (
+                <p
+                  className={`mt-2 text-sm ${
+                    message.type === "success"
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }`}
+                >
+                  {message.text}
+                </p>
+              )}
+              {uploading && (
+  <div className="mt-3 w-56">
+    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div
+        className="h-full bg-[#FFA500] transition-all"
+        style={{ width: `${uploadProgress}%` }}
+      />
+    </div>
 
+    <p className="text-xs text-gray-500 mt-1">
+      Uploading... {uploadProgress}%
+    </p>
+  </div>
+)}
+            </div>
           </div>
 
           {/* EMAIL */}
@@ -329,9 +308,7 @@ export default function ClientSettingsPage() {
 
             <input
               value={user.email}
-              onChange={(e) =>
-                updateField("email", e.target.value)
-              }
+              onChange={(e) => updateField("email", e.target.value)}
               className="
                 w-full
                 rounded-2xl
@@ -352,7 +329,7 @@ export default function ClientSettingsPage() {
           {/* SAVE BUTTON */}
           <button
             onClick={handleSave}
-            disabled={saving || uploadingImage}
+            disabled={saving || uploading}
             className="
               inline-flex
               items-center
@@ -370,17 +347,13 @@ export default function ClientSettingsPage() {
           >
             {saving ? "Saving..." : "Save Changes"}
           </button>
-
         </div>
       </div>
 
       {/* ================= PASSWORD ================= */}
       <div className="bg-white border border-gray-200 rounded-3xl shadow-sm overflow-hidden">
-
         <div className="border-b border-gray-100 px-6 py-5">
-          <h2 className="text-lg font-bold text-[#5F021F]">
-            Change Password
-          </h2>
+          <h2 className="text-lg font-bold text-[#5F021F]">Change Password</h2>
 
           <p className="text-sm text-gray-500 mt-1">
             After changing your password, you will be logged out automatically.
@@ -388,7 +361,6 @@ export default function ClientSettingsPage() {
         </div>
 
         <div className="p-6 space-y-5">
-
           {/* CURRENT PASSWORD */}
           <div>
             <p className="text-sm font-medium text-gray-600 mb-2">
@@ -396,13 +368,10 @@ export default function ClientSettingsPage() {
             </p>
 
             <div className="relative">
-
               <input
                 type={showCurrent ? "text" : "password"}
                 value={currentPassword}
-                onChange={(e) =>
-                  setCurrentPassword(e.target.value)
-                }
+                onChange={(e) => setCurrentPassword(e.target.value)}
                 className="
                   w-full
                   rounded-2xl
@@ -423,13 +392,8 @@ export default function ClientSettingsPage() {
                 onClick={() => setShowCurrent(!showCurrent)}
                 className="absolute right-4 top-3.5 text-gray-500"
               >
-                {showCurrent ? (
-                  <EyeOff size={18} />
-                ) : (
-                  <Eye size={18} />
-                )}
+                {showCurrent ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
-
             </div>
           </div>
 
@@ -440,13 +404,10 @@ export default function ClientSettingsPage() {
             </p>
 
             <div className="relative">
-
               <input
                 type={showNew ? "text" : "password"}
                 value={newPassword}
-                onChange={(e) =>
-                  setNewPassword(e.target.value)
-                }
+                onChange={(e) => setNewPassword(e.target.value)}
                 className="
                   w-full
                   rounded-2xl
@@ -467,13 +428,8 @@ export default function ClientSettingsPage() {
                 onClick={() => setShowNew(!showNew)}
                 className="absolute right-4 top-3.5 text-gray-500"
               >
-                {showNew ? (
-                  <EyeOff size={18} />
-                ) : (
-                  <Eye size={18} />
-                )}
+                {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
-
             </div>
 
             {/* STRENGTH */}
@@ -488,20 +444,19 @@ export default function ClientSettingsPage() {
                     strength === 1
                       ? "w-1/4 bg-red-500"
                       : strength === 2
-                      ? "w-2/4 bg-orange-500"
-                      : strength === 3
-                      ? "w-3/4 bg-yellow-500"
-                      : strength === 4
-                      ? "w-full bg-green-500"
-                      : "w-0"
+                        ? "w-2/4 bg-orange-500"
+                        : strength === 3
+                          ? "w-3/4 bg-yellow-500"
+                          : strength === 4
+                            ? "w-full bg-green-500"
+                            : "w-0"
                   }
                 `}
               />
             </div>
 
             <p className="text-xs text-gray-500 mt-2">
-              Use at least 8 characters including uppercase,
-              number and symbol.
+              Use at least 8 characters including uppercase, number and symbol.
             </p>
           </div>
 
@@ -512,13 +467,10 @@ export default function ClientSettingsPage() {
             </p>
 
             <div className="relative">
-
               <input
                 type={showConfirm ? "text" : "password"}
                 value={confirmPassword}
-                onChange={(e) =>
-                  setConfirmPassword(e.target.value)
-                }
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 className="
                   w-full
                   rounded-2xl
@@ -539,13 +491,8 @@ export default function ClientSettingsPage() {
                 onClick={() => setShowConfirm(!showConfirm)}
                 className="absolute right-4 top-3.5 text-gray-500"
               >
-                {showConfirm ? (
-                  <EyeOff size={18} />
-                ) : (
-                  <Eye size={18} />
-                )}
+                {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
-
             </div>
           </div>
 
@@ -568,11 +515,8 @@ export default function ClientSettingsPage() {
               disabled:opacity-50
             "
           >
-            {changingPassword
-              ? "Updating Password..."
-              : "Change Password"}
+            {changingPassword ? "Updating Password..." : "Change Password"}
           </button>
-
         </div>
       </div>
     </div>

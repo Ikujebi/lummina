@@ -1,17 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Gyahegi } from "@/app/fonts";
-
 import Image from "next/image";
 import Logo from "@/public/img/Lummina2.png";
 import { Bell, Menu } from "lucide-react";
 
-type User = {
-  name: string;
-  role: string;
-  profilePicture?: string | null;
-};
+import { useClientUser } from "@/context/ClientUserContext";
 
 type TopbarProps = {
   notifications?: number;
@@ -22,39 +16,13 @@ export default function Topbar({
   notifications = 0,
   onToggleSidebar,
 }: TopbarProps) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchCurrentUser = async () => {
-      try {
-        const res = await fetch("/api/me", {
-          method: "GET",
-          credentials: "include",
-        });
-
-        const data = await res.json();
-
-        if (res.ok) {
-          setUser(data.user);
-        } else {
-          console.error(data.error);
-        }
-      } catch (err) {
-        console.error("Failed to fetch current user:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCurrentUser();
-  }, []);
+  const { user } = useClientUser();
 
   const clientName = user?.name || "User";
-  const userRole = user?.role || "Administrator";
+  const userRole = user?.role || "Client";
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-16 md:h-20 bg-white/80 backdrop-blur-xl border-b border-gray-200/50 flex justify-between items-center px-4 md:px-8 lg:px-12 z-[100] transition-all duration-300 ">
+    <header className="fixed top-0 left-0 right-0 h-16 md:h-20 bg-white/80 backdrop-blur-xl border-b border-gray-200/50 flex justify-between items-center px-4 md:px-8 lg:px-12 z-[100] transition-all duration-300">
       {/* BRAND SECTION */}
       <div className="flex items-center gap-4 group cursor-pointer">
         <div className="relative w-10 h-10 md:w-12 md:h-12 flex items-center justify-center transition-transform group-hover:scale-105">
@@ -95,7 +63,7 @@ export default function Topbar({
 
           {notifications > 0 && (
             <span className="absolute top-2 right-2 flex h-4 w-4">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FFA500] opacity-75"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FFA500] opacity-75" />
 
               <span className="relative inline-flex rounded-full h-4 w-4 bg-[#FFA500] text-[10px] font-bold text-white items-center justify-center ring-2 ring-white">
                 {notifications > 9 ? "9+" : notifications}
@@ -111,7 +79,7 @@ export default function Topbar({
         <div className="flex items-center gap-3">
           <div className="hidden md:flex flex-col text-right">
             <span className="text-sm font-bold text-[#5F021F] truncate max-w-[150px]">
-              {loading ? "Loading..." : clientName}
+              {clientName}
             </span>
 
             <span className="text-[11px] text-gray-500 font-medium">
