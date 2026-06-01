@@ -216,7 +216,7 @@ const uploadImage = async (file: File): Promise<string | null> => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FFF7E7] p-6 md:p-10">
+    <div className="min-h-screen bg-[#FFF7E7] p-6 md:p-10 text-[#5F021F]/80">
       <div className="max-w-5xl mx-auto bg-white rounded-3xl border border-[#5F021F]/10 shadow-xl overflow-hidden">
 
         {/* HEADER */}
@@ -232,15 +232,14 @@ const uploadImage = async (file: File): Promise<string | null> => {
             value={form.title}
             onChange={handleChange}
             placeholder="Title"
-            className="w-full rounded-2xl border px-5 py-4"
-          />
+className="w-full rounded-2xl border px-5 py-4 focus:outline-none "          />
 
           <input
             name="slug"
             value={form.slug}
             onChange={handleChange}
             placeholder="Slug"
-            className="w-full rounded-2xl border px-5 py-4"
+            className="w-full rounded-2xl border px-5 py-4 focus:outline-none "
           />
 
           <textarea
@@ -248,22 +247,21 @@ const uploadImage = async (file: File): Promise<string | null> => {
             value={form.summary}
             onChange={handleChange}
             placeholder="Summary"
-            className="w-full rounded-2xl border px-5 py-4"
-          />
+className="w-full rounded-2xl border px-5 py-4 focus:outline-none "          />
 
           <textarea
             name="content"
             value={form.content}
             onChange={handleChange}
             placeholder="Full Content"
-            className="w-full rounded-2xl border px-5 py-4"
+            className="w-full rounded-2xl border px-5 py-4 focus:outline-none "
           />
 
           <input
             ref={fileRef}
             type="file"
             onChange={handleFile}
-            className="w-full rounded-2xl border px-5 py-4"
+            className="w-full rounded-2xl border px-5 py-4 focus:outline-none focus:border-transparent"
           />
 
           {/* ACTIONS */}

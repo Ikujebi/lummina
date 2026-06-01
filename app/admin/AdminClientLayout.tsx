@@ -78,13 +78,12 @@ export default function AdminClientLayout({
         notificationMenu={notificationMenu}
       />
 
-      <div className="min-h-screen bg-[#F7E7CE] flex">
-        {/* SIDEBAR */}
+<div className="h-screen bg-[#F7E7CE] flex overflow-hidden">        {/* SIDEBAR */}
         <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
 
         {/* CONTENT AREA */}
-        <div className="flex flex-col flex-1 lg:ml-[16.25rem]">
-          <main className="flex-1 px-4 sm:px-6 md:px-8 lg:px-10 py-6">
+        <div className="flex flex-col flex-1 lg:ml-[16.25rem] h-full">
+          <main className="flex-1 px-4 sm:px-6 md:px-8 lg:px-10 py-6 overflow-y-auto no-scrollbar">
             <div className="w-full max-w-7xl mx-auto">
               {children}
             </div>

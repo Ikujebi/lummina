@@ -123,8 +123,7 @@ export default function EditInsightPage() {
   // LOADING UI
   if (fetching) {
     return (
-      <div className="min-h-screen bg-[#FFF7E7] flex items-center justify-center">
-        <div className="text-[#5F021F] font-semibold">
+<div className="min-h-screen bg-[#FFF7E7] p-6 md:p-10 text-[#5F021F]/90">        <div className="text-[#5F021F] font-semibold">
           Loading insight...
         </div>
       </div>
@@ -132,7 +131,7 @@ export default function EditInsightPage() {
   }
 
   return (
-    <div className="min-h-screen overflow-y-auto bg-[#FFF7E7] p-6 md:p-10">
+    <div className="min-h-screen overflow-y-auto bg-[#FFF7E7] p-6 md:p-10 text-[#5F021F]/90">
       <div className="max-w-5xl mx-auto bg-white rounded-3xl border border-[#5F021F]/10 shadow-xl overflow-hidden">
 
         {/* HEADER */}
@@ -164,32 +163,32 @@ export default function EditInsightPage() {
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full rounded-2xl border px-5 py-4"
+            className="w-full rounded-2xl border px-5 py-4 focus:outline-none "
           />
 
           <input
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
-            className="w-full rounded-2xl border px-5 py-4"
+            className="w-full rounded-2xl border px-5 py-4 focus:outline-none "
           />
 
           <textarea
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
             rows={4}
-            className="w-full rounded-2xl border px-5 py-4"
+            className="w-full rounded-2xl border px-5 py-4 focus:outline-none "
           />
 
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
             rows={16}
-            className="w-full rounded-2xl border px-5 py-4"
+            className="w-full rounded-2xl border px-5 py-4 focus:outline-none"
           />
 
           <input
             type="file"
-            className="w-full rounded-2xl border px-5 py-4"
+            className="w-full rounded-2xl border px-5 py-4 focus:outline-none"
           />
 
           {/* TOGGLE */}
@@ -198,7 +197,7 @@ export default function EditInsightPage() {
               type="checkbox"
               checked={published}
               onChange={() => setPublished(!published)}
-              className="h-5 w-5 accent-[#5F021F]"
+              className="h-5 w-5 accent-[#5F021F] focus:outline-none"
             />
 
             <div>
