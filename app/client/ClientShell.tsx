@@ -26,8 +26,7 @@ export default function ClientShell({
         />
 
         {/* Content Area */}
-        <div className="flex flex-col w-full min-h-screen lg:ml-[260px]">
-          {/* Topbar */}
+<div className="flex flex-col w-full h-screen lg:ml-[260px] overflow-hidden">          {/* Topbar */}
           <Topbar
             onToggleSidebar={() =>
               setSidebarOpen((prev) => !prev)
@@ -35,8 +34,7 @@ export default function ClientShell({
           />
 
           {/* Page Content */}
-          <main className="flex-1 pt-20 px-6 md:px-10 flex flex-col gap-8">
-            {children}
+<main className="flex-1 overflow-y-auto no-scrollbar pt-20 px-6 md:px-10 flex flex-col gap-8">            {children}
           </main>
 
           {/* Footer */}
