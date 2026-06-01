@@ -74,11 +74,7 @@ export default function ReportsSection() {
 
     const rows = [
       ["Date", "New Cases", "Closed Cases"],
-      ...analytics.chartData.map((d) => [
-        d.date,
-        d.newCases,
-        d.closedCases,
-      ]),
+      ...analytics.chartData.map((d) => [d.date, d.newCases, d.closedCases]),
     ];
 
     const csv = rows.map((r) => r.join(",")).join("\n");
@@ -123,10 +119,12 @@ export default function ReportsSection() {
               placeholder="All Lawyers"
               allowClear
               style={{ width: 180 }}
-              options={analytics?.lawyers.map((l) => ({
-                value: l.id,
-                label: l.name,
-              }))}
+              options={
+                analytics?.lawyers?.map((l) => ({
+                  value: l.id,
+                  label: l.name,
+                })) || []
+              }
             />
 
             {/* Client Filter */}
@@ -136,10 +134,12 @@ export default function ReportsSection() {
               placeholder="All Clients"
               allowClear
               style={{ width: 180 }}
-              options={analytics?.clients.map((c) => ({
-                value: c.id,
-                label: c.name,
-              }))}
+              options={
+                analytics?.clients?.map((c) => ({
+                  value: c.id,
+                  label: c.name,
+                })) || []
+              }
             />
 
             {/* Buttons */}

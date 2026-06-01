@@ -44,7 +44,6 @@ export async function GET(req: Request) {
       }),
       prisma.matter.count({
         where: {
-          ...matterFilter,
           status: { in: ["OPEN", "IN_PROGRESS", "PENDING"] },
         },
       }),
@@ -121,6 +120,8 @@ export async function GET(req: Request) {
         select: { id: true, name: true },
       }),
     ]);
+
+    
 
     // ================= RESPONSE =================
     return NextResponse.json({
