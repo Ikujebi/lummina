@@ -6,12 +6,15 @@ import heroIllustration from "@/public/img/careers.jpg";
 import { useSearchParams } from "next/navigation";
 
 const steps = [
-  { number: 1, label: "Log in", status: "complete" },
-  { number: 2, label: "Create Account", status: "active" },
-  { number: 3, label: "Client Dashboard", status: "upcoming" },
-  { number: 4, label: "Secure Chat", status: "upcoming" },
-  { number: 5, label: "Legal Resources", status: "upcoming" },
-  { number: 6, label: "Lawyer Dashboard", status: "upcoming" },
+  
+  { number: 1, label: "Create Account", status: "active" },
+  { number: 2, label: "Awaiting Approval", status: "approved" },
+  { number: 3, label: "Log in", status: "complete" },
+  { number: 4, label: "Client Dashboard", status: "complete" },
+  { number: 5, label: "Update Profile", status: "complete" },
+  { number: 6, label: "Secure Chat", status: "complete" },
+  { number: 7, label: "Legal Resources", status: "complete" },
+  { number: 8, label: "Lawyer Dashboard", status: "complete" },
 ];
 
 export default function RegisterPage() {
@@ -29,13 +32,9 @@ export default function RegisterPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  
-  // Clean Fix: Initialize as true if no token exists, false if we need to fetch
   const [roleLoaded, setRoleLoaded] = useState(!token);
 
-  // Prefill email & role from token if available
   useEffect(() => {
-    // If no token exists, roleLoaded is already true. Exit early.
     if (!token) return;
 
     fetch(`/api/invitations/${token}`)
@@ -52,7 +51,6 @@ export default function RegisterPage() {
         console.error("Failed to fetch invitation details:", err);
       })
       .finally(() => {
-        // Asynchronous update safely signals loading completion
         setRoleLoaded(true);
       });
   }, [token]);
@@ -104,8 +102,13 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-dvh bg-[#F7E7CE]/50 flex flex-col overflow-y-auto no-scrollbar">
-      <main className="flex-1 grid gap-12 justify-center items-center grid-cols-1 lg:grid-cols-[minmax(320px,560px)_minmax(320px,520px)] p-6 lg:p-16">
+    /* FIXED HERE:
+      - Changed 'min-h-dvh' to an absolute height forcing layout box 'h-screen' or 'h-dvh'
+      - Added 'overflow-y-scroll' to create an isolated vertical scrolling layer
+      - Added 'touch-pan-y' to guarantee mobile devices process swipe mechanics properly
+    */
+    <div className="h-screen w-full bg-[#F7E7CE]/50 flex flex-col overflow-y-scroll touch-pan-y">
+      <main className="flex-grow grid gap-12 justify-center items-center grid-cols-1 lg:grid-cols-[minmax(320px,560px)_minmax(320px,520px)] p-6 lg:p-16">
         {/* Registration Card */}
         <section className="bg-[#FFF7E0] rounded-[20px] shadow-2xl p-6 md:p-12 border border-[#FFD580]/50">
           <header className="text-center mb-8">
@@ -160,7 +163,8 @@ export default function RegisterPage() {
                 value={form.name}
                 onChange={handleChange}
                 required
-className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#FFF7E0] disabled:opacity-60 focus:outline-none focus:ring-0 focus:border-[#FFD580]/50"              />
+                className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#FFF7E0] disabled:opacity-60 focus:outline-none focus:ring-0 focus:border-[#FFD580]/50"
+              />
             </div>
 
             {/* Email */}
@@ -172,7 +176,8 @@ className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#F
                 value={form.email}
                 onChange={handleChange}
                 required
-className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#FFF7E0] disabled:opacity-60 focus:outline-none focus:ring-0 focus:border-[#FFD580]/50"                disabled={!!token}
+                className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#FFF7E0] disabled:opacity-60 focus:outline-none focus:ring-0 focus:border-[#FFD580]/50"
+                disabled={!!token}
               />
             </div>
 
@@ -197,7 +202,8 @@ className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#F
                   value={form.password}
                   onChange={handleChange}
                   required
-className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#FFF7E0] focus:outline-none focus:ring-0 focus:border-[#FFD580]/50 active:outline-none active:ring-0"                />
+                  className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#FFF7E0] focus:outline-none focus:ring-0 focus:border-[#FFD580]/50 active:outline-none active:ring-0"
+                />
               </div>
               <div className="grid gap-2">
                 <label className="text-sm text-[#5F021F]/90">
@@ -209,7 +215,8 @@ className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#F
                   value={form.confirmPassword}
                   onChange={handleChange}
                   required
-className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#FFF7E0] focus:outline-none focus:ring-0 focus:border-[#FFD580]/50 active:outline-none active:ring-0"                />
+                  className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#FFF7E0] focus:outline-none focus:ring-0 focus:border-[#FFD580]/50 active:outline-none active:ring-0"
+                />
               </div>
             </div>
 
@@ -220,7 +227,8 @@ className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#F
                 name="address"
                 value={form.address}
                 onChange={handleChange}
-className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#FFF7E0] disabled:opacity-60 focus:outline-none focus:ring-0 focus:border-[#FFD580]/50"              >
+                className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#FFF7E0] disabled:opacity-60 focus:outline-none focus:ring-0 focus:border-[#FFD580]/50"
+              >
                 <option value="">Select your location</option>
                 <option>Lagos</option>
                 <option>Abuja</option>
@@ -284,7 +292,7 @@ className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#F
         </ol>
       </nav>
 
-      <footer className="text-center text-sm text-[#5F021F]/60 py-4">
+      <footer className="text-center text-sm text-[#5F021F]/60 py-4 mt-auto">
         © 2026 LexTrust Nigeria — Trusted Digital Legal Services.
       </footer>
     </div>
