@@ -1,43 +1,72 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Sidebar from "@/app/components/dashboard/Sidebar";
 import Topbar from "@/app/components/dashboard/Topbar";
-
 import { ClientUserProvider } from "@/context/ClientUserContext";
 import type { User } from "@/types/user";
+import { Spin } from "antd";
 
 export default function ClientShell({
   children,
-  user: initialUser,
 }: {
   children: React.ReactNode;
-  user: User;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const res = await fetch("/api/auth/me", {
+          credentials: "include",
+        });
+
+        if (!res.ok) throw new Error("Failed");
+
+        const data = await res.json();
+        setUser(data);
+      } catch {
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUser();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-[#F7e7ce]">
+        <Spin size="large" />
+      </div>
+    );
+  }
 
   return (
-    <ClientUserProvider initialUser={initialUser}>
+    <ClientUserProvider initialUser={user!}>
       <div className="min-h-screen bg-[#F7e7ce] flex">
-        {/* FIXED SIDEBAR */}
+        {/* SIDEBAR */}
         <Sidebar
           open={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
         />
 
-        {/* Content Area */}
-<div className="flex flex-col w-full h-screen lg:ml-[260px] overflow-hidden">          {/* Topbar */}
+        {/* CONTENT */}
+        <div className="flex flex-col w-full h-screen lg:ml-[260px] overflow-hidden">
+
           <Topbar
             onToggleSidebar={() =>
               setSidebarOpen((prev) => !prev)
             }
           />
 
-          {/* Page Content */}
-<main className="flex-1 overflow-y-auto no-scrollbar pt-20 px-6 md:px-10 flex flex-col gap-8">            {children}
+          <main className="flex-1 overflow-y-auto no-scrollbar pt-20 px-6 md:px-10 flex flex-col gap-8">
+            {children}
           </main>
 
-          {/* Footer */}
           <footer className="text-center p-4 text-xs sm:text-sm text-[#5F021F]/70 bg-[#FFF4E0]">
             © 2026 Lummina Law Management System. All rights reserved.
           </footer>
