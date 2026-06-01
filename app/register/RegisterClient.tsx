@@ -29,28 +29,32 @@ export default function RegisterPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [roleLoaded, setRoleLoaded] = useState(false); // track when role from token is loaded
+  
+  // Clean Fix: Initialize as true if no token exists, false if we need to fetch
+  const [roleLoaded, setRoleLoaded] = useState(!token);
 
   // Prefill email & role from token if available
   useEffect(() => {
-    if (token) {
-      fetch(`/api/invitations/${token}`)
-        .then((res) => res.json())
-        .then((invitation) => {
-          if (invitation.email) {
-            setForm((prev) => ({ ...prev, email: invitation.email }));
-          }
-          if (invitation.role === "CLIENT" || invitation.role === "LAWYER") {
-            setRole(invitation.role);
-          }
-          setRoleLoaded(true); // role has been set from token
-        })
-        .catch(() => {
-          setRoleLoaded(true); // even if fetch fails, allow manual selection
-        });
-    } else {
-      setRoleLoaded(true); // no token, normal registration
-    }
+    // If no token exists, roleLoaded is already true. Exit early.
+    if (!token) return;
+
+    fetch(`/api/invitations/${token}`)
+      .then((res) => res.json())
+      .then((invitation) => {
+        if (invitation.email) {
+          setForm((prev) => ({ ...prev, email: invitation.email }));
+        }
+        if (invitation.role === "CLIENT" || invitation.role === "LAWYER") {
+          setRole(invitation.role);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch invitation details:", err);
+      })
+      .finally(() => {
+        // Asynchronous update safely signals loading completion
+        setRoleLoaded(true);
+      });
   }, [token]);
 
   const handleChange = (
@@ -59,7 +63,7 @@ export default function RegisterPage() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e: React.SyntheticEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
 
@@ -80,7 +84,7 @@ export default function RegisterPage() {
           phone: form.phone,
           address: form.address,
           role,
-          token, // send token for backend verification
+          token,
         }),
       });
 
@@ -90,7 +94,6 @@ export default function RegisterPage() {
         throw new Error(data.error || "Something went wrong");
       }
 
-      // Redirect to login
       window.location.href = "/";
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message);
@@ -118,30 +121,30 @@ export default function RegisterPage() {
           </header>
 
           {/* Role Switch */}
-          <div className="relative grid grid-cols-2 bg-[#FFF3D6] rounded-md p-1 mb-6">
+          <div className="relative grid grid-cols-2 bg-[#FFF3D6] rounded-md p-1 mb-6 z-0">
             <button
               type="button"
-              className={`py-3 text-sm font-semibold rounded-md ${
+              className={`py-3 text-sm font-semibold rounded-md transition-colors duration-200 z-10 ${
                 role === "CLIENT" ? "text-[#FFA500]" : "text-[#5F021F]/80"
               }`}
               onClick={() => setRole("CLIENT")}
-              disabled={!!token} // lock role if token exists
-            >
-              ⚖️ Lawyer
-            </button>
-            <button
-              type="button"
-              className={`py-3 text-sm font-semibold ${
-                role === "LAWYER" ? "text-[#FFA500]" : "text-[#5F021F]/80"
-              }`}
-              onClick={() => setRole("LAWYER")}
-              disabled={!!token} // lock role if token exists
+              disabled={!!token}
             >
               🧑‍💼 Client
             </button>
+            <button
+              type="button"
+              className={`py-3 text-sm font-semibold rounded-md transition-colors duration-200 z-10 ${
+                role === "LAWYER" ? "text-[#FFA500]" : "text-[#5F021F]/80"
+              }`}
+              onClick={() => setRole("LAWYER")}
+              disabled={!!token}
+            >
+              ⚖️ Lawyer
+            </button>
 
             <span
-              className={`absolute top-1 left-1 w-[calc(50%-0.25rem)] h-[calc(100%-0.5rem)] bg-[#FFF7E0] rounded-md shadow-md transition-transform ${
+              className={`absolute top-1 left-1 w-[calc(50%-0.25rem)] h-[calc(100%-0.5rem)] bg-[#FFF7E0] rounded-md shadow-md transition-transform duration-200 ease-in-out -z-10 ${
                 role === "LAWYER" ? "translate-x-full" : "translate-x-0"
               }`}
             />
@@ -157,7 +160,7 @@ export default function RegisterPage() {
                 value={form.name}
                 onChange={handleChange}
                 required
-                className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm"
+                className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#FFF7E0]"
               />
             </div>
 
@@ -170,8 +173,8 @@ export default function RegisterPage() {
                 value={form.email}
                 onChange={handleChange}
                 required
-                className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm"
-                disabled={!!token} // lock email if prefilled from token
+                className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#FFF7E0] disabled:opacity-60"
+                disabled={!!token}
               />
             </div>
 
@@ -182,7 +185,7 @@ export default function RegisterPage() {
                 name="phone"
                 value={form.phone}
                 onChange={handleChange}
-                className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm"
+                className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#FFF7E0]"
               />
             </div>
 
@@ -196,7 +199,7 @@ export default function RegisterPage() {
                   value={form.password}
                   onChange={handleChange}
                   required
-                  className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm"
+                  className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#FFF7E0]"
                 />
               </div>
               <div className="grid gap-2">
@@ -209,7 +212,7 @@ export default function RegisterPage() {
                   value={form.confirmPassword}
                   onChange={handleChange}
                   required
-                  className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm"
+                  className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#FFF7E0]"
                 />
               </div>
             </div>
@@ -221,7 +224,7 @@ export default function RegisterPage() {
                 name="address"
                 value={form.address}
                 onChange={handleChange}
-                className="w-full border border-[#FFD580]/50 rounded-lg h-12 px-4 text-sm"
+                className="w-full border border-[#FFD580]/50 rounded-lg h-12 px-4 text-sm bg-[#FFF7E0]"
               >
                 <option value="">Select your location</option>
                 <option>Lagos</option>
@@ -235,14 +238,14 @@ export default function RegisterPage() {
 
             {/* Error */}
             {error && (
-              <p className="text-red-600 text-sm text-center">{error}</p>
+              <p className="text-red-600 text-sm text-center font-medium">{error}</p>
             )}
 
             {/* Submit */}
             <button
               type="submit"
-              disabled={!!loading || (!!token && !roleLoaded)}
-              className="w-full h-14 bg-[#FFA500] text-[#5F021F] font-semibold rounded-lg shadow-md mt-4 disabled:opacity-50"
+              disabled={loading || (!!token && !roleLoaded)}
+              className="w-full h-14 bg-[#FFA500] text-[#5F021F] font-semibold rounded-lg shadow-md mt-4 disabled:opacity-50 transition-opacity"
             >
               {loading ? "Creating Account..." : "Create Account"}
             </button>
@@ -258,6 +261,7 @@ export default function RegisterPage() {
               src={heroIllustration}
               alt="Registration Illustration"
               className="object-cover rounded-lg"
+              priority
             />
           </div>
         </div>
@@ -286,7 +290,7 @@ export default function RegisterPage() {
       </nav>
 
       <footer className="text-center text-sm text-[#5F021F]/60 py-4">
-        © 2025 LexTrust Nigeria — Trusted Digital Legal Services.
+        © 2026 LexTrust Nigeria — Trusted Digital Legal Services.
       </footer>
     </div>
   );
