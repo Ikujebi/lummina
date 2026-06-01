@@ -104,7 +104,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F7E7CE]/50 flex flex-col">
+    <div className="min-h-dvh bg-[#F7E7CE]/50 flex flex-col overflow-y-auto no-scrollbar">
       <main className="flex-1 grid gap-12 justify-center items-center grid-cols-1 lg:grid-cols-[minmax(320px,560px)_minmax(320px,520px)] p-6 lg:p-16">
         {/* Registration Card */}
         <section className="bg-[#FFF7E0] rounded-[20px] shadow-2xl p-6 md:p-12 border border-[#FFD580]/50">
@@ -151,7 +151,7 @@ export default function RegisterPage() {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="grid gap-6">
+          <form onSubmit={handleSubmit} className="grid gap-6 text-[#5F021F]/90">
             {/* Full Name */}
             <div className="grid gap-2">
               <label className="text-sm text-[#5F021F]/90">Full Name</label>
@@ -160,8 +160,7 @@ export default function RegisterPage() {
                 value={form.name}
                 onChange={handleChange}
                 required
-                className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#FFF7E0]"
-              />
+className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#FFF7E0] disabled:opacity-60 focus:outline-none focus:ring-0 focus:border-[#FFD580]/50"              />
             </div>
 
             {/* Email */}
@@ -173,8 +172,7 @@ export default function RegisterPage() {
                 value={form.email}
                 onChange={handleChange}
                 required
-                className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#FFF7E0] disabled:opacity-60"
-                disabled={!!token}
+className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#FFF7E0] disabled:opacity-60 focus:outline-none focus:ring-0 focus:border-[#FFD580]/50"                disabled={!!token}
               />
             </div>
 
@@ -185,7 +183,7 @@ export default function RegisterPage() {
                 name="phone"
                 value={form.phone}
                 onChange={handleChange}
-                className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#FFF7E0]"
+                className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#FFF7E0] disabled:opacity-60 focus:outline-none focus:ring-0 focus:border-[#FFD580]/50"
               />
             </div>
 
@@ -199,8 +197,7 @@ export default function RegisterPage() {
                   value={form.password}
                   onChange={handleChange}
                   required
-                  className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#FFF7E0]"
-                />
+className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#FFF7E0] focus:outline-none focus:ring-0 focus:border-[#FFD580]/50 active:outline-none active:ring-0"                />
               </div>
               <div className="grid gap-2">
                 <label className="text-sm text-[#5F021F]/90">
@@ -212,8 +209,7 @@ export default function RegisterPage() {
                   value={form.confirmPassword}
                   onChange={handleChange}
                   required
-                  className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#FFF7E0]"
-                />
+className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#FFF7E0] focus:outline-none focus:ring-0 focus:border-[#FFD580]/50 active:outline-none active:ring-0"                />
               </div>
             </div>
 
@@ -224,8 +220,7 @@ export default function RegisterPage() {
                 name="address"
                 value={form.address}
                 onChange={handleChange}
-                className="w-full border border-[#FFD580]/50 rounded-lg h-12 px-4 text-sm bg-[#FFF7E0]"
-              >
+className="w-full border border-[#FFD580]/50 rounded-lg px-4 h-12 text-sm bg-[#FFF7E0] disabled:opacity-60 focus:outline-none focus:ring-0 focus:border-[#FFD580]/50"              >
                 <option value="">Select your location</option>
                 <option>Lagos</option>
                 <option>Abuja</option>
