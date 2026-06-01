@@ -20,7 +20,8 @@ export default function AdminClientLayout({
 
   const admin = useAdminProfile();
 
-  const { notifications, loadingNotifications } = useNotifications();
+  const { notifications, loadingNotifications } =
+    useNotifications();
 
   useAuthRedirect();
 
@@ -39,33 +40,33 @@ export default function AdminClientLayout({
           },
         ]
       : notifications.length === 0
-        ? [
-            {
-              key: "empty",
-              label: "No notifications",
-              disabled: true,
-            },
-          ]
-        : notifications.map((notification) => ({
-            key: notification.id,
-            label: (
-              <div
-                className={`text-sm ${
-                  notification.read
-                    ? "text-gray-400"
-                    : "font-medium"
-                }`}
-              >
-                {notification.message}
+      ? [
+          {
+            key: "empty",
+            label: "No notifications",
+            disabled: true,
+          },
+        ]
+      : notifications.map((notification) => ({
+          key: notification.id,
+          label: (
+            <div
+              className={`text-sm ${
+                notification.read
+                  ? "text-gray-400"
+                  : "font-medium"
+              }`}
+            >
+              {notification.message}
 
-                <div className="text-xs text-gray-500">
-                  {new Date(
-                    notification.createdAt
-                  ).toLocaleString()}
-                </div>
+              <div className="text-xs text-gray-500">
+                {new Date(
+                  notification.createdAt
+                ).toLocaleString()}
               </div>
-            ),
-          })),
+            </div>
+          ),
+        })),
   };
 
   return (
@@ -76,22 +77,29 @@ export default function AdminClientLayout({
         notifications={notifications}
         notificationMenu={notificationMenu}
       />
-      
 
-      <div className="flex h-screen overflow-hidden">
+      <div className="min-h-screen bg-[#F7E7CE] flex">
+        {/* SIDEBAR */}
         <Sidebar
           open={sidebarOpen}
           setOpen={setSidebarOpen}
         />
 
-        <main className="flex-1  p-6 sm:p-10 overflow-y-auto no-scrollbar">
-          {children}
-        </main>
-      </div>
+        {/* CONTENT AREA */}
+        <div className="flex flex-col flex-1 lg:ml-[16.25rem]">
+          <main className="flex-1 overflow-y-auto no-scrollbar px-4 sm:px-6 md:px-8 lg:px-10 py-6">
+            {/* CENTERED CONTENT CONTAINER */}
+            <div className="w-full max-w-7xl mx-auto">
+              {children}
+            </div>
+          </main>
 
-      <footer className="text-center p-4 text-xs sm:text-sm text-[#5F021F]/70 bg-[#FFF4E0]">
-        © 2026 Lummina Law Management System. All rights reserved.
-      </footer>
+          <footer className="text-center p-4 text-xs sm:text-sm text-[#5F021F]/70 bg-[#FFF4E0] border-t border-[#5F021F]/10">
+            © 2026 Lummina Law Management System. All rights
+            reserved.
+          </footer>
+        </div>
+      </div>
     </>
   );
 }
