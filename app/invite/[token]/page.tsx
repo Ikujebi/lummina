@@ -44,7 +44,7 @@ export default function InvitePage() {
   if (error) return <p>{error}</p>;
 
   return (
-    <div className="p-10">
+    <div className="p-10 text-[#5F021F]/90">
       <h1>You have been invited as {invitation?.role}</h1>
       <p>Email: {invitation?.email}</p>
 

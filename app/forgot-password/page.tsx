@@ -44,7 +44,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F7E7CE]/50 flex flex-col">
+    <div className="min-h-screen bg-[#F7E7CE]/50 flex flex-col text-[#5F021F]/90">
       <main className="flex-1 grid gap-12 justify-center items-center grid-cols-1 lg:grid-cols-[minmax(320px,560px)_minmax(320px,520px)] p-6 lg:p-16">
         <section className="bg-[#FFF7E0] backdrop-blur-sm rounded-[20px] shadow-2xl p-6 md:p-12 border border-[#FFD580]/50">
           <header className="text-center mb-8">

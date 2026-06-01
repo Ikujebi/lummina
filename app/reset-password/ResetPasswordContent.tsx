@@ -94,14 +94,14 @@ export default function ResetPasswordContent() {
 
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center text-[#5F021F]/90">
         Invalid reset token
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative">
+    <div className="min-h-screen flex items-center justify-center relative text-[#5F021F]/90">
       <Image src={Bg} alt="bg" fill className="object-cover -z-10" />
       <div className="absolute inset-0 bg-black/40 -z-10" />
 
