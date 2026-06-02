@@ -22,7 +22,7 @@ function corsHeaders(req: NextRequest) {
   return headers;
 }
 
-// Preflight (important even for GET in some cases)
+// Preflight
 export async function OPTIONS(req: NextRequest) {
   return new Response(null, {
     status: 204,
@@ -36,7 +36,13 @@ export async function GET(req: NextRequest) {
     orderBy: { publishedAt: "desc" },
   });
 
-  return Response.json(insights, {
+  // ✅ ONLY CHANGE: normalize coverImage → images[]
+  const formatted = insights.map((item) => ({
+    ...item,
+    images: item.coverImage ? [item.coverImage] : [],
+  }));
+
+  return Response.json(formatted, {
     headers: corsHeaders(req),
   });
 }

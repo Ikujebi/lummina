@@ -47,7 +47,7 @@ export async function POST(
       if (!subscriber.email) continue;
 
       const response = await resend.emails.send({
-        from: "Lummina Law <onboarding@resend.dev>",
+        from: "Lummina Law <noreply@legal.lumminalaw.com>",
         to: subscriber.email,
         subject: insight.title,
         html: `
