@@ -5,7 +5,16 @@ import { usePathname } from "next/navigation";
 import LogoutButton from "../LogoutButton";
 import { MenuItem } from "@/types/side";
 import { AnimatePresence, motion } from "framer-motion";
-
+import {
+  LayoutDashboard,
+  Newspaper,
+  Activity,
+  Users,
+  FileText,
+  Bell,
+  Settings,
+  LogOut,
+} from "lucide-react";
 interface SidebarProps {
   open: boolean;
   setOpen: (open: boolean) => void;
@@ -15,17 +24,17 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
   const pathname = usePathname();
 
   const menuItems: MenuItem[] = [
-    { label: "Dashboard", icon: "📊", href: "/admin/dashboard" },
-    { label: "Insights", icon: "📰", href: "/admin/insights" },
-    { label: "Website Activity", icon: "📈", href: "/admin/activity" },
-    { label: "Lawyers", icon: "👨‍⚖️", href: "/admin/lawyers" },
-    { label: "Clients", icon: "👥", href: "/admin/clients" },
-    { label: "Cases", icon: "📁", href: "/admin/cases" },
-    { label: "Reports", icon: "📄", href: "/admin/reports" },
-    { label: "Documents", icon: "📄", href: "/admin/documents" },
-    { label: "Notifications", icon: "🔔", href: "/admin/notifications" },
-    { label: "Settings", icon: "⚙️", href: "/admin/settings" },
-    { label: "Logout", icon: "🚪", isLogout: true },
+    { label: "Dashboard", icon:<LayoutDashboard size={18} />, href: "/admin/dashboard" },
+    { label: "Insights", icon: <Newspaper size={18} />, href: "/admin/insights" },
+    { label: "Website Activity", icon: <Activity size={18} />, href: "/admin/activity" },
+    { label: "Lawyers", icon: <Users size={18} />, href: "/admin/lawyers" },
+    { label: "Clients", icon: <Users size={18} />, href: "/admin/clients" },
+    { label: "Cases", icon: <FileText size={18} />, href: "/admin/cases" },
+    { label: "Reports", icon: <FileText size={18} />, href: "/admin/reports" },
+    { label: "Documents", icon: <FileText size={18} />, href: "/admin/documents" },
+    { label: "Notifications", icon: <Bell size={18} />, href: "/admin/notifications" },
+    { label: "Settings", icon: <Settings size={18} />, href: "/admin/settings" },
+    { label: "Logout", icon: <LogOut size={18} />, isLogout: true },
   ];
 
   const renderLink = (item: MenuItem, index: number) => {
@@ -108,11 +117,19 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
       </AnimatePresence>
 
       {/* DESKTOP */}
-      <aside className="hidden lg:flex flex-col fixed top-0 left-0 h-screen w-[260px] p-6 bg-[#FFF4E0] border-r border-[#5F021F]/10 ">        
-      <nav className="flex flex-col gap-3 pt-[4.25rem]">
-        {menuItems.map(renderLink)}
-      </nav>
-      </aside>
+     <aside className="hidden lg:flex flex-col fixed top-0 left-0 h-screen w-[260px] p-6 bg-[#FFF4E0] border-r border-[#5F021F]/10">
+  <nav className="flex flex-col gap-3 pt-[4.25rem]">
+    {menuItems
+      .filter((item) => !item.isLogout)
+      .map(renderLink)}
+  </nav>
+
+  <div className="mt-auto pb-4">
+    {menuItems
+      .filter((item) => item.isLogout)
+      .map(renderLink)}
+  </div>
+</aside>
     </>
   );
 }
