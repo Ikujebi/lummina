@@ -85,7 +85,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-4xl space-y-8">
+    <div className="max-w-4xl space-y-8 text-[#5F021F]">
       {/* PROFILE */}
       <section className="bg-white border border-gray-200 rounded-3xl shadow-sm overflow-hidden">
         <div className="px-8 py-6 border-b border-gray-100 bg-gradient-to-r from-[#FFF4E0] to-white">

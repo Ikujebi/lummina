@@ -27,7 +27,7 @@ export default function PasswordForm({
   const [showConfirm, setShowConfirm] = useState(false);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-[#5F021F]">
       {/* TITLE (matches your original section style) */}
       <div>
         <h2 className="text-2xl font-bold text-[#5F021F]">
