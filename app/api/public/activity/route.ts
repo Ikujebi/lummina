@@ -1,19 +1,35 @@
 import { prisma } from "@/lib/prisma";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "https://www.lumminalaw.com",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
+const allowedOrigins = [
+  "https://www.lumminalaw.com",
+  "https://lumminalaw.com",
+  "http://localhost:3000",
+  "http://localhost:3001",
+];
 
-export async function OPTIONS() {
+function getCorsHeaders(origin: string | null) {
+  return {
+    "Access-Control-Allow-Origin":
+      origin && allowedOrigins.includes(origin)
+        ? origin
+        : "https://www.lumminalaw.com",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+  };
+}
+
+export async function OPTIONS(req: Request) {
+  const origin = req.headers.get("origin");
+
   return new Response(null, {
     status: 204,
-    headers: corsHeaders,
+    headers: getCorsHeaders(origin),
   });
 }
 
 export async function POST(req: Request) {
+  const origin = req.headers.get("origin");
+
   try {
     const body = await req.json();
 
@@ -21,6 +37,7 @@ export async function POST(req: Request) {
       data: {
         event: body.event,
         path: body.path,
+        metadata: body.metadata,
         ipAddress: null,
         userAgent: req.headers.get("user-agent"),
       },
@@ -28,12 +45,19 @@ export async function POST(req: Request) {
 
     return Response.json(
       { success: true },
-      { headers: corsHeaders }
+      {
+        headers: getCorsHeaders(origin),
+      }
     );
   } catch (err) {
+    console.error("Activity logging error:", err);
+
     return Response.json(
       { success: false },
-      { status: 500, headers: corsHeaders }
+      {
+        status: 500,
+        headers: getCorsHeaders(origin),
+      }
     );
   }
 }
