@@ -137,7 +137,7 @@ export default function SettingsPage() {
     passwords.new === passwords.confirm;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-10 p-6 text-[#5F021F]">
+    <div className="w-full md:max-w-5xl mx-auto space-y-10 py-6 md:p-6 text-[#5F021F]">
 
       {/* HEADER */}
       <div>
@@ -163,7 +163,7 @@ export default function SettingsPage() {
           <div className="p-6 space-y-6">
 
             {/* IMAGE SECTION — UNTOUCHED */}
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-1 md:gap-6">
               <div className="relative">
                 <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-[#5F021F]/10">
                   <Image
@@ -197,9 +197,14 @@ export default function SettingsPage() {
                 />
               </div>
 
-              <div>
-                <h3 className="text-xl font-bold">{user.name}</h3>
-                <p className="text-gray-500">{user.email}</p>
+              <div className="min-w-0">
+                <h3 className="text-xl font-bold truncate">
+                  {user.name}
+                </h3>
+
+                <p className="text-gray-500 text-sm sm:text-base truncate">
+                  {user.email}
+                </p>
 
                 <div className="mt-2 inline-flex items-center gap-2 text-xs bg-green-50 text-green-700 px-3 py-1 rounded-full">
                   <ShieldCheck size={14} />
@@ -306,9 +311,8 @@ export default function SettingsPage() {
 
             {passwords.confirm.length > 0 && (
               <p
-                className={`text-xs ${
-                  passwordsMatch ? "text-green-600" : "text-red-500"
-                }`}
+                className={`text-xs ${passwordsMatch ? "text-green-600" : "text-red-500"
+                  }`}
               >
                 {passwordsMatch
                   ? "Passwords match"
