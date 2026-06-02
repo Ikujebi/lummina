@@ -50,7 +50,7 @@ function SidebarContent({
           <h2 className="text-[#5F021F] font-bold text-lg">
             Client Portal
           </h2>
-          <p className="text-xs text-gray-400">Legal Dashboard</p>
+          <p className="text-xs text-gray-400">Client Dashboard</p>
         </div>
       </motion.div>
 
@@ -169,7 +169,7 @@ export default function Sidebar({ open, onClose }: Props) {
   return (
     <>
       {/* DESKTOP SIDEBAR */}
-      <aside className="hidden lg:flex fixed inset-y-0 left-0 z-40 w-[260px] bg-white border-r border-gray-100 shadow-2xl flex-col overflow-hidden">
+      <aside className="hidden xl:flex fixed inset-y-0 left-0 z-40 w-[260px] bg-white border-r border-gray-100 shadow-2xl flex-col overflow-hidden">
         <SidebarContent
           links={links}
           pathname={pathname}
@@ -183,7 +183,7 @@ export default function Sidebar({ open, onClose }: Props) {
         {open && (
           <>
             <motion.div
-              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-md lg:hidden"
+              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-md xl:hidden"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}

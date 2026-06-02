@@ -83,7 +83,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
       {/* MOBILE */}
       <AnimatePresence>
         {open && (
-          <div className="fixed inset-0 z-50 flex lg:hidden">
+          <div className="fixed inset-0 z-50 flex xl:hidden">
             {/* Overlay */}
             <motion.div
               className="absolute inset-0 bg-black/40"
@@ -117,7 +117,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
       </AnimatePresence>
 
       {/* DESKTOP */}
-     <aside className="hidden lg:flex flex-col fixed top-0 left-0 h-screen w-[260px] p-6 bg-[#FFF4E0] border-r border-[#5F021F]/10">
+     <aside className="hidden xl:flex flex-col fixed top-0 left-0 h-screen w-[260px] p-6 bg-[#FFF4E0] border-r border-[#5F021F]/10">
   <nav className="flex flex-col gap-3 pt-[4.25rem]">
     {menuItems
       .filter((item) => !item.isLogout)
