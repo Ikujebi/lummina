@@ -121,7 +121,7 @@ export default function LawyersPage() {
   );
 
   return (
-    <div className="flex flex-col gap-4 md:p-4">
+    <div className="flex flex-col gap-4 md:p-4 text-[#5F021F]/70">
       {/* Header */}
       <section className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div className="w-full sm:max-w-[70%]">
@@ -188,7 +188,7 @@ export default function LawyersPage() {
 
       {/* Invite Form */}
       {showInviteForm && (
-        <div className="flex flex-col gap-2 p-4 border rounded bg-[#F7E7CE] w-full sm:w-96">
+        <div className="flex flex-col gap-2 p-4 border rounded bg-[#F7E7CE] w-full sm:w-96 text-[#5F021F]/70">
           <input
             type="email"
             placeholder="Lawyer's Email"
