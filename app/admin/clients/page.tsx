@@ -98,7 +98,7 @@ async function sendInvite() {
 }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 text-[#5F021F]/70">
       {/* HEADER */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold ">Clients</h1>
