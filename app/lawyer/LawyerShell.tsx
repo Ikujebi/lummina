@@ -17,19 +17,20 @@ export default function LawyerShell({
 
   return (
     <UserProvider initialUser={initialUser}>
-      <div className="h-screen flex flex-col bg-[#F7E7CE] overflow-hidden">
-
+      <div className="min-h-screen flex flex-col bg-[#F7E7CE]">
         <LawyerHeader onOpenSidebar={() => setOpen(true)} />
 
-        <div className="flex flex-1 overflow-hidden">
-
+        <div className="flex flex-1">
           <Sidebar open={open} onClose={() => setOpen(false)} />
 
-          <main className="flex-1 overflow-y-auto p-6 no-scrollbar">
+          <main className="flex-1 p-6">
             {children}
           </main>
-
         </div>
+
+        <footer className="text-center p-4 text-xs sm:text-sm text-[#5F021F]/70 bg-[#FFF4E0] border-t border-[#5F021F]/10">
+          © 2026 Lummina Law Management System. All rights reserved.
+        </footer>
       </div>
     </UserProvider>
   );
