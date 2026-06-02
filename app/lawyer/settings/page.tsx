@@ -137,11 +137,11 @@ export default function SettingsPage() {
     passwords.new === passwords.confirm;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-10 p-6">
+    <div className="max-w-5xl mx-auto space-y-10 p-6 text-[#5F021F]">
 
       {/* HEADER */}
       <div>
-        <h1 className="text-4xl font-black text-[#5F021F]">
+        <h1 className="text-4xl font-black ">
           Account Settings
         </h1>
         <p className="text-gray-500 mt-2">
@@ -155,7 +155,7 @@ export default function SettingsPage() {
         <div className="lg:col-span-2 bg-white rounded-3xl border shadow-sm overflow-hidden">
 
           <div className="p-6 border-b">
-            <h2 className="text-lg font-bold text-[#5F021F]">
+            <h2 className="text-lg font-bold ">
               Profile Information
             </h2>
           </div>
@@ -234,7 +234,7 @@ export default function SettingsPage() {
         <div className="bg-white rounded-3xl border shadow-sm overflow-hidden">
 
           <div className="p-6 border-b">
-            <h2 className="text-lg font-bold text-[#5F021F]">
+            <h2 className="text-lg font-bold">
               Security
             </h2>
             <p className="text-xs text-gray-500 mt-1">
