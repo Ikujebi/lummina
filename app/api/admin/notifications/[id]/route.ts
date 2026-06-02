@@ -3,19 +3,24 @@ import { getCurrentUser } from "@/lib/auth";
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+
     const user = await getCurrentUser();
 
     if (!user) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
+      return Response.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
     const notification = await prisma.notification.findFirst({
       where: {
-        id: params.id,
-        userId: user.id, // important security check
+        id,
+        userId: user.id,
       },
     });
 
@@ -28,7 +33,7 @@ export async function PATCH(
 
     const updated = await prisma.notification.update({
       where: {
-        id: params.id,
+        id,
       },
       data: {
         read: true,
@@ -38,6 +43,7 @@ export async function PATCH(
     return Response.json(updated);
   } catch (err) {
     console.error("Notification update error:", err);
+
     return Response.json(
       { error: "Failed to update notification" },
       { status: 500 }
