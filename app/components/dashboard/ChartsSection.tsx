@@ -16,43 +16,53 @@ export default function ChartsSection({
   const sparklineRef = useRef<SVGSVGElement | null>(null);
 
   // ================= DOUGHNUT =================
-  useEffect(() => {
-    if (!canvasRef.current || !doughnutData) return;
+useEffect(() => {
+  if (
+    !canvasRef.current ||
+    !doughnutData?.labels?.length ||
+    !doughnutData?.values?.length
+  )
+    return;
 
-    casesChartRef.current?.destroy();
+  casesChartRef.current?.destroy();
 
-    casesChartRef.current = new Chart(canvasRef.current, {
-      type: "doughnut",
-      data: {
-        labels: doughnutData.labels,
-        datasets: [
-          {
-            data: doughnutData.values,
-            backgroundColor: ["#22C55E", "#FFA500", "#F7E7CE", "#5F021F]/75"],
-            borderWidth: 0,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: "70%",
-        plugins: {
-          legend: {
-            position: "bottom",
-            labels: {
-              color: "#5F021F",
-              usePointStyle: true,
-            },
+  casesChartRef.current = new Chart(canvasRef.current, {
+    type: "doughnut",
+    data: {
+      labels: doughnutData.labels,
+      datasets: [
+        {
+          data: doughnutData.values,
+          backgroundColor: [
+            "#22C55E",
+            "#FFA500",
+            "#F7E7CE",
+            "rgba(95, 2, 31, 0.75)",
+          ],
+          borderWidth: 0,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: "70%",
+      plugins: {
+        legend: {
+          position: "bottom",
+          labels: {
+            color: "#5F021F",
+            usePointStyle: true,
           },
         },
       },
-    });
+    },
+  });
 
-    return () => {
-      casesChartRef.current?.destroy();
-    };
-  }, [doughnutData]);
+  return () => {
+    casesChartRef.current?.destroy();
+  };
+}, [doughnutData]);
 
   // ================= LINE =================
   useEffect(() => {

@@ -11,31 +11,21 @@ import { Spin } from "antd";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useUserActions } from "@/hooks/useUserActions";
 
-import type { User } from "@/types/admin";
+// import type { User } from "@/types/admin";
 
 // ================= COMPONENT =================
 export default function AdminDashboard() {
   const [search, setSearch] = useState("");
 
-  const {
-    widgets,
-    alerts,
-    users,
-    setUsers,
-    chartData,
-    loading,
-  } = useDashboardData();
+  const { widgets, alerts, users, setUsers, chartData, loading } =
+    useDashboardData();
 
-  const {
-    handleApprove,
-    handleSave,
-    handleDelete,
-  } = useUserActions(setUsers);
+  const { handleApprove, handleSave, handleDelete } = useUserActions(setUsers);
 
   const filteredUsers = users.filter(
     (user) =>
       user.name.toLowerCase().includes(search.toLowerCase()) ||
-      user.email.toLowerCase().includes(search.toLowerCase())
+      user.email.toLowerCase().includes(search.toLowerCase()),
   );
 
   return (
@@ -72,9 +62,9 @@ export default function AdminDashboard() {
 
         {/* ================= CHARTS ================= */}
         <ChartsSection
-          doughnutData={chartData.doughnut}
-          lineData={chartData.line}
-          progress={chartData.progress}
+          doughnutData={chartData?.doughnut}
+          lineData={chartData?.line || []}
+          progress={chartData?.progress || 0}
         />
 
         {/* ================= USERS TABLE ================= */}

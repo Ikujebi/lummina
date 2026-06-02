@@ -51,7 +51,7 @@ export function useDashboardData() {
             fetch("/api/admin/stats"),
             fetch("/api/admin/alerts"),
             fetch("/api/admin/users"),
-            fetch("/api/admin/reports?period=month"),
+            fetch("/api/admin/reports?period=year"),
           ]);
 
         const statsData: Widget[] = await statsRes.json();
