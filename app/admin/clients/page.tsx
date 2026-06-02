@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import UsersTable from "../../components/admin-dashboard/users/UsersTable";
 import { User } from "@/types/admin";
 import { approveUser, deleteUser, updateUser } from "@/lib/api/users";
-import { message, Modal } from "antd";
+import { message, Modal , Checkbox } from "antd";
 export default function ClientsPage() {
   const [clients, setClients] = useState<User[]>([]);
   const [search, setSearch] = useState("");
@@ -16,6 +16,7 @@ export default function ClientsPage() {
   const [inviteExpiry, setInviteExpiry] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [showUnapprovedOnly, setShowUnapprovedOnly] = useState(false);
 
   useEffect(() => {
     fetchClients();
@@ -40,9 +41,7 @@ export default function ClientsPage() {
     }
   }
 
-  const filteredClients = clients.filter((u) =>
-    (u.name ?? "").toLowerCase().includes(search.toLowerCase()),
-  );
+  
 
 async function sendInvite() {
   setError("");
@@ -97,6 +96,18 @@ async function sendInvite() {
   }
 }
 
+const filteredClients = clients.filter((u) => {
+  const matchesSearch = (u.name ?? "")
+    .toLowerCase()
+    .includes(search.toLowerCase());
+
+  const matchesApproval = showUnapprovedOnly
+    ? !u.isApproved
+    : true;
+
+  return matchesSearch && matchesApproval;
+});
+
   return (
     <div className="flex flex-col gap-6 text-[#5F021F]/70 ">
       {/* HEADER */}
@@ -110,15 +121,26 @@ async function sendInvite() {
           Invite Client
         </button>
       </div>
+      
 
       {/* SEARCH */}
-      <input
-        type="search"
-        placeholder="Search clients..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="px-4 py-2 rounded-xl border border-[#5F021F]/30 outline-none w-full sm:w-64 text-[#5F021F]"
-      />
+      
+      <div className="flex items-center gap-4">
+  <input
+    type="search"
+    placeholder="Search clients..."
+    value={search}
+    onChange={(e) => setSearch(e.target.value)}
+    className="px-4 py-2 rounded-xl border border-[#5F021F]/30 outline-none w-full sm:w-64 text-[#5F021F]"
+  />
+
+  <Checkbox
+    checked={showUnapprovedOnly}
+    onChange={(e) => setShowUnapprovedOnly(e.target.checked)}
+  >
+    Unapproved Only
+  </Checkbox>
+</div>
 
       {/* TABLE */}
       {loading ? (
