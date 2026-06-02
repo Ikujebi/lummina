@@ -49,6 +49,9 @@ export async function GET(req: Request) {
       where: { event: "download" },
     });
 
+    const subscribers =
+  await prisma.newsletterSubscriber.count();
+
     // ================= RECENT =================
     const recentActivity = await prisma.websiteActivity.findMany({
       orderBy: { createdAt: "desc" },
@@ -138,7 +141,7 @@ export async function GET(req: Request) {
           pageViews,
           newsletterOpens,
           downloads,
-          subscribers: 0,
+          subscribers,
           uniqueVisitors,
         },
 
