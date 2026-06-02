@@ -85,13 +85,13 @@ export default function LawyerDashboard() {
             placeholder="Search matter"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full sm:w-64 px-4 py-2 rounded-xl bg-[#FFF4E0] outline-none"
+            className="w-full sm:w-64 px-4 py-2 rounded-xl bg-[#FFF4E0] text-[#5F021F] outline-none"
           />
 
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full sm:w-48 px-4 py-2 rounded-xl bg-[#FFF4E0] outline-none"
+            className="w-full sm:w-48 px-4 py-2 rounded-xl bg-[#FFF4E0] text-[#5F021F] outline-none"
           >
             {["All Status", "OPEN", "IN_PROGRESS", "PENDING", "CLOSED"].map(
               (s) => (
