@@ -166,9 +166,6 @@ export default function GlossaryPage() {
                       LUMMINA
                     </span>
           
-                    <span className="text-[10px] font-medium text-[#FFA500] tracking-[0.2em] uppercase hidden md:block">
-                      Law Portal
-                    </span>
                   </Link>
 
           {/* SEARCH */}
