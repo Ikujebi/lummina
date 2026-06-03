@@ -6,6 +6,7 @@ import Logo from "@/public/img/Lummina2.png";
 import { Bell, Menu } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useClientUser } from "@/context/ClientUserContext";
+import { useNotifications } from "@/hooks/useClientNotifications";
 
 type TopbarProps = {
   notifications?: number;
@@ -13,16 +14,27 @@ type TopbarProps = {
 };
 
 export default function Topbar({
-  notifications = 0,
+  notifications,
   onToggleSidebar,
 }: TopbarProps) {
   const { user } = useClientUser();
-const router = useRouter();
+  const router = useRouter();
+
   const clientName = user?.name || "User";
   const userRole = user?.role || "Client";
 
+  // 🔥 ALWAYS use hook as source of truth
+  const { unreadCount = 0 } = useNotifications();
+
+  // 🔥 safe merge (prop overrides only if provided)
+  const count =
+    typeof notifications === "number"
+      ? notifications
+      : unreadCount ?? 0;
+
   return (
     <header className="fixed top-0 left-0 right-0 h-16 md:h-20 bg-white/80 backdrop-blur-xl border-b border-gray-200/50 flex justify-between items-center px-4 md:px-8 lg:px-12 z-[100] transition-all duration-300">
+
       {/* BRAND SECTION */}
       <div className="flex items-center gap-4 group cursor-pointer">
         <div className="relative w-10 h-10 md:w-12 md:h-12 flex items-center justify-center transition-transform group-hover:scale-105">
@@ -51,26 +63,26 @@ const router = useRouter();
 
       {/* ACTION SECTION */}
       <div className="flex items-center gap-2 md:gap-5">
+
         {/* Notifications */}
         <button
-        onClick={() => router.push("/notifications")}
+          onClick={() => router.push("/client/notifications")}
           className="relative p-2.5 text-[#5F021F] hover:bg-[#5F021F]/5 rounded-xl transition-all group"
-          aria-label={`${notifications} unread notifications`}
+          aria-label={`${count} unread notifications`}
         >
           <Bell
             size={24}
             className="group-hover:rotate-12 transition-transform"
           />
 
-          {notifications > 0 && (
-            <span className="absolute top-2 right-2 flex h-4 w-4">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FFA500] opacity-75" />
+          {/* 🔥 SHOW EVEN ZERO ONLY IF YOU WANT (optional) */}
+          <span className="absolute top-1  right-1 flex h-4 w-4">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FFA500] opacity-75" />
 
-              <span className="relative inline-flex rounded-full h-4 w-4 bg-[#FFA500] text-[10px] font-bold text-white items-center justify-center ring-2 ring-white">
-                {notifications > 9 ? "9+" : notifications}
-              </span>
+            <span className="relative inline-flex rounded-full h-4 w-4 bg-[#FFA500] text-[10px] font-bold text-white items-center justify-center ring-2 ring-white">
+              {count > 9 ? "9+" : count}
             </span>
-          )}
+          </span>
         </button>
 
         {/* Divider */}

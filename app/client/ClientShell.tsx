@@ -6,6 +6,7 @@ import Sidebar from "@/app/components/dashboard/Sidebar";
 import Topbar from "@/app/components/dashboard/Topbar";
 import { ClientUserProvider } from "@/context/ClientUserContext";
 import type { User } from "@/types/user";
+import { useNotifications } from "@/hooks/useClientNotifications";
 
 export default function ClientShell({
   children,
@@ -15,7 +16,9 @@ export default function ClientShell({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [unreadCount, setUnreadCount] = useState(0);
+
+  // ✅ notifications hook (source of truth)
+  const { unreadCount } = useNotifications();
 
   useEffect(() => {
     const loadUser = async () => {
@@ -38,36 +41,11 @@ export default function ClientShell({
     loadUser();
   }, []);
 
-  useEffect(() => {
-    let mounted = true;
-
-    (async () => {
-      try {
-        const res = await fetch("/api/notifications", {
-          credentials: "include",
-        });
-
-        if (!res.ok) return;
-
-        const data = await res.json();
-
-        if (!mounted) return;
-
-        setUnreadCount(data.unreadCount ?? 0);
-      } catch {
-        // Silent fail
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F7E7CE]">
-<Spin size="large" style={{ color: "#5F021F" }} description="Loading ..."/>      </div>
+        <Spin size="large" style={{ color: "#5F021F" }} description="Loading ..." />
+      </div>
     );
   }
 

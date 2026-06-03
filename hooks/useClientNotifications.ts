@@ -16,30 +16,41 @@ export function useNotifications() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  const fetchNotifications = async () => {
+    const res = await fetch("/api/notifications", {
+      credentials: "include",
+    });
+
+    if (!res.ok) return;
+
+    const data = await res.json();
+
+    const list: Notification[] = Array.isArray(data)
+      ? data
+      : data?.notifications ?? [];
+
+    setNotifications(list);
+
+    setUnreadCount(
+      list.reduce((acc, n) => acc + (n.read ? 0 : 1), 0)
+    );
+  };
+
   useEffect(() => {
-    let isMounted = true;
+    let mounted = true;
 
-    async function load() {
+    const load = async () => {
       try {
-        const res = await fetch("/api/notifications");
-
-        if (!res.ok) return;
-
-        const data = await res.json();
-
-        if (!isMounted) return;
-
-        setNotifications(data.notifications ?? []);
-        setUnreadCount(data.unreadCount ?? 0);
+        await fetchNotifications();
       } finally {
-        if (isMounted) setLoading(false);
+        if (mounted) setLoading(false);
       }
-    }
+    };
 
     load();
 
     return () => {
-      isMounted = false;
+      mounted = false;
     };
   }, []);
 
@@ -47,5 +58,6 @@ export function useNotifications() {
     notifications,
     unreadCount,
     loading,
+    refetch: fetchNotifications,
   };
 }

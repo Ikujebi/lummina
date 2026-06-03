@@ -133,7 +133,7 @@ export async function POST(req: Request) {
       );
     }
 
-    await assertMatterAccess(user, matterId);
+    const matter = await assertMatterAccess(user, matterId);
 
     const message = await prisma.message.create({
       data: {
@@ -156,7 +156,7 @@ export async function POST(req: Request) {
     });
 
     // ==========================
-    // 🔥 FIX: SMALL PUSHER PAYLOAD
+    // 🔥 PUSHER MESSAGE EVENT
     // ==========================
     const safeMessageForPusher = {
       id: message.id,
@@ -176,6 +176,31 @@ export async function POST(req: Request) {
       "new-message",
       safeMessageForPusher
     );
+
+    // ==========================
+    // 🔔 NEW: NOTIFICATION LOGIC (ADDED ONLY HERE)
+    // ==========================
+
+    const recipients = [
+      matter.client.userId,
+      matter.lawyerId,
+    ].filter((id) => id && id !== user.id);
+
+    if (recipients.length > 0) {
+      await prisma.notification.createMany({
+        data: recipients.map((userId) => ({
+          userId,
+          title: "New message",
+          message:
+            content?.slice(0, 80) ||
+            "You received a new message",
+          type: "MESSAGE",
+          // optional future routing support (safe even if unused)
+          entityType: "MESSAGE",
+          entityId: message.id,
+        })),
+      });
+    }
 
     return NextResponse.json({
       message: "Message sent",

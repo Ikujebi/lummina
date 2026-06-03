@@ -35,6 +35,10 @@ export default function NotificationsPage() {
     load();
   }, []);
 
+  // =========================
+  // MARK SINGLE AS READ
+  // uses: PATCH /api/notifications/${id}
+  // =========================
   const markAsRead = async (id: string) => {
     await fetch(`/api/notifications/${id}`, {
       method: "PATCH",
@@ -48,6 +52,10 @@ export default function NotificationsPage() {
     );
   };
 
+  // =========================
+  // MARK ALL AS READ
+  // uses: PATCH /api/notifications/read-all
+  // =========================
   const markAllAsRead = async () => {
     await fetch("/api/notifications/read-all", {
       method: "PATCH",
@@ -60,7 +68,11 @@ export default function NotificationsPage() {
   };
 
   if (loading) {
-    return <p className="p-6 text-sm text-gray-500">Loading notifications...</p>;
+    return (
+      <p className="p-6 text-sm text-gray-500">
+        Loading notifications...
+      </p>
+    );
   }
 
   return (
