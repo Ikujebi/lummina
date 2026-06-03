@@ -4,6 +4,8 @@ import { getCurrentUser } from "@/lib/auth";
 import { randomUUID } from "crypto";
 import { Prisma } from "@prisma/client";
 import { Resend } from "resend";
+import { createNotification } from "@/lib/notifications";
+
 
 interface InvitationBody {
   id?: string;
@@ -78,6 +80,13 @@ export async function POST(req: Request) {
         userId: admin.id,
       } as Prisma.InvitationUncheckedCreateInput,
     });
+
+    await createNotification({
+  userId: admin.id,
+  title: "Invitation Sent",
+  message: `You invited ${email} as ${role}`,
+  type: "INFO",
+});
 
     const invitationLink =
       `${process.env.NEXT_PUBLIC_BASE_URL}/register?token=${token}`;
