@@ -79,7 +79,7 @@ export default function Topbar({
           <span className="absolute top-1  right-1 flex h-4 w-4">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FFA500] opacity-75" />
 
-            <span className="relative inline-flex rounded-full h-4 w-4 bg-[#FFA500] text-[10px] font-bold text-white items-center justify-center ring-2 ring-white">
+            <span className="relative inline-flex rounded-full h-4 w-4 bg-[#5F021F] text-[10px] font-bold text-white items-center justify-center ring-2 ring-white">
               {count > 9 ? "9+" : count}
             </span>
           </span>
