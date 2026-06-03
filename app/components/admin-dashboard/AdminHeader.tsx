@@ -19,23 +19,27 @@ interface AdminProfile {
 interface Props {
   setSidebarOpen: (open: boolean) => void;
   admin: AdminProfile | null;
+
   notifications: {
     id: string;
     message: string;
     createdAt: string;
     read: boolean;
   }[];
+
+  unreadCount: number;
   notificationMenu: MenuProps;
 }
 
 export default function AdminHeader({
   setSidebarOpen,
   admin,
-  notifications,
+  unreadCount,
   notificationMenu,
 }: Props) {
   return (
     <header className="sticky top-0 z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between px-6 sm:px-8 py-4 bg-[#5F021F] shadow">
+      {/* LEFT */}
       <div className="flex items-center gap-3">
         <button
           className="lg:hidden text-[#F7E7CE] text-2xl"
@@ -59,16 +63,15 @@ export default function AdminHeader({
         </div>
       </div>
 
+      {/* RIGHT */}
       <div className="flex items-center gap-4">
+        {/* NOTIFICATIONS */}
         <Dropdown
           menu={notificationMenu}
           trigger={["click"]}
           placement="bottomRight"
         >
-          <Badge
-            count={notifications.filter((n) => !n.read).length}
-            size="small"
-          >
+          <Badge count={unreadCount} size="small">
             <BellOutlined
               style={{
                 fontSize: 22,
@@ -79,6 +82,7 @@ export default function AdminHeader({
           </Badge>
         </Dropdown>
 
+        {/* ADMIN AVATAR */}
         <Image
           src={admin?.profilePicture || adminPhoto}
           alt="Admin photo"

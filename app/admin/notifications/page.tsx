@@ -1,97 +1,73 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Table, Spin, Tag, Typography } from "antd";
+import { Spin, Button, List, Tag } from "antd";
+import { useNotifications } from "@/hooks/useNotifications";
 
-const { Text } = Typography;
-
-interface AuditLog {
-  id: string;
-  user: string;
-  action: string;
-  entity: string;
-  createdAt: string;
-}
-
-export default function AuditLogsTable() {
-  const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const fetchLogs = async () => {
-      setLoading(true);
-
-      try {
-        const res = await fetch("/api/admin/audit-logs");
-        const data = await res.json();
-
-        setLogs(data || []);
-      } catch (err) {
-        console.error("Failed to fetch audit logs:", err);
-        setLogs([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLogs();
-  }, []);
-
-  const columns = [
-    {
-      title: "User",
-      dataIndex: "user",
-      key: "user",
-      render: (user: string) => (
-        <Text strong>{user || "System"}</Text>
-      ),
-    },
-
-    {
-      title: "Action",
-      dataIndex: "action",
-      key: "action",
-      render: (action: string) => {
-        let color = "default";
-
-        if (action.includes("CLOSE")) color = "red";
-        if (action.includes("ASSIGN")) color = "blue";
-        if (action.includes("CREATE")) color = "green";
-        if (action.includes("UPDATE")) color = "orange";
-
-        return <Tag color={color}>{action}</Tag>;
-      },
-    },
-
-    {
-      title: "Entity",
-      dataIndex: "entity",
-      key: "entity",
-      render: (entity: string) => (
-        <Tag color="geekblue">{entity}</Tag>
-      ),
-    },
-
-    {
-      title: "Time",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: (text: string) =>
-        text ? new Date(text).toLocaleString() : "-",
-    },
-  ];
+export default function AdminNotificationsPage() {
+  const {
+    notifications,
+    loadingNotifications,
+    markAsRead,
+    markAllAsRead,
+    refetch,
+  } = useNotifications();
 
   return (
-    <Spin spinning={loading}>
-      <Table
-        dataSource={logs}
-        columns={columns}
-        rowKey="id"
-        pagination={{ pageSize: 10 }}
-        locale={{
-          emptyText: "No audit logs available",
-        }}
-      />
-    </Spin>
+    <div className="p-6">
+      {/* HEADER */}
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-xl font-bold">
+          Notifications
+        </h1>
+
+        <Button
+          type="primary"
+          onClick={markAllAsRead}
+          disabled={notifications.length === 0}
+        >
+          Mark all as read
+        </Button>
+      </div>
+
+      {/* LIST */}
+      <Spin spinning={loadingNotifications}>
+        <List
+          dataSource={notifications}
+          locale={{ emptyText: "No notifications" }}
+          renderItem={(item) => (
+            <List.Item
+              onClick={() => {
+                if (!item.read) {
+                  markAsRead(item.id);
+                }
+              }}
+              className="cursor-pointer hover:bg-gray-50 px-3 rounded-md"
+            >
+              <List.Item.Meta
+                title={
+                  <div className="flex items-center gap-2">
+                    <span>{item.message}</span>
+
+                    {!item.read && (
+                      <Tag color="red">New</Tag>
+                    )}
+                  </div>
+                }
+                description={new Date(
+                  item.createdAt
+                ).toLocaleString()}
+              />
+            </List.Item>
+          )}
+        />
+      </Spin>
+
+      {/* optional refresh */}
+      <div className="mt-4">
+        <Button onClick={refetch}>
+          Refresh
+        </Button>
+      </div>
+    </div>
   );
 }
