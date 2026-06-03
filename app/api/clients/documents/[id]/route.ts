@@ -24,7 +24,7 @@ export async function GET(
       },
       include: {
         matter: true,
-        uploadedBy: {
+        uploader: {
           select: {
             id: true,
             name: true,
