@@ -3,6 +3,8 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Sidebar from "@/app/components/dashboard/Sidebar";
+import { Gyahegi } from "@/app/fonts";
+
 
 type Term = {
   id: string;
@@ -157,9 +159,17 @@ export default function GlossaryPage() {
           </button>
 
           {/* BRAND */}
-          <Link href="/" className="font-bold text-[#FFA500] whitespace-nowrap">
-            LexTrust
-          </Link>
+           <Link href={"/client/dashboard"} className="flex flex-col">
+                    <span
+                      className={`${Gyahegi.className} font-bold text-md md:text-md tracking-wider text-[#5F021F] leading-none pb-1`}
+                    >
+                      LUMMINA
+                    </span>
+          
+                    <span className="text-[10px] font-medium text-[#FFA500] tracking-[0.2em] uppercase hidden md:block">
+                      Law Portal
+                    </span>
+                  </Link>
 
           {/* SEARCH */}
           <input

@@ -4,13 +4,13 @@ import { notFound } from "next/navigation";
 interface Props {
   params: {
     id: string;
-  };
+  } | Promise<{ id: string }>;
 }
 
 export default async function DocumentDetailsPage({
   params,
 }: Props) {
-  const { id } = params;
+  const { id } = await params; // ✅ safe for both Next patterns
 
   const document = await prisma.document.findUnique({
     where: { id },
@@ -18,7 +18,6 @@ export default async function DocumentDetailsPage({
     include: {
       matter: true,
 
-      // ✅ FIXED: correct relation name
       uploader: {
         select: {
           id: true,
@@ -64,7 +63,9 @@ export default async function DocumentDetailsPage({
             </p>
 
             <p>
-              <span className="font-medium">Case Number:</span>{" "}
+              <span className="font-medium">
+                Case Number:
+              </span>{" "}
               {document.matter?.caseNumber ?? "N/A"}
             </p>
 
@@ -78,6 +79,20 @@ export default async function DocumentDetailsPage({
               {document.fileSize
                 ? `${(document.fileSize / 1024 / 1024).toFixed(2)} MB`
                 : "N/A"}
+            </p>
+
+            <p>
+              <span className="font-medium">
+                Original Name:
+              </span>{" "}
+              {document.originalName ?? "N/A"}
+            </p>
+
+            <p>
+              <span className="font-medium">
+                File Type:
+              </span>{" "}
+              {document.mimeType ?? "N/A"}
             </p>
           </div>
         </div>
