@@ -78,16 +78,7 @@ export default function ClientDashboard() {
     load();
   }, []);
 
-  /* =======================
-     LOADING STATE
-  ======================= */
-  if (loading) {
-    return (
-      <p className="text-sm text-[#5F021F]/60">
-        Loading dashboard...
-      </p>
-    );
-  }
+  
 
   /* =======================
      UI

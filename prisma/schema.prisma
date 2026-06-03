@@ -183,6 +183,9 @@ model Document {
   id         String         @id @default(uuid())
   name       String
   fileUrl    String
+  fileSize        Int?
+  mimeType        String?
+  originalName    String?
   status     DocumentStatus
   matterId   String
   matter     Matter         @relation(fields: [matterId], references: [id])

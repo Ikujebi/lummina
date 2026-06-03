@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Spin } from "antd";
 import Sidebar from "@/app/components/dashboard/Sidebar";
 import Topbar from "@/app/components/dashboard/Topbar";
 import { ClientUserProvider } from "@/context/ClientUserContext";
 import type { User } from "@/types/user";
-import { Spin } from "antd";
 
 export default function ClientShell({
   children,
@@ -39,66 +39,57 @@ export default function ClientShell({
   }, []);
 
   useEffect(() => {
-  let mounted = true;
+    let mounted = true;
 
-  (async () => {
-    try {
-      const res = await fetch("/api/notifications", {
-        credentials: "include",
-      });
+    (async () => {
+      try {
+        const res = await fetch("/api/notifications", {
+          credentials: "include",
+        });
 
-      if (!res.ok) return;
+        if (!res.ok) return;
 
-      const data = await res.json();
+        const data = await res.json();
 
-      if (!mounted) return;
+        if (!mounted) return;
 
-      setUnreadCount(data.unreadCount ?? 0);
-    } catch {
-      // silent fail
-    }
-  })();
+        setUnreadCount(data.unreadCount ?? 0);
+      } catch {
+        // Silent fail
+      }
+    })();
 
-  return () => {
-    mounted = false;
-  };
-}, []);
-
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   if (loading) {
     return (
-      <div className="h-screen w-full flex items-center justify-center bg-[#F7e7ce]">
-        <Spin size="large" />
-      </div>
+      <div className="flex min-h-screen items-center justify-center bg-[#F7E7CE]">
+<Spin size="large" style={{ color: "#5F021F" }} description="Loading ..."/>      </div>
     );
   }
 
-
-
   return (
     <ClientUserProvider initialUser={user!}>
-      <div className="min-h-screen bg-[#F7e7ce] flex">
-        {/* SIDEBAR */}
+      <div className="min-h-screen bg-[#F7E7CE]">
         <Sidebar
           open={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
         />
 
-        {/* CONTENT */}
-        <div className="flex flex-col w-full h-screen lg:ml-[260px] overflow-hidden">
-
+        <div className="flex min-h-screen flex-col lg:ml-[260px]">
           <Topbar
-          notifications={unreadCount}
-            onToggleSidebar={() =>
-              setSidebarOpen((prev) => !prev)
-            }
+            notifications={unreadCount}
+            onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
           />
 
-          <main className="flex-1 overflow-y-auto no-scrollbar pt-20 px-6 md:px-10 flex flex-col gap-8">
+          <main className="flex-1 pt-20 px-4 sm:px-6 md:px-8 lg:px-10 pb-8">
             {children}
           </main>
 
-          <footer className="text-center p-4 text-xs sm:text-sm text-[#5F021F]/70 bg-white mt-10">
+          <footer className="border-t border-[#5F021F]/10 bg-white px-4 py-4 text-center text-xs text-[#5F021F]/70 sm:text-sm">
             © 2026 Lummina Law Management System. All rights reserved.
           </footer>
         </div>
