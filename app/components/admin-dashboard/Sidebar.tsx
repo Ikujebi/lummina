@@ -34,6 +34,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
     { label: "Documents", icon: <FileText size={18} />, href: "/admin/documents" },
     { label: "Notifications", icon: <Bell size={18} />, href: "/admin/notifications" },
     { label: "Settings", icon: <Settings size={18} />, href: "/admin/settings" },
+    { label: "Audit Logs", icon: <Activity size={18} />, href: "/admin/audit-logs" },
     { label: "Logout", icon: <LogOut size={18} />, isLogout: true },
   ];
 
