@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { createNotification } from "@/lib/notifications/notifications.helper";
+import { logAudit } from "@/lib/audit";
+
 export async function POST(req: Request) {
   try {
     const { name, email, phone, address, password, role, token } =
@@ -69,21 +71,41 @@ export async function POST(req: Request) {
         isApproved: false,
       },
     });
+    await logAudit(
+  user.id,
+  "CREATE",
+  "User",
+  user.id
+);
 
     // =========================
     // 5. CREATE CLIENT PROFILE
     // =========================
     if (role === "CLIENT") {
-      await prisma.client.create({
-        data: {
-          name,
-          email,
-          phone,
-          address,
-          userId: user.id,
-        },
-      });
-    }
+  const client = await prisma.client.create({
+    data: {
+      name,
+      email,
+      phone,
+      address,
+      userId: user.id,
+    },
+  });
+
+  await logAudit(
+    user.id,
+    "CREATE",
+    "Client",
+    client.id
+  );
+
+  await createNotification({
+    userId: user.id,
+    title: "Welcome to Lummina",
+    message: "Thank you for signing up!",
+    type: "INFO",
+  });
+}
 
     // =========================
     // 6. UPDATE INVITATION (LAWYER ONLY)
@@ -96,6 +118,14 @@ export async function POST(req: Request) {
           userId: user.id,
         },
       });
+
+        await logAudit(
+    user.id,
+    "ACCEPT",
+    "Invitation",
+    invitation.id
+  );
+
 
        await createNotification({
     userId: invitation.userId, // admin who originally sent invitation
