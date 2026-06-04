@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
+import { createNotification } from "@/lib/notifications.helper";
 
 interface AppointmentBody {
   id?: string;
@@ -63,6 +64,13 @@ export async function POST(req: Request) {
 
     // ✅ Optional: log creation
     await logAudit(user.id, "CREATE", "Appointment", appointment.id);
+
+    await createNotification({
+  userId: user.id,
+  title: "Appointment Scheduled",
+  message: `Appointment "${appointment.title}" has been scheduled`,
+  type: "DEADLINE",
+});
 
     return NextResponse.json({ success: true, appointment });
   } catch (err) {

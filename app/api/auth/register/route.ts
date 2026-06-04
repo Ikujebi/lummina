@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-
+import { createNotification } from "@/lib/notifications.helper";
 export async function POST(req: Request) {
   try {
     const { name, email, phone, address, password, role, token } =
@@ -96,7 +96,15 @@ export async function POST(req: Request) {
           userId: user.id,
         },
       });
+
+       await createNotification({
+    userId: invitation.userId, // admin who originally sent invitation
+    title: "Invitation Accepted",
+    message: `${name} (${email}) accepted the invitation`,
+    type: "INFO",
+  });
     }
+    
 
     // =========================
     // 7. RESPONSE

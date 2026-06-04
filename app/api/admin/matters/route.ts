@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { logAudit } from "@/lib/audit";
 import { getCurrentUser } from "@/lib/auth";
+import { createNotification } from "@/lib/notifications.helper";
 
 // ================= CASE NUMBER GENERATOR =================
 async function generateCaseNumber() {
@@ -92,6 +93,24 @@ export async function POST(req: Request) {
         requestId
       );
 
+      // notify admin
+      await createNotification({
+        userId: currentUser.id,
+        title: "Matter Request Approved",
+        message: `You approved a matter request`,
+        type: "INFO",
+      });
+
+      // notify lawyer
+      if (lawyerId) {
+        await createNotification({
+          userId: lawyerId,
+          title: "New Matter Assigned",
+          message: `You have been assigned a matter`,
+          type: "INFO",
+        });
+      }
+
       return NextResponse.json({
         message: "Matter request approved",
         matter: updatedRequest,
@@ -101,7 +120,6 @@ export async function POST(req: Request) {
     /**
      * ================================
      * MODE 2: DIRECT CASE CREATION
-     * (manual admin flow - still supported)
      * ================================
      */
 
@@ -112,7 +130,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Validate lawyer
     const lawyer = await prisma.user.findUnique({
       where: { id: lawyerId },
     });
@@ -124,7 +141,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Validate client
     const client = await prisma.client.findUnique({
       where: { id: clientId },
     });
@@ -152,12 +168,31 @@ export async function POST(req: Request) {
       },
     });
 
-    await logAudit(
-      currentUser.id,
-      "CREATE",
-      "Matter",
-      matter.id
-    );
+    await logAudit(currentUser.id, "CREATE", "Matter", matter.id);
+
+    // notify admin
+    await createNotification({
+      userId: currentUser.id,
+      title: "Matter Created",
+      message: `Matter "${title}" was created successfully`,
+      type: "INFO",
+    });
+
+    // notify lawyer
+    await createNotification({
+      userId: lawyerId,
+      title: "New Matter Assigned",
+      message: `You were assigned matter "${title}"`,
+      type: "INFO",
+    });
+
+    // notify client
+    await createNotification({
+      userId: client.userId,
+      title: "New Case Opened",
+      message: `A new matter "${title}" has been opened for you`,
+      type: "INFO",
+    });
 
     return NextResponse.json({
       message: "Matter created",
@@ -220,6 +255,24 @@ export async function PUT(req: Request) {
       updatedMatter.id
     );
 
+    // notify admin
+    await createNotification({
+      userId: currentUser.id,
+      title: "Matter Updated",
+      message: `Matter "${updatedMatter.title}" was updated`,
+      type: "INFO",
+    });
+
+    // notify lawyer
+    if (updatedMatter.lawyerId) {
+      await createNotification({
+        userId: updatedMatter.lawyerId,
+        title: "Matter Updated",
+        message: `Matter "${updatedMatter.title}" was updated`,
+        type: "INFO",
+      });
+    }
+
     return NextResponse.json(updatedMatter);
   } catch (err) {
     console.error("Failed to update matter:", err);
@@ -261,12 +314,15 @@ export async function DELETE(req: Request) {
       where: { id },
     });
 
-    await logAudit(
-      currentUser.id,
-      "DELETE",
-      "Matter",
-      id
-    );
+    await logAudit(currentUser.id, "DELETE", "Matter", id);
+
+    // notify admin
+    await createNotification({
+      userId: currentUser.id,
+      title: "Matter Deleted",
+      message: `Matter was deleted successfully`,
+      type: "WARNING",
+    });
 
     return NextResponse.json({ success: true });
   } catch (err) {

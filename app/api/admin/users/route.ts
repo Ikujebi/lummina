@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/requireAdmin";
 import { logAudit } from "@/lib/audit";
 import { getCurrentUser } from "@/lib/auth";
+import { createNotification } from "@/lib/notifications.helper";
 
 /**
  * GET - Get all users
@@ -71,6 +72,12 @@ export async function POST(req: NextRequest) {
     const currentUser = await getCurrentUser();
     if (currentUser) {
       await logAudit(currentUser.id, "CREATE", "User", user.id);
+        await createNotification({
+    userId: currentUser.id,
+    title: "User Created",
+    message: `${name} (${email}) was created as ${role}`,
+    type: "INFO",
+  });
     }
 
     return NextResponse.json({

@@ -23,7 +23,7 @@ export function useNotifications() {
     setLoadingNotifications(true);
 
     try {
-      const res = await fetch("/api/admin/notifications", {
+      const res = await fetch("/api/notifications", {
         credentials: "include",
       });
 
@@ -49,7 +49,7 @@ export function useNotifications() {
 
   const markAsRead = useCallback(async (id: string) => {
     try {
-      const res = await fetch(`/api/admin/notifications/${id}`, {
+      const res = await fetch(`/api/notifications/${id}`, {
         method: "PATCH",
       });
 
@@ -63,7 +63,7 @@ export function useNotifications() {
 
   const markAllAsRead = useCallback(async () => {
     try {
-      const res = await fetch(`/api/admin/notifications/read-all`, {
+      const res = await fetch(`/api/notifications/read-all`, {
         method: "PATCH",
       });
 

@@ -14,6 +14,14 @@ export async function createNotification({
   message,
   type = "INFO",
 }: CreateNotificationInput) {
+  if (!userId) {
+    throw new Error("Notification must have a userId (recipient)");
+  }
+
+  if (!title || !message) {
+    throw new Error("Notification must include title and message");
+  }
+
   return prisma.notification.create({
     data: {
       userId,

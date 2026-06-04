@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/requireAdmin";
 import { logAudit } from "@/lib/audit";
 import { getCurrentUser } from "@/lib/auth";
+import { createNotification } from "@/lib/notifications.helper";
 
 /**
  * GET - Get single user
@@ -49,14 +50,25 @@ export async function PATCH(
   try {
     await requireAdmin();
 
-    const { id } = await context.params; // ✅ IMPORTANT (same as GET)
-
+    const { id } = await context.params;
     const body = await req.json();
 
     if (!id) {
       return NextResponse.json(
         { success: false, error: "Missing user id" },
         { status: 400 }
+      );
+    }
+
+    // 1. Get existing user
+    const existingUser = await prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!existingUser) {
+      return NextResponse.json(
+        { success: false, error: "User not found" },
+        { status: 404 }
       );
     }
 
@@ -70,10 +82,44 @@ export async function PATCH(
       data.isApproved = body.isApproved;
     }
 
+    // 2. Update user
     const updatedUser = await prisma.user.update({
       where: { id },
       data,
     });
+
+    // 3. Notify admin (actor)
+    const currentUser = await getCurrentUser();
+
+    if (currentUser) {
+      await logAudit(currentUser.id, "UPDATE", "User", id);
+
+      const changes: string[] = [];
+
+      if (body.role && body.role !== existingUser.role) {
+        changes.push(`role changed to ${body.role}`);
+      }
+
+      if (
+        typeof body.isApproved === "boolean" &&
+        body.isApproved !== existingUser.isApproved
+      ) {
+        changes.push(
+          body.isApproved ? "approved" : "approval revoked"
+        );
+      }
+
+      if (changes.length > 0) {
+        await createNotification({
+          userId: currentUser.id,
+          title: "User Updated",
+          message: `${existingUser.name ?? existingUser.email}: ${changes.join(
+            ", "
+          )}`,
+          type: "INFO",
+        });
+      }
+    }
 
     return NextResponse.json({ success: true, user: updatedUser });
   } catch (error) {
@@ -95,19 +141,47 @@ export async function DELETE(
 ) {
   try {
     await requireAdmin();
+
     const { id } = await context.params;
 
-    await prisma.user.delete({ where: { id } });
+    // 1. Get user first (before deleting)
+    const userToDelete = await prisma.user.findUnique({
+      where: { id },
+    });
 
-    // ✅ Log audit
-    const currentUser = await getCurrentUser();
-    if (currentUser) {
-      await logAudit(currentUser.id, "DELETE", "User", id);
+    if (!userToDelete) {
+      return NextResponse.json(
+        { success: false, error: "User not found" },
+        { status: 404 }
+      );
     }
 
-    return NextResponse.json({ success: true, message: "User deleted successfully" });
+    // 2. Delete user
+    await prisma.user.delete({ where: { id } });
+
+    // 3. Audit + Notification
+    const currentUser = await getCurrentUser();
+
+    if (currentUser) {
+      await logAudit(currentUser.id, "DELETE", "User", id);
+
+      await createNotification({
+        userId: currentUser.id,
+        title: "User Deleted",
+        message: `${userToDelete.name ?? userToDelete.email} was deleted`,
+        type: "WARNING",
+      });
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "User deleted successfully",
+    });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ success: false, error: "Failed to delete user" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: "Failed to delete user" },
+      { status: 500 }
+    );
   }
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
+import { createNotification } from "@/lib/notifications.helper";
 import type { MatterStatus } from "@/types/lawyer";
 
 // =========================
@@ -26,7 +27,6 @@ export async function PATCH(
     }
 
     const { id } = await params;
-
     const { status } = await req.json();
 
     if (!status) {
@@ -36,9 +36,6 @@ export async function PATCH(
       );
     }
 
-    // =========================
-    // ROLE GUARD (IMPORTANT)
-    // =========================
     if (user.role === "LAWYER") {
       if (!LAWYER_ALLOWED_STATUSES.includes(status)) {
         return NextResponse.json(
@@ -48,7 +45,6 @@ export async function PATCH(
       }
     }
 
-    // Optional stricter rule (recommended)
     if (status === "CLOSED" && user.role === "LAWYER") {
       return NextResponse.json(
         { error: "Lawyers cannot close matters" },
@@ -82,6 +78,30 @@ export async function PATCH(
       "Matter",
       `${matter.status} → ${status}`
     );
+
+    // =========================
+    // NOTIFICATIONS (ADDED)
+    // =========================
+
+    // Notify lawyer
+    if (updated.lawyerId) {
+      await createNotification({
+        userId: updated.lawyerId,
+        title: "Matter Status Updated",
+        message: `Matter "${updated.title}" is now ${status}`,
+        type: "INFO",
+      });
+    }
+
+    // Notify client
+    if (updated.client?.userId) {
+      await createNotification({
+        userId: updated.client.userId,
+        title: "Case Update",
+        message: `Your matter "${updated.title}" is now ${status}`,
+        type: "INFO",
+      });
+    }
 
     return NextResponse.json({ matter: updated });
   } catch (err) {

@@ -4,7 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { randomUUID } from "crypto";
 import { Prisma } from "@prisma/client";
 import { Resend } from "resend";
-import { createNotification } from "@/lib/notifications";
+import { createNotification } from "@/lib/notifications.helper";
 
 
 interface InvitationBody {
