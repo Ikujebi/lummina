@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { createNotification } from "@/lib/notifications.helper";
+import { createNotification } from "@/lib/notifications/notifications.helper";
 export async function POST(req: Request) {
   try {
     const { name, email, phone, address, password, role, token } =

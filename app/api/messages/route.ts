@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import Pusher from "pusher";
 import { Attachment } from "@/types/chat";
+import { notifyMessageEvent } from "@/lib/events/messageEvents";
 
 interface MessageBody {
   id?: string;
@@ -89,10 +90,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json(messages);
   } catch (err: unknown) {
-    return NextResponse.json(
-      { error: getErrorMessage(err) },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -115,21 +113,18 @@ export async function POST(req: Request) {
     const attachments: Attachment[] = Array.isArray(body.attachments)
       ? body.attachments.filter(
           (a): a is Attachment =>
-            typeof a?.fileUrl === "string" && a.fileUrl.length > 0
+            typeof a?.fileUrl === "string" && a.fileUrl.length > 0,
         )
       : [];
 
     if (typeof matterId !== "string") {
-      return NextResponse.json(
-        { error: "Invalid matterId" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid matterId" }, { status: 400 });
     }
 
     if (!content.trim() && attachments.length === 0) {
       return NextResponse.json(
         { error: "Message cannot be empty" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -152,6 +147,7 @@ export async function POST(req: Request) {
       include: {
         sender: true,
         attachments: true,
+        matter: true,
       },
     });
 
@@ -174,26 +170,30 @@ export async function POST(req: Request) {
     await pusher.trigger(
       `matter-${matterId}`,
       "new-message",
-      safeMessageForPusher
+      safeMessageForPusher,
     );
 
     // ==========================
     // 🔔 NEW: NOTIFICATION LOGIC (ADDED ONLY HERE)
     // ==========================
 
-    const recipients = [
-      matter.client.userId,
-      matter.lawyerId,
-    ].filter((id) => id && id !== user.id);
+    await notifyMessageEvent({
+      message,
+      actorId: user.id,
+      actorRole: user.role,
+      event: "CREATED",
+    });
+
+    const recipients = [matter.client.userId, matter.lawyerId].filter(
+      (id) => id && id !== user.id,
+    );
 
     if (recipients.length > 0) {
       await prisma.notification.createMany({
         data: recipients.map((userId) => ({
           userId,
           title: "New message",
-          message:
-            content?.slice(0, 80) ||
-            "You received a new message",
+          message: content?.slice(0, 80) || "You received a new message",
           type: "MESSAGE",
           // optional future routing support (safe even if unused)
           entityType: "MESSAGE",
@@ -207,10 +207,7 @@ export async function POST(req: Request) {
       data: message,
     });
   } catch (err: unknown) {
-    return NextResponse.json(
-      { error: getErrorMessage(err) },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -238,10 +235,7 @@ export async function PATCH(req: Request) {
     });
 
     if (!existing?.matterId) {
-      return NextResponse.json(
-        { error: "Message not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Message not found" }, { status: 404 });
     }
 
     await assertMatterAccess(user, existing.matterId);
@@ -249,28 +243,28 @@ export async function PATCH(req: Request) {
     const message = await prisma.message.update({
       where: { id },
       data: { content },
-      include: { sender: true, attachments: true },
+      include: { sender: true, attachments: true, matter: true },
     });
 
-    await pusher.trigger(
-      `matter-${existing.matterId}`,
-      "update-message",
-      {
-        id: message.id,
-        content: message.content,
-        matterId: message.matterId,
-      }
-    );
+    await pusher.trigger(`matter-${existing.matterId}`, "update-message", {
+      id: message.id,
+      content: message.content,
+      matterId: message.matterId,
+    });
+
+     await notifyMessageEvent({
+      message,
+      actorId: user.id,
+      actorRole: user.role,
+      event: "UPDATED",
+    });
 
     return NextResponse.json({
       message: "Message updated",
       data: message,
     });
   } catch (err: unknown) {
-    return NextResponse.json(
-      { error: getErrorMessage(err) },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -287,32 +281,46 @@ export async function DELETE(req: Request) {
   try {
     const { id } = await req.json();
 
-    const existing = await prisma.message.findUnique({
+    // 1. GET FULL MESSAGE (NOT just matterId)
+    const message = await prisma.message.findUnique({
       where: { id },
-      select: { matterId: true },
+      include: {
+        matter: true,
+      },
     });
 
-    if (!existing?.matterId) {
+    if (!message) {
       return NextResponse.json(
         { error: "Message not found" },
         { status: 404 }
       );
     }
 
-    await assertMatterAccess(user, existing.matterId);
+    // 2. ACCESS CHECK
+    await assertMatterAccess(user, message.matterId);
 
+    // 3. DELETE
     await prisma.message.delete({
       where: { id },
     });
 
+    // 4. PUSHER EVENT
     await pusher.trigger(
-      `matter-${existing.matterId}`,
+      `matter-${message.matterId}`,
       "delete-message",
       {
         id,
-        matterId: existing.matterId,
+        matterId: message.matterId,
       }
     );
+
+    // 5. NOTIFICATION EVENT (CORRECT)
+    await notifyMessageEvent({
+      message,
+      actorId: user.id,
+      actorRole: user.role,
+      event: "DELETED",
+    });
 
     return NextResponse.json({ message: "Message deleted" });
   } catch (err: unknown) {

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { logAudit } from "@/lib/audit";
 import { getCurrentUser } from "@/lib/auth";
-import { createNotification } from "@/lib/notifications.helper";
+import { createNotification } from "@/lib/notifications/notifications.helper";
 
 // ================= CASE NUMBER GENERATOR =================
 async function generateCaseNumber() {

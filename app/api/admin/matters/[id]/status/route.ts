@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
-import { createNotification } from "@/lib/notifications.helper";
+import { createNotification } from "@/lib/notifications/notifications.helper";
 import type { MatterStatus } from "@/types/lawyer";
 
 // =========================

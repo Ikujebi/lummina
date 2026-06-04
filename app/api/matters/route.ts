@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { canAccessMatter } from "@/lib/permissions";
+import { logAudit } from "@/lib/audit";
+import { notifyMatterEvent } from "@/lib/notifications/notifyMatterEvent";
 
 interface MatterBody {
   id?: string;
@@ -101,6 +103,18 @@ export async function POST(req: Request) {
         appointments: true,
       },
     });
+    await logAudit(
+  user.id,
+  "CREATE",
+  "Matter",
+  matter.id
+);
+await notifyMatterEvent({
+  matter,
+  actorId: user.id,
+  event: "CREATED",
+  actorRole: user.role,
+});
 
     return NextResponse.json({
       message: "Matter created",
@@ -241,6 +255,27 @@ export async function PATCH(req: Request) {
         appointments: true,
       },
     });
+    if (status && status !== currentStatus) {
+  await logAudit(
+    user.id,
+    "STATUS_CHANGE",
+    "Matter",
+    updatedMatter.id
+  );
+  await notifyMatterEvent({
+  matter: updatedMatter,
+  actorId: user.id,
+  event: "STATUS_CHANGED",
+  actorRole: user.role,
+});
+} else {
+  await logAudit(
+    user.id,
+    "UPDATE",
+    "Matter",
+    updatedMatter.id
+  );
+}
 
     return NextResponse.json({
       message,
@@ -300,6 +335,18 @@ export async function DELETE(req: Request) {
     await prisma.matter.delete({
       where: { id },
     });
+    await logAudit(
+  user.id,
+  "DELETE",
+  "Matter",
+  matter.id
+);
+await notifyMatterEvent({
+  matter,
+  actorId: user.id,
+  event: "DELETED",
+  actorRole: user.role,
+});
 
     return NextResponse.json({
       message: "Matter deleted",

@@ -4,8 +4,8 @@ import { getCurrentUser } from "@/lib/auth";
 import { randomUUID } from "crypto";
 import { Prisma } from "@prisma/client";
 import { Resend } from "resend";
-import { createNotification } from "@/lib/notifications.helper";
-
+import { createNotification } from "@/lib/notifications/notifications.helper";
+import { logAudit } from "@/lib/audit";
 
 interface InvitationBody {
   id?: string;
@@ -80,6 +80,12 @@ export async function POST(req: Request) {
         userId: admin.id,
       } as Prisma.InvitationUncheckedCreateInput,
     });
+ await logAudit(
+  admin.id,
+  "CREATE",
+  "Invitation",
+  invitation.id
+);
 
     await createNotification({
   userId: admin.id,

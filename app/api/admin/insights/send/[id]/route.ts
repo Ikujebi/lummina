@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { resend } from "@/lib/resend";
-import { createNotification } from "@/lib/notifications.helper";
+import { createNotification } from "@/lib/notifications/notifications.helper";
 
 interface RouteContext {
   params: Promise<{

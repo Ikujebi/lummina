@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/requireAdmin";
 import { logAudit } from "@/lib/audit";
 import { getCurrentUser } from "@/lib/auth";
-import { createNotification } from "@/lib/notifications.helper";
+import { createNotification } from "@/lib/notifications/notifications.helper";
 
 /**
  * GET - Get all users
