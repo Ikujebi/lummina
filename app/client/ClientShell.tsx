@@ -7,6 +7,7 @@ import Topbar from "@/app/components/dashboard/Topbar";
 import { ClientUserProvider } from "@/context/ClientUserContext";
 import type { User } from "@/types/user";
 import { useNotifications } from "@/hooks/useClientNotifications";
+import { Montserrat } from "@/app/fonts";
 
 export default function ClientShell({
   children,
@@ -51,7 +52,7 @@ export default function ClientShell({
 
   return (
     <ClientUserProvider initialUser={user!}>
-      <div className="min-h-screen bg-[#F7E7CE]">
+      <div className={`${Montserrat.className} min-h-screen bg-[#F7E7CE]`}>
         <Sidebar
           open={sidebarOpen}
           onClose={() => setSidebarOpen(false)}

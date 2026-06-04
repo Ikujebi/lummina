@@ -5,7 +5,6 @@ import Link from "next/link";
 import { BellOutlined } from "@ant-design/icons";
 import { Dropdown, Badge } from "antd";
 import type { MenuProps } from "antd";
-
 import Lummina2 from "@/public/img/Lummina2.png";
 import adminPhoto from "@/public/img/careers.jpg";
 

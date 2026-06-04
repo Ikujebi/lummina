@@ -5,6 +5,8 @@ import Sidebar from "@/app/components/lawyer-dashboard/Sidebar";
 import LawyerHeader from "@/app/components/lawyer-dashboard/LawyerHeader";
 import type { User } from "@/types/user";
 import { UserProvider } from "@/context/UserContext";
+import { Montserrat } from "@/app/fonts";
+
 
 export default function LawyerShell({
   children,
@@ -17,7 +19,7 @@ export default function LawyerShell({
 
   return (
     <UserProvider initialUser={initialUser}>
-      <div className="min-h-screen flex flex-col bg-[#F7E7CE]">
+      <div className={`${Montserrat.className} min-h-screen flex flex-col bg-[#F7E7CE]`}>
         <LawyerHeader onOpenSidebar={() => setOpen(true)} />
 
         <div className="flex flex-1">

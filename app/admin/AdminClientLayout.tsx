@@ -3,10 +3,9 @@
 import { useState } from "react";
 import Sidebar from "../components/admin-dashboard/Sidebar";
 import AdminHeader from "../components/admin-dashboard/AdminHeader";
-
 import { Spin } from "antd";
 import type { MenuProps } from "antd";
-
+import { Montserrat } from "@/app/fonts";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
@@ -100,7 +99,7 @@ export default function AdminClientLayout({
 
   return (
     <>
-      <div className="min-h-screen flex flex-col bg-[#F7E7CE]">
+      <div className={`${Montserrat.className} min-h-screen flex flex-col bg-[#F7E7CE]`}>
         <AdminHeader
           setSidebarOpen={setSidebarOpen}
           admin={admin}

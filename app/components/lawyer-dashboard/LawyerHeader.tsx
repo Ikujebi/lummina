@@ -6,6 +6,7 @@ import { Menu } from "lucide-react";
 import LumminaLogo from "@/public/img/Lummina2.png";
 import { useUser } from "@/context/UserContext";
 
+
 interface Props {
   onOpenSidebar: () => void;
 }
