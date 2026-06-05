@@ -4,6 +4,7 @@ import { Gyahegi } from "@/app/fonts";
 import Image from "next/image";
 import Logo from "@/public/img/Lummina2.png";
 import { Bell, Menu } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useClientUser } from "@/context/ClientUserContext";
 import { useNotifications } from "@/hooks/useClientNotifications";
@@ -49,7 +50,7 @@ export default function Topbar({
           />
         </div>
 
-        <div className="flex flex-col">
+        <Link href="/client/dashboard" className="flex flex-col">
           <span
             className={`${Gyahegi.className} font-bold text-md md:text-md tracking-wider text-[#5F021F] leading-none pb-1`}
           >
@@ -59,7 +60,7 @@ export default function Topbar({
           <span className="text-[10px] font-medium text-[#FFA500] tracking-[0.2em] uppercase hidden md:block">
             Law Portal
           </span>
-        </div>
+        </Link>
       </div>
 
       {/* ACTION SECTION */}

@@ -38,7 +38,7 @@ export default function AdminClientLayout({
             key: "loading",
             label: (
               <div className="flex items-center gap-2">
-                <Spin size="small" />
+                <Spin size="small" style={{ color: "#5F021F" }} />
                 Loading...
               </div>
             ),
