@@ -192,6 +192,7 @@ export default function ClientSettingsPage() {
       setConfirmPassword("");
 
       // redirect to login after logout
+      localStorage.removeItem("isLoggedIn");
       window.location.href = "/";
     } catch (err) {
       console.error(err);

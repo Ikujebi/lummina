@@ -126,6 +126,7 @@ export default function SettingsPage() {
       if (!res.ok) throw new Error(data.error);
 
       setPasswords({ current: "", new: "", confirm: "" });
+      localStorage.removeItem("isLoggedIn");
       window.location.href = "/";
     } finally {
       setChangingPassword(false);

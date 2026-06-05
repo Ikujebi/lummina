@@ -110,7 +110,7 @@ export async function POST(req: Request) {
     // =========================
     if (dbUser.email) {
       await resend.emails.send({
-        from: "Lummina Law Security <onboarding@resend.dev>",
+        from: "Lummina Law Security <noreply@legal.lumminalaw.com>",
         to: dbUser.email,
         subject: "Your Lummina Law Password Was Changed",
         text: `

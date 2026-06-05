@@ -139,6 +139,7 @@ export function usePassword() {
       });
 
       /* OPTIONAL AUTO REDIRECT */
+      localStorage.removeItem("isLoggedIn");
       setTimeout(() => {
         window.location.href =
           "/";
