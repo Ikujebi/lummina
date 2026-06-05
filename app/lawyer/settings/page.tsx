@@ -11,7 +11,7 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react";
-
+import { message as antdMessage } from "antd";
 import type { User } from "@/types/user";
 import Profilepix from "@/public/img/default.png";
 import { useLawyerImageUpload } from "@/hooks/useLawyerImageUpload";
@@ -68,29 +68,37 @@ export default function SettingsPage() {
   }
 
   async function handleSave() {
-    if (!user) return;
+  if (!user) return;
 
-    try {
-      setSaving(true);
+  try {
+    setSaving(true);
 
-      const res = await fetch("/api/me", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: user.name,
-          email: user.email,
-          profilePicture: user.profilePicture,
-        }),
-      });
+    const res = await fetch("/api/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: user.name,
+        email: user.email,
+        profilePicture: user.profilePicture,
+      }),
+    });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+    const data = await res.json();
 
-      setUser(data.user);
-    } finally {
-      setSaving(false);
+    if (!res.ok) {
+      antdMessage.error(data.error || "Update failed");
+      return;
     }
+
+    setUser(data.user);
+    antdMessage.success("Profile updated successfully");
+  } catch (err) {
+    console.error(err);
+    antdMessage.error("Something went wrong");
+  } finally {
+    setSaving(false);
   }
+}
 
   async function handlePasswordChange() {
     if (

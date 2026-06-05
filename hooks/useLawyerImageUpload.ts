@@ -4,20 +4,10 @@ import { useState, Dispatch, SetStateAction } from "react";
 import { uploadToCloudinary } from "@/lib/cloudinary/uploadToCloudinary";
 import type { User } from "@/types/user";
 
-type UploadMessage = {
-  text: string;
-  type: "success" | "error" | "";
-};
-
 export function useLawyerImageUpload() {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
-
-  const [message, setMessage] = useState<UploadMessage>({
-    text: "",
-    type: "",
-  });
 
   async function uploadImage(
     file: File,
@@ -30,7 +20,6 @@ export function useLawyerImageUpload() {
     setPreview(localPreview);
     setUploading(true);
     setUploadProgress(0);
-    setMessage({ text: "", type: "" });
 
     try {
       const signRes = await fetch("/api/cloudinary/sign");
@@ -49,9 +38,7 @@ export function useLawyerImageUpload() {
         (percent) => setUploadProgress(percent)
       );
 
-      if (!cloudData?.secure_url) {
-        throw new Error("Upload failed");
-      }
+      if (!cloudData?.secure_url) throw new Error("Upload failed");
 
       const saveRes = await fetch("/api/me", {
         method: "PATCH",
@@ -64,32 +51,15 @@ export function useLawyerImageUpload() {
       });
 
       const saveData = await saveRes.json();
+      if (!saveRes.ok) throw new Error(saveData.error);
 
-      if (!saveRes.ok) {
-        throw new Error(saveData.error || "Failed to save profile");
-      }
-
-      // ✅ UPDATE GLOBAL STATE (NO NULL ISSUES)
       setUser(saveData.user);
-
       setPreview(cloudData.secure_url);
-
-      setMessage({
-        type: "success",
-        text: "Profile picture updated successfully",
-      });
 
       URL.revokeObjectURL(localPreview);
     } catch (err) {
       console.error(err);
-
       setPreview(previousImage || "");
-
-      setMessage({
-        type: "error",
-        text: "Failed to upload image",
-      });
-
       URL.revokeObjectURL(localPreview);
     } finally {
       setUploading(false);
@@ -103,6 +73,5 @@ export function useLawyerImageUpload() {
     preview,
     setPreview,
     uploadProgress,
-    message,
   };
 }
