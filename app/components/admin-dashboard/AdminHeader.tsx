@@ -48,7 +48,7 @@ export default function AdminHeader({
         </button>
 
         <div className="font-semibold bg-[#F7E7CE]/40 shadow-xl text-lg rounded-xl">
-          <Link href="/" onClick={() => setSidebarOpen(false)}>
+          <Link href="/admin/dashboard" onClick={() => setSidebarOpen(false)}>
             <Image
               src={Lummina2}
               alt="Lummina Logo"
