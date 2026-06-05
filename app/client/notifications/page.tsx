@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
 type Notification = {
   id: string;
   title: string;
@@ -76,10 +75,10 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="p-6 flex flex-col gap-6">
+    <div className="p-6 flex flex-col gap-6 text-[#5F021F]">
       {/* HEADER */}
       <div className="flex justify-between items-center">
-        <h1 className="text-xl font-bold text-[#5F021F]">
+        <h1 className="text-xl font-bold ">
           Notifications
         </h1>
 

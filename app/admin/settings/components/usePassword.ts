@@ -141,7 +141,7 @@ export function usePassword() {
       /* OPTIONAL AUTO REDIRECT */
       setTimeout(() => {
         window.location.href =
-          "/login";
+          "/";
       }, 2000);
 
       return data;

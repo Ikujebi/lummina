@@ -118,7 +118,7 @@ export default function SettingsPage() {
       if (!res.ok) throw new Error(data.error);
 
       setPasswords({ current: "", new: "", confirm: "" });
-      window.location.href = "/login";
+      window.location.href = "/";
     } finally {
       setChangingPassword(false);
     }

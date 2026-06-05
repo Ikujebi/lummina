@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { Camera, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useClientImageUpload } from "@/hooks/useClientImageUpload";
+import { message as antdMessage } from "antd";
 
 type User = {
   id: string;
@@ -55,7 +56,11 @@ export default function ClientSettingsPage() {
     uploadProgress,
     message,
   } = useClientImageUpload();
-  useEffect(() => {
+
+  /* =======================
+     LOAD USER
+  ======================= */
+   useEffect(() => {
     async function load() {
       try {
         const res = await fetch("/api/me");
@@ -63,10 +68,10 @@ export default function ClientSettingsPage() {
         if (!res.ok) throw new Error("Failed to load user");
 
         const data = await res.json();
-
         setUser(data.user);
       } catch (err) {
         console.error(err);
+        antdMessage.error("Failed to load user");
       } finally {
         setLoading(false);
       }
@@ -74,6 +79,7 @@ export default function ClientSettingsPage() {
 
     load();
   }, []);
+
 
   useEffect(() => {
     if (user?.profilePicture) {
@@ -123,17 +129,18 @@ export default function ClientSettingsPage() {
       });
 
       if (!res.ok) {
-        throw new Error("Update failed");
+           antdMessage.error("Update failed");
+
       }
 
       const data = await res.json();
 
       setUser(data.user);
 
-      alert("Profile updated successfully");
+      antdMessage.success("Profile updated successfully");
     } catch (err) {
       console.error(err);
-      alert("Failed to update profile");
+      antdMessage.error("Failed to update profile");
     } finally {
       setSaving(false);
     }
@@ -144,17 +151,17 @@ export default function ClientSettingsPage() {
   ======================= */
   async function handleChangePassword() {
     if (!currentPassword || !newPassword || !confirmPassword) {
-      alert("All fields are required");
+      antdMessage.error("All fields are required");
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      alert("Passwords do not match");
+      antdMessage.error("Passwords do not match");
       return;
     }
 
     if (strength < 3) {
-      alert("Password is too weak");
+      antdMessage.error("Password is too weak");
       return;
     }
 
@@ -178,17 +185,17 @@ export default function ClientSettingsPage() {
         throw new Error(data.error || "Failed");
       }
 
-      alert("Password updated successfully. Please log in again.");
+      antdMessage.success("Password updated successfully. Please log in again.");
 
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
 
       // redirect to login after logout
-      window.location.href = "/login";
+      window.location.href = "/";
     } catch (err) {
       console.error(err);
-      alert("Password update failed");
+      antdMessage.error("Password update failed");
     } finally {
       setChangingPassword(false);
     }
@@ -203,7 +210,7 @@ export default function ClientSettingsPage() {
   }
 
   return (
-    <div className="max-w-3xl space-y-8">
+    <div className="max-w-3xl space-y-8 text-[#5F021F]">
       {/* HEADER */}
       <div>
         <h1 className="text-3xl font-black tracking-tight text-[#5F021F]">

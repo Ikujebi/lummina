@@ -36,22 +36,16 @@ export function useClientImageUpload() {
     setPreview(localPreview);
     setUploading(true);
     setUploadProgress(0);
-    setMessage({
-      text: "",
-      type: "",
-    });
+    setMessage({ text: "", type: "" });
 
     try {
       const signRes = await fetch("/api/cloudinary/sign");
 
-      if (!signRes.ok) {
-        throw new Error("Failed to get upload signature");
-      }
+      if (!signRes.ok) throw new Error("Failed to get upload signature");
 
       const signData = await signRes.json();
 
       const formData = new FormData();
-
       formData.append("file", file);
       formData.append("api_key", signData.apiKey);
       formData.append("timestamp", String(signData.timestamp));
@@ -64,9 +58,7 @@ export function useClientImageUpload() {
         (percent) => setUploadProgress(percent)
       );
 
-      if (!cloudData?.secure_url) {
-        throw new Error("Upload failed");
-      }
+      if (!cloudData?.secure_url) throw new Error("Upload failed");
 
       const saveRes = await fetch("/api/me", {
         method: "PATCH",
@@ -82,18 +74,15 @@ export function useClientImageUpload() {
       const saveData = await saveRes.json();
 
       if (!saveRes.ok) {
-        throw new Error(
-          saveData.error || "Failed to save profile picture"
-        );
+        throw new Error(saveData.error || "Failed to save profile picture");
       }
 
       setUser(saveData.user);
-
       setPreview(cloudData.secure_url);
 
       setMessage({
-        type: "success",
         text: "Profile picture updated successfully",
+        type: "success",
       });
 
       URL.revokeObjectURL(localPreview);
@@ -103,8 +92,8 @@ export function useClientImageUpload() {
       setPreview(previousImage || "");
 
       setMessage({
-        type: "error",
         text: "Failed to upload image",
+        type: "error",
       });
 
       URL.revokeObjectURL(localPreview);
@@ -120,6 +109,6 @@ export function useClientImageUpload() {
     preview,
     setPreview,
     uploadProgress,
-    message,
+    message, // ✅ IMPORTANT
   };
 }

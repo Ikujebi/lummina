@@ -9,6 +9,7 @@ import type { User } from "@/types/user";
 import { useNotifications } from "@/hooks/useClientNotifications";
 import { Montserrat } from "@/app/fonts";
 
+
 export default function ClientShell({
   children,
 }: {
