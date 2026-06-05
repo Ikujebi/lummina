@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { logAudit } from "@/lib/audit"; 
+import { notifyMatterRequestCreated } from "@/lib/events/matterRequestEvents";
+
 
 export async function POST(req: Request) {
   try {
@@ -45,6 +48,18 @@ export async function POST(req: Request) {
         }),
         status: "PENDING",
       },
+    });
+   await logAudit(
+  user.id,
+  "CREATE",
+  "MatterRequest",
+  request.id
+);
+
+    await notifyMatterRequestCreated({
+      clientUserId: user.id,
+      clientName: user.name,
+      title,
     });
 
     return NextResponse.json({
