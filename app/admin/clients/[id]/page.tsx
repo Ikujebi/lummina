@@ -2,16 +2,27 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Button, Input, Tag, message, Spin } from "antd";
+import {
+  Button,
+  Input,
+  Tag,
+  message,
+  Spin,
+  Tabs,
+  Empty,
+} from "antd";
 import { User } from "@/types/admin";
 import Image from "next/image";
-import Link from "next/link"
 import {
   CheckCircleOutlined,
   SaveOutlined,
   EditOutlined,
   CloseOutlined,
 } from "@ant-design/icons";
+import ClientMatters from "@/app/components/admin-dashboard/client-profile/ClientMatters";
+import ClientDocuments from "@/app/components/admin-dashboard/client-profile/ClientDocuments";
+import ClientTimeline from "@/app/components/admin-dashboard/client-profile/ClientTimeline";
+import ClientPayments from "@/app/components/admin-dashboard/client-profile/ClientPayments";
 
 export default function ClientProfilePage() {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +34,9 @@ export default function ClientProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
 
   const [form, setForm] = useState<Partial<User>>({});
+  const [mattersCount, setMattersCount] = useState<number>(0);
+const [documentsCount, setDocumentsCount] = useState<number>(0);
+const [timelineCount, setTimelineCount] = useState<number>(0);
 
   useEffect(() => {
     fetchClient();
@@ -229,54 +243,40 @@ export default function ClientProfilePage() {
         )}
       </div>
 
-      {/* FUTURE SECTIONS */}
-     {/* FUTURE SECTIONS */}
+{/* CLIENT INTELLIGENCE DASHBOARD */}
 <div className="bg-white rounded-xl p-6 shadow">
-  <h2 className="text-lg font-semibold mb-3">
-    Activity Overview
+  <h2 className="text-lg font-semibold mb-4">
+    Client Activity
   </h2>
 
-  <p className="text-sm text-gray-500 mb-4">
-    These features are not yet available. They will appear here once enabled in the system.
-  </p>
-
-  <ul className="list-disc ml-5 text-gray-600 mt-2 text-sm space-y-2">
-  <li>
-    <Link
-      href={`/admin/users/${id}/matters`}
-      className="text-[#5F021F] hover:underline"
-    >
-      Matters assigned to client
-    </Link>
-  </li>
-
-  <li>
-    <Link
-      href={`/admin/users/${id}/documents`}
-      className="text-[#5F021F] hover:underline"
-    >
-      Uploaded documents
-    </Link>
-  </li>
-
-  <li className="text-gray-400 cursor-not-allowed">
-    Invoices / payments (not available yet)
-  </li>
-
-  <li>
-    <Link
-      href={`/admin/users/${id}/timeline`}
-      className="text-[#5F021F] hover:underline"
-    >
-      Case history timeline
-    </Link>
-  </li>
-</ul>
-
-  {/* optional badge */}
-  <div className="mt-5 inline-flex items-center px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-500">
-    Feature modules in development
-  </div>
+  <Tabs
+    defaultActiveKey="matters"
+    destroyOnHidden
+    items={[
+      {
+        key: "matters",
+        label: "Matters",
+        children: <ClientMatters clientId={id} />,
+      },
+      {
+        key: "documents",
+        label: "Documents",
+        children: <ClientDocuments clientId={id} />,
+      },
+      {
+        key: "timeline",
+        label: "Timeline",
+        children: <ClientTimeline clientId={id} />,
+      },
+      {
+        key: "payments",
+        label: "Payments",
+        children: (
+          <Empty description="Payments module not available yet" />
+        ),
+      },
+    ]}
+  />
 </div>
     </div>
   );

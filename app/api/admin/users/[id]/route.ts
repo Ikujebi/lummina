@@ -1,4 +1,3 @@
-// app/api/admin/users/[id]/route.ts
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
@@ -8,7 +7,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { createNotification } from "@/lib/notifications/notifications.helper";
 
 /**
- * GET - Get single user
+ * GET - Get single user with client profile data
  */
 export async function GET(
   req: NextRequest,
@@ -16,36 +15,57 @@ export async function GET(
 ) {
   try {
     await requireAdmin();
+
     const { id } = await context.params;
 
     const user = await prisma.user.findUnique({
       where: { id },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        createdAt: true,
-        isApproved: true,
-        profilePicture: true,
-        phone : true,
-        address : true,
+      include: {
+        clients: true,
       },
     });
 
     if (!user) {
-      return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: "User not found" },
+        { status: 404 }
+      );
     }
+    
 
-    return NextResponse.json({ success: true, user });
+    const primaryClient = user.clients?.[0];
+    
+
+    return NextResponse.json({
+      success: true,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        createdAt: user.createdAt,
+        isApproved: user.isApproved,
+        profilePicture: user.profilePicture,
+
+        // flattened client fields for frontend convenience
+        phone: primaryClient?.phone ?? "",
+        address: primaryClient?.address ?? "",
+
+        clients: user.clients,
+      },
+    });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    console.error("GET error:", error);
+
+    return NextResponse.json(
+      { success: false, error: "Unauthorized" },
+      { status: 401 }
+    );
   }
 }
 
 /**
- * PATCH - Update user role
+ * PATCH - Update user + client profile data
  */
 export async function PATCH(
   req: NextRequest,
@@ -64,9 +84,11 @@ export async function PATCH(
       );
     }
 
-    // 1. Get existing user
     const existingUser = await prisma.user.findUnique({
       where: { id },
+      include: {
+        clients: true,
+      },
     });
 
     if (!existingUser) {
@@ -76,23 +98,52 @@ export async function PATCH(
       );
     }
 
-    const data: Prisma.UserUpdateInput = {};
+    /**
+     * 1. Update USER fields (role, approval only)
+     */
+    const userData: Prisma.UserUpdateInput = {};
 
     if (typeof body.role === "string") {
-      data.role = body.role;
+      userData.role = body.role;
     }
 
     if (typeof body.isApproved === "boolean") {
-      data.isApproved = body.isApproved;
+      userData.isApproved = body.isApproved;
     }
 
-    // 2. Update user
-    const updatedUser = await prisma.user.update({
+    await prisma.user.update({
       where: { id },
-      data,
+      data: userData,
     });
 
-    // 3. Notify admin (actor)
+    /**
+     * 2. Update CLIENT fields (phone, address)
+     */
+    if (body.phone !== undefined || body.address !== undefined) {
+      await prisma.client.updateMany({
+        where: { userId: id },
+        data: {
+          ...(body.phone !== undefined && { phone: body.phone }),
+          ...(body.address !== undefined && { address: body.address }),
+        },
+      });
+    }
+
+    /**
+     * 3. Refetch updated record
+     */
+    const updatedUser = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        clients: true,
+      },
+    });
+
+    const primaryClient = updatedUser?.clients?.[0];
+
+    /**
+     * 4. Audit + notifications
+     */
     const currentUser = await getCurrentUser();
 
     if (currentUser) {
@@ -113,6 +164,14 @@ export async function PATCH(
         );
       }
 
+      if (body.phone && body.phone !== existingUser.clients?.[0]?.phone) {
+        changes.push("phone updated");
+      }
+
+      if (body.address && body.address !== existingUser.clients?.[0]?.address) {
+        changes.push("address updated");
+      }
+
       if (changes.length > 0) {
         await createNotification({
           userId: currentUser.id,
@@ -125,7 +184,21 @@ export async function PATCH(
       }
     }
 
-    return NextResponse.json({ success: true, user: updatedUser });
+    return NextResponse.json({
+      success: true,
+      user: {
+        id: updatedUser?.id,
+        name: updatedUser?.name,
+        email: updatedUser?.email,
+        role: updatedUser?.role,
+        createdAt: updatedUser?.createdAt,
+        isApproved: updatedUser?.isApproved,
+        profilePicture: updatedUser?.profilePicture,
+
+        phone: primaryClient?.phone ?? "",
+        address: primaryClient?.address ?? "",
+      },
+    });
   } catch (error) {
     console.error("PATCH error:", error);
 
@@ -148,7 +221,6 @@ export async function DELETE(
 
     const { id } = await context.params;
 
-    // 1. Get user first (before deleting)
     const userToDelete = await prisma.user.findUnique({
       where: { id },
     });
@@ -160,10 +232,10 @@ export async function DELETE(
       );
     }
 
-    // 2. Delete user
-    await prisma.user.delete({ where: { id } });
+    await prisma.user.delete({
+      where: { id },
+    });
 
-    // 3. Audit + Notification
     const currentUser = await getCurrentUser();
 
     if (currentUser) {
@@ -182,7 +254,8 @@ export async function DELETE(
       message: "User deleted successfully",
     });
   } catch (error) {
-    console.error(error);
+    console.error("DELETE error:", error);
+
     return NextResponse.json(
       { success: false, error: "Failed to delete user" },
       { status: 500 }
