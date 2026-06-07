@@ -148,6 +148,8 @@ const filteredClients = clients.filter((u) => {
       ) : (
         <UsersTable
           users={filteredClients}
+            viewHref={(user) => `/admin/clients/${user.id}`}
+
           // ✅ FIXED HERE
          onApprove={async (user) => {
   try {

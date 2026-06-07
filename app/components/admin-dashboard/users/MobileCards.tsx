@@ -6,20 +6,26 @@ import {
   EditOutlined,
   DeleteOutlined,
   CheckCircleOutlined,
+  EyeOutlined,
 } from "@ant-design/icons";
 import { confirmDeleteUser } from "./userActions";
+import Link from "next/link";
 
 interface Props {
   users: User[];
   editingKey: string | null;
   editedUser: Partial<User>;
   isEditing: (user: User) => boolean;
-  handleChange: <K extends keyof User>(field: K, value: User[K]) => void;
+  handleChange: <K extends keyof User>(
+    field: K,
+    value: User[K]
+  ) => void;
   edit: (user: User) => void;
   save: (id: string) => void;
   cancel: () => void;
   onApprove: (user: User) => void;
   onDelete: (user: User) => void;
+  viewHref?: (user: User) => string;
 }
 
 export default function MobileCards({
@@ -32,6 +38,7 @@ export default function MobileCards({
   cancel,
   onApprove,
   onDelete,
+  viewHref,
 }: Props) {
   return (
     <div className="block md:hidden w-full max-w-[400px] mx-auto">
@@ -91,10 +98,23 @@ export default function MobileCards({
                 <Button onClick={() => save(user.id)}>
                   Save
                 </Button>
-                <Button onClick={cancel}>Cancel</Button>
+
+                <Button onClick={cancel}>
+                  Cancel
+                </Button>
               </>
             ) : (
               <>
+                {viewHref && (
+                  <Link href={viewHref(user)}>
+                    <Button
+                      icon={<EyeOutlined />}
+                      className="w-[.4rem] ">
+                      View
+                    </Button>
+                  </Link>
+                )}
+
                 <Button
                   icon={<EditOutlined />}
                   onClick={() => edit(user)}

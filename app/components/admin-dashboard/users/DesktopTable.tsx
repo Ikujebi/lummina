@@ -8,8 +8,10 @@ import {
   CheckCircleOutlined,
   SaveOutlined,
   CloseOutlined,
+  EyeOutlined,
 } from "@ant-design/icons";
 import { confirmDeleteUser } from "./userActions";
+import Link from "next/link";
 
 interface Props {
   users: User[];
@@ -22,6 +24,8 @@ interface Props {
   cancel: () => void;
   onApprove: (user: User) => void;
   onDelete: (user: User) => void;
+  viewHref?: (user: User) => string;
+
 }
 
 export default function DesktopTable({
@@ -34,6 +38,7 @@ export default function DesktopTable({
   cancel,
   onApprove,
   onDelete,
+  viewHref
 }: Props) {
   return (
     <div className="hidden md:block w-full overflow-x-auto">
@@ -138,6 +143,18 @@ export default function DesktopTable({
                           onClick={() => onApprove(user)}
                           className="text-[#5F021F] hover:bg-[#5F021F]/10"
                         />
+                      )}
+
+                      {viewHref && (
+                        <Link href={viewHref(user)}>
+                          <Button
+                          type="text"
+                            icon={<EyeOutlined />}
+                          className="text-[#5F021F] hover:bg-[#5F021F]/10"
+                          />
+
+                           
+                        </Link>
                       )}
 
                       <Button

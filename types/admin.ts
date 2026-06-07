@@ -18,6 +18,9 @@ export type User ={
   email: string;
   role: "ADMIN" | "LAWYER" | "CLIENT";
    isApproved: boolean;
+   profilePicture?: string;
+   phone?: string;
+   address?: string;
 }
 
 export type Lawyer ={

@@ -10,6 +10,8 @@ interface Props {
   onApprove: (user: User) => void;
   onSave: (user: User) => void;
   onDelete: (user: User) => void;
+    viewHref?: (user: User) => string;
+
 }
 
 export default function UsersTable({
@@ -17,6 +19,7 @@ export default function UsersTable({
   onApprove,
   onSave,
   onDelete,
+  viewHref
 }: Props) {
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [editedUser, setEditedUser] = useState<Partial<User>>({});
@@ -69,6 +72,7 @@ export default function UsersTable({
         cancel={cancel}
         onApprove={onApprove}
         onDelete={onDelete}
+        viewHref={viewHref}
       />
 
       <MobileCards
@@ -82,6 +86,7 @@ export default function UsersTable({
         cancel={cancel}
         onApprove={onApprove}
         onDelete={onDelete}
+        viewHref={viewHref}
       />
     </>
   );
