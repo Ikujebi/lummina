@@ -35,6 +35,8 @@ export default function AdminDashboardClient({ initialData }: Props) {
       user.email.toLowerCase().includes(search.toLowerCase()),
   );
 
+  
+
   return (
     <Spin spinning={false}>
       <section className="flex justify-between mb-6">
@@ -55,7 +57,7 @@ export default function AdminDashboardClient({ initialData }: Props) {
           placeholder="Search users..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border px-3 py-2 rounded-md w-full max-w-sm outline-none"
+          className=" bg-white/40 px-3 py-2 rounded-md w-full max-w-sm outline-none text-[#5F021F] focus:ring-2 focus:ring-[#5F021F]/50 transition"
         />
       </div>
       <UsersTable

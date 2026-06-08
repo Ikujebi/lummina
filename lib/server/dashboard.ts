@@ -2,8 +2,6 @@ import { prisma } from "@/lib/prisma";
 import type { DashboardData, Status, Widget, Alert } from "@/types/dashboard";
 import type { User } from "@/types/admin";
 
-/* ================= TYPES ================= */
-
 type MatterStatus = {
   createdAt: Date;
   status: Status;
@@ -17,16 +15,17 @@ type LineItem = {
   closedCases: number;
 };
 
-/* ================= SERVICE ================= */
-
 export async function getDashboardData(): Promise<DashboardData> {
   const now = new Date();
+
+const oneMonthAgo = new Date();
+oneMonthAgo.setMonth(now.getMonth() - 1);
 
   const [users, matters] = await Promise.all([
     prisma.user.findMany(),
     prisma.matter.findMany({
       where: {
-        createdAt: { gte: now },
+        createdAt: { gte: oneMonthAgo },
       },
       select: {
         createdAt: true,
@@ -50,12 +49,10 @@ export async function getDashboardData(): Promise<DashboardData> {
     statusCounts[m.status]++;
   });
 
-  /* ================= LINE DATA ================= */
+  /* ================= GROUP BY DATE ================= */
 
-  const grouped: Record<
-    string,
-    { newCases: number; closedCases: number }
-  > = {};
+  const grouped: Record<string, { newCases: number; closedCases: number }> =
+    {};
 
   typed.forEach((m) => {
     const key = m.createdAt.toISOString().split("T")[0];
@@ -71,13 +68,22 @@ export async function getDashboardData(): Promise<DashboardData> {
     }
   });
 
-  const line: LineItem[] = Object.entries(grouped).map(
-    ([date, value]) => ({
-      date,
-      newCases: value.newCases,
-      closedCases: value.closedCases,
-    })
-  );
+  const line: LineItem[] = Object.entries(grouped).map(([date, value]) => ({
+    date,
+    newCases: value.newCases,
+    closedCases: value.closedCases,
+  }));
+
+  /* ================= SAFE USER MAPPING ================= */
+
+  const safeUsers: User[] = users.map((u) => ({
+    id: u.id,
+    name: u.name, // now guaranteed string (your schema fix worked 👍)
+    email: u.email,
+    role: u.role,
+    isApproved: u.isApproved,
+    profilePicture: u.profilePicture ?? undefined,
+  }));
 
   /* ================= WIDGETS ================= */
 
@@ -110,12 +116,29 @@ export async function getDashboardData(): Promise<DashboardData> {
   const total = typed.length;
   const closed = statusCounts.CLOSED;
 
-  /* ================= RETURN ================= */
+  console.log("🔥 SERVER DASHBOARD DATA:", {
+  widgets,
+  alerts,
+  usersCount: users.length,
+  chartData: {
+    doughnut: {
+      labels: ["OPEN", "IN_PROGRESS", "PENDING", "CLOSED"],
+      values: [
+        statusCounts.OPEN,
+        statusCounts.IN_PROGRESS,
+        statusCounts.PENDING,
+        statusCounts.CLOSED,
+      ],
+    },
+    lineLength: line.length,
+    progress: total,
+  },
+});
 
   return {
     widgets,
     alerts,
-    users: users as User[], // 👈 properly typed as User[]
+    users: safeUsers,
 
     chartData: {
       doughnut: {
