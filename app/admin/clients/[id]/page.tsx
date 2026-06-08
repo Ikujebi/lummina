@@ -2,15 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import {
-  Button,
-  Input,
-  Tag,
-  message,
-  Spin,
-  Tabs,
-  Empty,
-} from "antd";
+import { Button, Input, Tag, message, Spin, Tabs, Empty } from "antd";
 import { User } from "@/types/admin";
 import Image from "next/image";
 import {
@@ -22,7 +14,6 @@ import {
 import ClientMatters from "@/app/components/admin-dashboard/client-profile/ClientMatters";
 import ClientDocuments from "@/app/components/admin-dashboard/client-profile/ClientDocuments";
 import ClientTimeline from "@/app/components/admin-dashboard/client-profile/ClientTimeline";
-import ClientPayments from "@/app/components/admin-dashboard/client-profile/ClientPayments";
 
 export default function ClientProfilePage() {
   const { id } = useParams<{ id: string }>();
@@ -35,36 +26,40 @@ export default function ClientProfilePage() {
 
   const [form, setForm] = useState<Partial<User>>({});
   const [mattersCount, setMattersCount] = useState<number>(0);
-const [documentsCount, setDocumentsCount] = useState<number>(0);
-const [timelineCount, setTimelineCount] = useState<number>(0);
+  const [documentsCount, setDocumentsCount] = useState<number>(0);
+  const [timelineCount, setTimelineCount] = useState<number>(0);
 
   useEffect(() => {
+    async function fetchClient() {
+      setLoading(true);
+
+      try {
+        const res = await fetch(`/api/admin/users/${id}`);
+        const data = await res.json();
+
+        if (!data.success) {
+          throw new Error(data.error || "Failed to fetch client");
+        }
+
+        setClient(data.user);
+
+        setForm({
+          phone: data.user.phone ?? "",
+          address: data.user.address ?? "",
+        });
+        setMattersCount(data.counts?.matters ?? 0);
+        setDocumentsCount(data.counts?.documents ?? 0);
+        setTimelineCount(data.counts?.timeline ?? 0);
+      } catch (err) {
+        console.error(err);
+        message.error("Failed to load client profile");
+      } finally {
+        setLoading(false);
+      }
+    }
+
     fetchClient();
   }, [id]);
-
-  async function fetchClient() {
-    setLoading(true);
-
-    try {
-      const res = await fetch(`/api/admin/users/${id}`);
-      const data = await res.json();
-
-      if (!data.success) {
-        throw new Error(data.error || "Failed to fetch client");
-      }
-
-      setClient(data.user);
-      setForm({
-        phone: data.user.phone ?? "",
-        address: data.user.address ?? "",
-      });
-    } catch (err) {
-      console.error(err);
-      message.error("Failed to load client profile");
-    } finally {
-      setLoading(false);
-    }
-  }
 
   function handleChange(field: "phone" | "address", value: string) {
     setForm((prev) => ({
@@ -133,9 +128,7 @@ const [timelineCount, setTimelineCount] = useState<number>(0);
         />
 
         <div className="flex-1 space-y-2">
-          <h1 className="text-2xl font-semibold">
-            {client.name || "No name"}
-          </h1>
+          <h1 className="text-2xl font-semibold">{client.name || "No name"}</h1>
 
           <p className="text-gray-600">{client.email}</p>
 
@@ -148,19 +141,14 @@ const [timelineCount, setTimelineCount] = useState<number>(0);
               <Tag color="orange">Pending</Tag>
             )}
 
-            <span className="text-sm text-gray-500">
-              Role: {client.role}
-            </span>
+            <span className="text-sm text-gray-500">Role: {client.role}</span>
           </div>
         </div>
 
         {/* EDIT BUTTON */}
         <div>
           {!isEditing ? (
-            <Button
-              icon={<EditOutlined />}
-              onClick={() => setIsEditing(true)}
-            >
+            <Button icon={<EditOutlined />} onClick={() => setIsEditing(true)}>
               Edit
             </Button>
           ) : (
@@ -187,31 +175,23 @@ const [timelineCount, setTimelineCount] = useState<number>(0);
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* PHONE (editable only in edit mode) */}
           <div>
-            <label className="text-sm text-gray-500">
-              Phone Number
-            </label>
+            <label className="text-sm text-gray-500">Phone Number</label>
 
             <Input
               value={form.phone || ""}
               disabled={!isEditing}
-              onChange={(e) =>
-                handleChange("phone", e.target.value)
-              }
+              onChange={(e) => handleChange("phone", e.target.value)}
             />
           </div>
 
           {/* ADDRESS (editable only in edit mode) */}
           <div>
-            <label className="text-sm text-gray-500">
-              Address
-            </label>
+            <label className="text-sm text-gray-500">Address</label>
 
             <Input
               value={form.address || ""}
               disabled={!isEditing}
-              onChange={(e) =>
-                handleChange("address", e.target.value)
-              }
+              onChange={(e) => handleChange("address", e.target.value)}
             />
           </div>
 
@@ -243,41 +223,39 @@ const [timelineCount, setTimelineCount] = useState<number>(0);
         )}
       </div>
 
-{/* CLIENT INTELLIGENCE DASHBOARD */}
-<div className="bg-white rounded-xl p-6 shadow">
-  <h2 className="text-lg font-semibold mb-4">
-    Client Activity
-  </h2>
+      {/* CLIENT INTELLIGENCE DASHBOARD */}
+      <div className="bg-white rounded-xl p-6 shadow">
+        <h2 className="text-lg font-semibold mb-4">Client Activity</h2>
 
-  <Tabs
-    defaultActiveKey="matters"
-    destroyOnHidden
-    items={[
-      {
-        key: "matters",
-        label: "Matters",
-        children: <ClientMatters clientId={id} />,
-      },
-      {
-        key: "documents",
-        label: "Documents",
-        children: <ClientDocuments clientId={id} />,
-      },
-      {
-        key: "timeline",
-        label: "Timeline",
-        children: <ClientTimeline clientId={id} />,
-      },
-      {
-        key: "payments",
-        label: "Payments",
-        children: (
-          <Empty description="Payments module not available yet" />
-        ),
-      },
-    ]}
-  />
-</div>
+        <Tabs
+          defaultActiveKey="matters"
+          destroyOnHidden
+          items={[
+            {
+              key: "matters",
+              label: `Matters (${mattersCount})`,
+              children: <ClientMatters clientId={id} />,
+            },
+            {
+              key: "documents",
+              label: `Documents (${documentsCount})`,
+              children: <ClientDocuments clientId={id} />,
+            },
+            {
+              key: "timeline",
+              label: `Timeline (${timelineCount})`,
+              children: <ClientTimeline clientId={id} />,
+            },
+            {
+              key: "payments",
+              label: "Payments",
+              children: (
+                <Empty description="Payments module not available yet" />
+              ),
+            },
+          ]}
+        />
+      </div>
     </div>
   );
 }

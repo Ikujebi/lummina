@@ -19,11 +19,25 @@ export async function GET(
     const { id } = await context.params;
 
     const user = await prisma.user.findUnique({
-      where: { id },
+  where: { id },
+  include: {
+    clients: {
       include: {
-        clients: true,
+        matters: {
+          select: {
+            id: true,
+            _count: {
+              select: {
+                documents: true,
+                activities: true,
+              },
+            },
+          },
+        },
       },
-    });
+    },
+  },
+});
 
     if (!user) {
       return NextResponse.json(
@@ -34,6 +48,20 @@ export async function GET(
     
 
     const primaryClient = user.clients?.[0];
+
+    const mattersCount = primaryClient?.matters.length ?? 0;
+
+const documentsCount =
+  primaryClient?.matters.reduce(
+    (sum, matter) => sum + matter._count.documents,
+    0
+  ) ?? 0;
+
+const timelineCount =
+  primaryClient?.matters.reduce(
+    (sum, matter) => sum + matter._count.activities,
+    0
+  ) ?? 0;
     
 
     return NextResponse.json({
@@ -53,6 +81,11 @@ export async function GET(
 
         clients: user.clients,
       },
+       counts: {
+    matters: mattersCount,
+    documents: documentsCount,
+    timeline: timelineCount,
+  },
     });
   } catch (error) {
     console.error("GET error:", error);

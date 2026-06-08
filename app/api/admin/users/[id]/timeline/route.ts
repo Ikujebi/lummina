@@ -25,6 +25,7 @@ export async function GET(
 
     return NextResponse.json({ success: true, timeline });
   } catch (err) {
+    console.error(err);
     return NextResponse.json(
       { success: false, error: "Failed to fetch timeline" },
       { status: 500 }
