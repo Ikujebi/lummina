@@ -116,24 +116,7 @@ oneMonthAgo.setMonth(now.getMonth() - 1);
   const total = typed.length;
   const closed = statusCounts.CLOSED;
 
-  console.log("🔥 SERVER DASHBOARD DATA:", {
-  widgets,
-  alerts,
-  usersCount: users.length,
-  chartData: {
-    doughnut: {
-      labels: ["OPEN", "IN_PROGRESS", "PENDING", "CLOSED"],
-      values: [
-        statusCounts.OPEN,
-        statusCounts.IN_PROGRESS,
-        statusCounts.PENDING,
-        statusCounts.CLOSED,
-      ],
-    },
-    lineLength: line.length,
-    progress: total,
-  },
-});
+  
 
   return {
     widgets,
