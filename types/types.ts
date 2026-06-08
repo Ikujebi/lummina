@@ -32,10 +32,11 @@ interface DoughnutData {
   values: number[];
 }
 
-interface LinePoint {
-  label: string;
-  value: number;
-}
+export type LinePoint = {
+  date: string;
+  newCases: number;
+  closedCases: number;
+};
 
 export interface ChartsSectionProps {
   doughnutData: DoughnutData;
