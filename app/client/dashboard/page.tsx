@@ -6,8 +6,7 @@ import HeroSection from "@/app/components/dashboard/HeroSection";
 import ChartsSection from "@/app/components/dashboard/ChartsSection";
 import TimelineSection from "@/app/components/dashboard/TimelineSection";
 import ProcessHistory from "@/app/components/dashboard/ProcessHistory";
-
-import { TimelineItem } from "@/types/types";
+import { LinePoint,TimelineItem } from "@/types/types";
 import type { ClientDashboardData } from "@/types/client";
 
 /* =======================
@@ -31,10 +30,7 @@ type DashboardData = {
       labels: string[];
       values: number[];
     };
-    line: {
-      label: string;
-      value: number;
-    }[];
+    line:LinePoint[];
     progress: number;
   };
 };
