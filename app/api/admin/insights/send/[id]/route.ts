@@ -63,31 +63,40 @@ ${process.env.NEXT_PUBLIC_APP_URL}/insights/${insight.slug}
     `;
 
     for (const subscriber of subscribers) {
-      if (!subscriber.email) continue;
+  if (!subscriber.email) continue;
 
-      const response = await resend.emails.send({
-        from: "Lummina Law <news@legal.lumminalaw.com>",
+  // 1. Updated path to match your new route: /api/admin/unsubscribe
+  const unsubscribeUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/admin/unsubscribe?id=${subscriber.id}`;
 
-        to: subscriber.email,
-        subject: insight.title,
+  const response = await resend.emails.send({
+    from: "Lummina Law <news@legal.lumminalaw.com>",
+    to: subscriber.email,
+    subject: insight.title,
+    
+    html: htmlContent + `
+      <hr style="border:none;border-top:1px solid #eee;margin-top:40px;"/>
+      <p style="font-size:12px;color:#666;text-align:center;">
+        Sent to ${subscriber.email}. If you wish to opt-out, you can 
+        <a href="${unsubscribeUrl}" style="color:#5F021F;">unsubscribe here</a>.
+      </p>
+    `,
+    text: textContent + `\n\nUnsubscribe:\n${unsubscribeUrl}`,
 
-        html: htmlContent,
-        text: textContent,
+    // 2. Passing the updated admin route to Gmail headers
+    headers: {
+      "List-Unsubscribe": `<${unsubscribeUrl}>, <mailto:unsubscribe@legal.lumminalaw.com?subject=Unsubscribe-${subscriber.id}>`,
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+    },
+  });
 
-        // 🔥 IMPORTANT FOR GMAIL INBOXING
-        headers: {
-          "List-Unsubscribe": `<${process.env.NEXT_PUBLIC_APP_URL}/unsubscribe>`,
-        },
-      });
+  console.log("RESEND RESPONSE:", response);
 
-      console.log("RESEND RESPONSE:", response);
+  if (response.error) {
+    throw new Error(response.error.message);
+  }
 
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
-
-      sentCount++;
-    }
+  sentCount++;
+}
 
     await prisma.newsletter.update({
       where: { id },
