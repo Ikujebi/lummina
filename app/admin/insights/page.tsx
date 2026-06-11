@@ -4,7 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { X, Trash2 } from "lucide-react";
+import {
+  X,
+  Trash2,
+  Edit3,
+  Send,
+  Upload,
+  CheckCircle,
+} from "lucide-react";
 
 import ConfirmModal from "@/app/components/ConfirmModal";
 
@@ -271,26 +278,31 @@ export default function InsightsPage() {
                 {!insight.published && (
                   <button
                     onClick={() => handlePublish(insight.id)}
-                    className="px-3 py-1 rounded text-sm bg-green-600 text-white"
+                    className="p-2 rounded-lg hover:bg-green-500/20 transition"
+    title="Publish"
                   >
-                    Publish
+                    <CheckCircle size={18} className="text-green-400" />
                   </button>
                 )}
 
                 {!insight.sent && (
                   <button
                     onClick={() => handleSend(insight.id)}
-                    className="px-3 py-1 rounded text-sm bg-white text-[#5F021F]"
+                    className="p-2 rounded-lg hover:bg-white/10 transition"
+                    title="Send"
                   >
-                    Send
+                        <Send size={18} className="text-white" />
+
                   </button>
                 )}
 
                 <Link
                   href={`/admin/insights/${insight.id}`}
-                  className="bg-[#F4C430] text-[#5F021F] px-3 py-1 rounded text-sm"
+                   className="p-[1px] rounded-lg border border-yellow-500 hover:bg-yellow-500/20 transition"
+                  title="Edit"
                 >
-                  Edit
+                    <Edit3 size={18} className="text-[#F4C430]" />
+
                 </Link>
               </div>
 

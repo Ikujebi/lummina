@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import slugify from "slugify";
+import { getCurrentUser } from "@/lib/auth";
 
 export async function GET() {
   try {
@@ -30,7 +31,6 @@ export async function GET() {
       updatedAt: item.updatedAt,
       authorId: item.authorId,
 
-      // analytics
       views: item._count.views,
       sent: item.sent,
     }));
@@ -48,6 +48,21 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    // -------------------------------
+    // 1. AUTH (IMPORTANT FIX)
+    // -------------------------------
+    const user = await getCurrentUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    // -------------------------------
+    // 2. REQUEST BODY
+    // -------------------------------
     const body = await req.json();
 
     const {
@@ -56,20 +71,23 @@ export async function POST(req: Request) {
       content,
       coverImage,
       published,
-      authorId,
     } = body;
 
+    if (!title) {
+      return NextResponse.json(
+        { error: "Title is required" },
+        { status: 400 }
+      );
+    }
+
     // -------------------------------
-    // 1. Generate base slug
+    // 3. SLUG GENERATION
     // -------------------------------
     const baseSlug = slugify(title, {
       lower: true,
       strict: true,
     });
 
-    // -------------------------------
-    // 2. Ensure uniqueness
-    // -------------------------------
     let slug = baseSlug;
     let counter = 1;
 
@@ -79,7 +97,7 @@ export async function POST(req: Request) {
     }
 
     // -------------------------------
-    // 3. Create insight
+    // 4. CREATE NEWSLETTER (FIXED authorId)
     // -------------------------------
     const insight = await prisma.newsletter.create({
       data: {
@@ -90,7 +108,9 @@ export async function POST(req: Request) {
         coverImage,
         published,
         publishedAt: published ? new Date() : null,
-        authorId,
+
+        // ✅ FIXED HERE
+        authorId: user.id,
       },
     });
 

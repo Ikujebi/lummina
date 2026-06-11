@@ -1,13 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { message } from "antd";
 
+type ActionState = "idle" | "saving";
 export default function EditInsightPage() {
   const params = useParams();
   const id = params?.id as string;
+  const router = useRouter();
 
-  const [loading, setLoading] = useState(false);
+
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const [action, setAction] = useState<ActionState>("idle");
   const [fetching, setFetching] = useState(true);
 
   const [title, setTitle] = useState("");
@@ -16,7 +24,13 @@ export default function EditInsightPage() {
   const [content, setContent] = useState("");
   const [published, setPublished] = useState(false);
 
-  // FETCH INSIGHT
+  const [existingImage, setExistingImage] = useState<string | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const isLoading = action !== "idle";
+
+  // ---------------- FETCH INSIGHT ----------------
   const fetchInsight = async (insightId: string) => {
     try {
       setFetching(true);
@@ -24,33 +38,93 @@ export default function EditInsightPage() {
       const res = await fetch(`/api/admin/insights/${insightId}`);
       const data = await res.json();
 
-      setTitle(data.title);
-      setSlug(data.slug);
-      setSummary(data.summary);
-      setContent(data.content);
-      setPublished(data.published);
+      if (!res.ok) throw new Error();
+
+      setTitle(data.title ?? "");
+      setSlug(data.slug ?? "");
+      setSummary(data.summary ?? "");
+      setContent(data.content ?? "");
+      setPublished(data.published ?? false);
+      setExistingImage(data.coverImage ?? null);
     } catch (err) {
       console.error(err);
-      alert("Failed to load insight");
+      message.error("Failed to load insight");
     } finally {
       setFetching(false);
     }
   };
 
-  // ✅ SAFE useEffect PATTERN (your requested format)
   useEffect(() => {
-    const load = async () => {
-      if (!id) return;
-      await fetchInsight(id);
-    };
-
-    load();
+    if (id) fetchInsight(id);
   }, [id]);
 
-  // SAVE
-  const handleSave = async () => {
+  // ---------------- CLEANUP ----------------
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  // ---------------- FILE HANDLER ----------------
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setCoverFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+  };
+
+  // ---------------- CLOUDINARY UPLOAD ----------------
+  const uploadImage = async (file: File): Promise<string | null> => {
     try {
-      setLoading(true);
+      const sigRes = await fetch("/api/cloudinary/sign");
+      const sig = await sigRes.json();
+
+      if (!sigRes.ok) return null;
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("api_key", sig.apiKey);
+      formData.append("timestamp", String(sig.timestamp));
+      formData.append("signature", sig.signature);
+      formData.append("folder", "insights");
+
+      const uploadRes = await fetch(
+        `https://api.cloudinary.com/v1_1/${sig.cloudName}/image/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const data = await uploadRes.json();
+
+      if (!uploadRes.ok) return null;
+
+      return data.secure_url ?? null;
+    } catch (err) {
+      console.error(err);
+      return null;
+    }
+  };
+
+  // ---------------- SAVE ----------------
+  const handleSave = async () => {
+    if (!title.trim()) {
+      message.error("Title is required");
+      return;
+    }
+
+    try {
+      setAction("saving");
+
+      let coverImageUrl: string | null = existingImage;
+
+      // upload new image if selected
+      if (coverFile) {
+        const uploaded = await uploadImage(coverFile);
+        if (uploaded) coverImageUrl = uploaded;
+      }
 
       const res = await fetch(`/api/admin/insights/${id}`, {
         method: "PATCH",
@@ -63,180 +137,162 @@ export default function EditInsightPage() {
           summary,
           content,
           published,
+          coverImage: coverImageUrl,
         }),
       });
 
       if (!res.ok) throw new Error();
 
-      alert("Insight updated successfully");
+      message.success("Insight updated successfully");
     } catch (err) {
       console.error(err);
-      alert("Error updating insight");
+      message.error("Failed to update insight");
     } finally {
-      setLoading(false);
+      setAction("idle");
     }
   };
 
-  // SEND
-  const handleSend = async () => {
-    try {
-      setLoading(true);
-
-      const res = await fetch(`/api/admin/insights/send/${id}`, {
-        method: "POST",
-      });
-
-      if (!res.ok) throw new Error();
-
-      alert("Insight sent to subscribers");
-    } catch (err) {
-      console.error(err);
-      alert("Error sending insight");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // DELETE
-  const handleDelete = async () => {
-    const confirmDelete = confirm("Are you sure you want to delete this insight?");
-    if (!confirmDelete) return;
-
-    try {
-      setLoading(true);
-
-      const res = await fetch(`/api/admin/insights/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) throw new Error();
-
-      alert("Insight deleted successfully");
-    } catch (err) {
-      console.error(err);
-      alert("Error deleting insight");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // LOADING UI
+  // ---------------- LOADING UI ----------------
   if (fetching) {
     return (
-<div className="min-h-screen bg-[#FFF7E7] p-6 md:p-10 text-[#5F021F]/90">        <div className="text-[#5F021F] font-semibold">
-          Loading insight...
-        </div>
+      <div className="min-h-screen bg-[#FFF7E7] p-10 text-[#5F021F]">
+        Loading insight...
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen overflow-y-auto bg-[#FFF7E7] p-6 md:p-10 text-[#5F021F]/90">
-      <div className="max-w-5xl mx-auto bg-white rounded-3xl border border-[#5F021F]/10 shadow-xl overflow-hidden">
+    <div className="min-h-screen bg-[#FFF7E7] p-6 md:p-10 text-[#5F021F]/90">
+      <div className="max-w-5xl mx-auto bg-white rounded-3xl border shadow-xl overflow-hidden">
 
         {/* HEADER */}
         <div className="bg-[#5F021F]/75 px-8 py-8 text-white">
-          <p className="uppercase tracking-widest text-[#F4C430] text-xs font-semibold">
-            Lummina Insights
-          </p>
-
-          <h1 className="text-3xl font-bold mt-3">
-            Edit Insight
-          </h1>
-
-          <p className="text-white/70 mt-2">
-            Insight ID: {id}
-          </p>
-
-          <div className={`mt-4 px-4 py-2 rounded-full text-sm font-semibold w-fit ${
-            published
-              ? "bg-green-500/20 text-green-200"
-              : "bg-yellow-500/20 text-yellow-200"
-          }`}>
-            {published ? "Published" : "Draft"}
-          </div>
+          <h1 className="text-3xl font-bold">Edit Insight</h1>
+          <p className="text-white/70 mt-2">ID: {id}</p>
         </div>
 
         {/* BODY */}
-        <div className="p-8 space-y-8">
+        <div className="p-8 space-y-6">
 
+          {/* IMAGE SECTION */}
+          <div className="space-y-3">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFile}
+              className="w-full border p-3 rounded-xl"
+            />
+
+            <div className="flex gap-4">
+              {previewUrl ? (
+                <Image
+                  src={previewUrl}
+                  alt="preview"
+                  width={120}
+                  height={120}
+                  className="rounded-xl object-cover"
+                />
+              ) : existingImage ? (
+                <Image
+                  src={existingImage}
+                  alt="existing"
+                  width={120}
+                  height={120}
+                  className="rounded-xl object-cover"
+                />
+              ) : null}
+            </div>
+          </div>
+
+          {/* FIELDS */}
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full rounded-2xl border px-5 py-4 focus:outline-none "
+            placeholder="Title"
+            className="w-full border p-4 rounded-xl"
           />
 
           <input
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
-            className="w-full rounded-2xl border px-5 py-4 focus:outline-none "
+            placeholder="Slug"
+            className="w-full border p-4 rounded-xl"
           />
 
           <textarea
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
-            rows={4}
-            className="w-full rounded-2xl border px-5 py-4 focus:outline-none "
+            placeholder="Summary"
+            className="w-full border p-4 rounded-xl"
           />
 
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            rows={16}
-            className="w-full rounded-2xl border px-5 py-4 focus:outline-none"
+            placeholder="Content"
+            rows={10}
+            className="w-full border p-4 rounded-xl"
           />
 
-          <input
-            type="file"
-            className="w-full rounded-2xl border px-5 py-4 focus:outline-none"
-          />
-
-          {/* TOGGLE */}
-          <div className="flex items-center gap-4 bg-[#FFF4E0] rounded-2xl p-5 border border-[#5F021F]/10">
+          {/* PUBLISHED */}
+          <label className="flex items-center gap-3">
             <input
               type="checkbox"
               checked={published}
               onChange={() => setPublished(!published)}
-              className="h-5 w-5 accent-[#5F021F] focus:outline-none"
             />
-
-            <div>
-              <p className="font-semibold text-[#5F021F]">Published</p>
-              <p className="text-sm text-[#5F021F]/60">
-                Toggle visibility of this insight
-              </p>
-            </div>
-          </div>
+            Published
+          </label>
 
           {/* ACTIONS */}
-          <div className="flex flex-wrap gap-4 pt-6">
+          {/* ACTIONS */}
+<div className="flex flex-wrap gap-4 pt-6">
 
-            <button
-              onClick={handleSave}
-              disabled={loading}
-              className="px-6 py-4 rounded-2xl bg-[#5F021F]/75 text-white font-semibold hover:bg-[#4A0118]"
-            >
-              {loading ? "Saving..." : "Save Changes"}
-            </button>
+  {/* SAVE */}
+  <button
+    onClick={handleSave}
+    disabled={isLoading}
+    className="px-6 py-4 bg-[#5F021F] text-white rounded-xl font-semibold hover:bg-[#4A0118] disabled:opacity-50"
+  >
+    {isLoading ? "Saving..." : "Save Changes"}
+  </button>
 
-            <button
-              onClick={handleSend}
-              disabled={loading}
-              className="px-6 py-4 rounded-2xl bg-[#F4C430] text-[#5F021F] font-semibold"
-            >
-              Send To Subscribers
-            </button>
+  {/* SEND */}
+  <button
+   onClick={async () => {
+  try {
+    setAction("saving");
 
-            <button
-              onClick={handleDelete}
-              disabled={loading}
-              className="px-6 py-4 rounded-2xl border border-red-200 text-red-600 font-semibold"
-            >
-              Delete Insight
-            </button>
+    const res = await fetch(`/api/admin/insights/send/${id}`, {
+      method: "POST",
+    });
 
-          </div>
+    const data = await res.json();
 
+    if (!res.ok || data?.success === false) {
+      throw new Error();
+    }
+
+    message.success("Insight sent successfully");
+
+    // ✅ redirect after success
+    router.push("/admin/insights");
+
+  } catch (err) {
+    console.error(err);
+    message.error("Failed to send insight");
+  } finally {
+    setAction("idle");
+  }
+}}
+    disabled={isLoading}
+    className="px-6 py-4 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 disabled:opacity-50"
+  >
+    Send Insight
+  </button>
+
+</div>
         </div>
       </div>
     </div>
