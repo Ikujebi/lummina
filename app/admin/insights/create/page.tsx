@@ -255,37 +255,6 @@ export default function CreateInsightPage() {
 
         {/* FORM */}
         <div className="p-8 space-y-8">
-          <input
-            name="title"
-            value={form.title}
-            onChange={handleChange}
-            placeholder="Title"
-            className="w-full rounded-2xl border px-5 py-4"
-          />
-
-          <input
-            name="slug"
-            value={form.slug}
-            onChange={handleChange}
-            placeholder="Slug"
-            className="w-full rounded-2xl border px-5 py-4"
-          />
-
-          <textarea
-            name="summary"
-            value={form.summary}
-            onChange={handleChange}
-            placeholder="Summary"
-            className="w-full rounded-2xl border px-5 py-4"
-          />
-
-          <textarea
-            name="content"
-            value={form.content}
-            onChange={handleChange}
-            placeholder="Full Content"
-            className="w-full rounded-2xl border px-5 py-4"
-          />
 
           {/* DROPZONE */}
           <div
@@ -342,6 +311,40 @@ export default function CreateInsightPage() {
               accept="image/*"
             />
           </div>
+          
+          <input
+            name="title"
+            value={form.title}
+            onChange={handleChange}
+            placeholder="Title"
+            className="w-full rounded-2xl border px-5 py-4"
+          />
+
+          <input
+            name="slug"
+            value={form.slug}
+            onChange={handleChange}
+            placeholder="Slug"
+            className="w-full rounded-2xl border px-5 py-4"
+          />
+
+          <textarea
+            name="summary"
+            value={form.summary}
+            onChange={handleChange}
+            placeholder="Summary"
+            className="w-full rounded-2xl border px-5 py-4"
+          />
+
+          <textarea
+            name="content"
+            value={form.content}
+            onChange={handleChange}
+            placeholder="Full Content"
+            className="w-full rounded-2xl border px-5 py-4"
+          />
+
+        
 
           {/* ACTIONS */}
           <div className="flex flex-wrap gap-4 pt-4">
