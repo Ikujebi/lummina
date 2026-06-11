@@ -40,13 +40,16 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     }
 
     let sentCount = 0;
+    
+    // Using the verified NEXT_PUBLIC_BASE_URL variable from your invitations file
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; padding: 40px;">
         <h1>${insight.title}</h1>
         <p>${insight.summary}</p>
 
-        <a href="${process.env.NEXT_PUBLIC_APP_URL}/insights/${insight.slug}"
+        <a href="${baseUrl}/insights/${insight.slug}"
            style="display:inline-block;background:#5F021F;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;">
           Read Full Insight
         </a>
@@ -59,44 +62,46 @@ ${insight.title}
 ${insight.summary}
 
 Read full insight:
-${process.env.NEXT_PUBLIC_APP_URL}/insights/${insight.slug}
+${baseUrl}/insights/${insight.slug}
     `;
 
     for (const subscriber of subscribers) {
-  if (!subscriber.email) continue;
+      if (!subscriber.email) continue;
 
-  // 1. Updated path to match your new route: /api/admin/unsubscribe
-  const unsubscribeUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/admin/unsubscribe?id=${subscriber.id}`;
+      const unsubscribeUrl = `${baseUrl}/api/admin/unsubscribe?id=${subscriber.id}`;
 
-  const response = await resend.emails.send({
-    from: "Lummina Law <news@legal.lumminalaw.com>",
-    to: subscriber.email,
-    subject: insight.title,
-    
-    html: htmlContent + `
-      <hr style="border:none;border-top:1px solid #eee;margin-top:40px;"/>
-      <p style="font-size:12px;color:#666;text-align:center;">
-        Sent to ${subscriber.email}. If you wish to opt-out, you can 
-        <a href="${unsubscribeUrl}" style="color:#5F021F;">unsubscribe here</a>.
-      </p>
-    `,
-    text: textContent + `\n\nUnsubscribe:\n${unsubscribeUrl}`,
+      // 🔥 CRITICAL FIX: Forces the entire header string onto one single clean line.
+      // There must be absolutely NO hidden carriage returns or spaces inside this value.
+      const listUnsubscribeValue = `<${unsubscribeUrl}>, <mailto:unsubscribe@legal.lumminalaw.com?subject=Unsubscribe-${subscriber.id}>`;
 
-    // 2. Passing the updated admin route to Gmail headers
-    headers: {
-      "List-Unsubscribe": `<${unsubscribeUrl}>, <mailto:unsubscribe@legal.lumminalaw.com?subject=Unsubscribe-${subscriber.id}>`,
-      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-    },
-  });
+      const response = await resend.emails.send({
+        from: "Lummina Law <news@legal.lumminalaw.com>",
+        to: subscriber.email,
+        subject: insight.title,
+        
+        html: htmlContent + `
+          <hr style="border:none;border-top:1px solid #eee;margin-top:40px;"/>
+          <p style="font-size:12px;color:#666;text-align:center;">
+            Sent to ${subscriber.email}. If you wish to opt-out, you can 
+            <a href="${unsubscribeUrl}" style="color:#5F021F;">unsubscribe here</a>.
+          </p>
+        `,
+        text: textContent + `\n\nUnsubscribe:\n${unsubscribeUrl}`,
 
-  console.log("RESEND RESPONSE:", response);
+        headers: {
+          "List-Unsubscribe": listUnsubscribeValue,
+          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        },
+      });
 
-  if (response.error) {
-    throw new Error(response.error.message);
-  }
+      console.log("RESEND RESPONSE:", response);
 
-  sentCount++;
-}
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      sentCount++;
+    }
 
     await prisma.newsletter.update({
       where: { id },
