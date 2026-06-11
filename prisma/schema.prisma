@@ -411,7 +411,7 @@ model NewsletterSubscriber {
   email        String   @unique
   subscribedAt DateTime @default(now())
   active       Boolean  @default(true)
-
+  userId       String?
   @@map("NewsletterSubscriber")
 }
 

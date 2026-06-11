@@ -17,48 +17,100 @@ export default function InsightsPage() {
   const [insights, setInsights] = useState<Insight[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Insight | null>(null);
-
+  const [subscribers, setSubscribers] = useState([]);
   const [toast, setToast] = useState<string | null>(null);
 
   // ✔️ DELETE MODAL STATE
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+ 
+ const fetchInsights = async () => {
+    try {
+      setLoading(true);
 
-  useEffect(() => {
-    const fetchInsights = async () => {
-      try {
-        setLoading(true);
+      // 1. Fetch the admin insights list and the raw activity logs at the same time
+      const [insightsRes, activityRes] = await Promise.all([
+        fetch("/api/admin/insights"),
+        fetch("/api/admin/activity"),
+      ]);
 
-        const res = await fetch("/api/admin/insights");
-        const data = await res.json();
+      const data = await insightsRes.json();
+      const activityData = await activityRes.json();
 
-        const formatted = (data as InsightApiResponse[]).map((item) => ({
+      // Get the raw website activity logs safely
+      const rawLogs = activityData?.recentActivity ?? [];
+
+      const formatted = (data as InsightApiResponse[]).map((item) => {
+        // Cast the item as 'any' to dynamically check properties like slug safely
+        const currentItem = item as any;
+
+        // 2. Count matches within the raw web log tracking paths
+        const logCalculatedViews = rawLogs.filter((log: any) => {
+          if (log.event !== "page_view" || !log.path) return false;
+          
+          // Checks if the user visited this specific insight's slug or ID path
+          return (
+            log.path === `/insights/${currentItem.slug}` ||
+            log.path === `/insights/${currentItem.id}` ||
+            log.path.endsWith(`/${currentItem.slug}`) ||
+            log.path.endsWith(`/${currentItem.id}`)
+          );
+        }).length;
+
+        return {
           id: item.id,
           title: item.title,
           summary: item.summary,
           date: item.publishedAt
             ? new Date(item.publishedAt).toLocaleDateString()
             : new Date(item.createdAt).toLocaleDateString(),
-          views: item.views ?? 0,
-          status: (item.published ? "Published" : "Draft") as
-            | "Published"
-            | "Draft",
+          
+          // 3. Display the computed view total from the activity logs. 
+          // If no logs are found yet, fall back to whatever is on the item record.
+          views: logCalculatedViews > 0 ? logCalculatedViews : (item.views ?? 0),
+          
+          status: (item.published ? "Published" : "Draft") as "Published" | "Draft",
           sent: item.sent ?? false,
           published: item.published ?? false,
           coverImage: item.coverImage ?? null,
-        }));
+        };
+      });
 
-        setInsights(formatted);
-      } catch (err) {
-        console.error(err);
-        setToast("Failed to load insights");
-        setTimeout(() => setToast(null), 3000);
-      } finally {
-        setLoading(false);
+      setInsights(formatted);
+    } catch (err) {
+      console.error(err);
+      setToast("Failed to load insights");
+      setTimeout(() => setToast(null), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+ 
+
+  const fetchSubscribers = async () => {
+    try {
+      const res = await fetch("/api/admin/subscribers");
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch subscribers");
       }
-    };
+
+      const data = await res.json();
+
+      setSubscribers(data);
+    } catch (err) {
+      console.error(err);
+      setToast("Failed to load subscribers");
+      setTimeout(() => setToast(null), 3000);
+    }
+  };
+  useEffect(() => {
+    fetchSubscribers();
 
     fetchInsights();
   }, []);
+
+
 
   const handleSend = async (id: string) => {
     try {
@@ -171,6 +223,9 @@ export default function InsightsPage() {
           + Create Insight
         </Link>
       </div>
+
+      
+
 
       {/* GRID */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -294,6 +349,40 @@ export default function InsightsPage() {
           </div>
         </div>
       )}
+
+      {/* SUBSCRIBERS */}
+<div className="bg-white rounded-2xl p-6 shadow mt-10">
+  <div className="flex items-center justify-between mb-4">
+    <h2 className="text-xl font-semibold text-[#5F021F]">
+      Newsletter Subscribers
+    </h2>
+
+    <span className="bg-[#5F021F]/10 text-[#5F021F] px-3 py-1 rounded-full text-sm">
+      {subscribers.length} Subscribers
+    </span>
+  </div>
+
+  <div className="max-h-64 overflow-y-auto">
+    {subscribers.length === 0 ? (
+      <p className="text-gray-500">No subscribers found.</p>
+    ) : (
+      subscribers.map((subscriber: any) => (
+        <div
+          key={subscriber.id}
+          className="flex justify-between border-b py-2 text-sm"
+        >
+          <span>{subscriber.email}</span>
+
+          <span className="text-gray-500">
+            {new Date(
+              subscriber.subscribedAt
+            ).toLocaleDateString()}
+          </span>
+        </div>
+      ))
+    )}
+  </div>
+</div>
     </div>
   );
 }

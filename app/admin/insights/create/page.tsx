@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { UploadCloud, Image as ImageIcon } from "lucide-react";
 import { message } from "antd";
+import TiptapEditor from "@/app/components/TiptapEditor"; // Added Tiptap component import
 
 type ActionState = "idle" | "saving" | "publishing" | "sending";
 
@@ -18,7 +19,6 @@ export default function CreateInsightPage() {
 
   const [form, setForm] = useState({
     title: "",
-    slug: "",
     summary: "",
     content: "",
     coverImage: null as File | null,
@@ -36,7 +36,7 @@ export default function CreateInsightPage() {
   const resetForm = () => {
     setForm({
       title: "",
-      slug: "",
+      
       summary: "",
       content: "",
       coverImage: null,
@@ -56,6 +56,14 @@ export default function CreateInsightPage() {
     setForm((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
+    }));
+  };
+
+  // ✅ HANDLES INCOMING CONTENT FROM TIPTAP EDITOR INSTANCE
+  const handleContentChange = (htmlContent: string) => {
+    setForm((prev) => ({
+      ...prev,
+      content: htmlContent,
     }));
   };
 
@@ -82,7 +90,6 @@ export default function CreateInsightPage() {
       }
 
       const formData = new FormData();
-
       formData.append("file", file);
       formData.append("api_key", sig.apiKey);
       formData.append("timestamp", String(sig.timestamp));
@@ -113,9 +120,12 @@ export default function CreateInsightPage() {
 
   // ---------------- SAVE DRAFT ----------------
   const saveDraft = async () => {
+     if (!form.title.trim()) {
+    message.error("Title is required");
+    return;
+  }
     try {
       setAction("saving");
-
       let coverImageUrl: string | null = null;
 
       if (form.coverImage) {
@@ -127,7 +137,7 @@ export default function CreateInsightPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: form.title,
-          slug: form.slug,
+          
           summary: form.summary,
           content: form.content,
           coverImage: coverImageUrl,
@@ -136,16 +146,13 @@ export default function CreateInsightPage() {
       });
 
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data?.error || "Failed to save draft");
-      }
+      if (!res.ok) throw new Error(data?.error || "Failed to save draft");
 
       setInsightId(data.id);
-      alert("Draft saved successfully");
+      message.success("Draft saved successfully");
     } catch (err) {
       console.error(err);
-      alert("Error saving draft");
+      message.error("Error saving draft");
     } finally {
       setAction("idle");
     }
@@ -153,9 +160,12 @@ export default function CreateInsightPage() {
 
   // ---------------- PUBLISH ----------------
   const publishInsight = async () => {
+     if (!form.title.trim()) {
+    message.error("Title is required");
+    return;
+  }
     try {
       setAction("publishing");
-
       let coverImageUrl: string | null = null;
 
       if (form.coverImage) {
@@ -167,7 +177,6 @@ export default function CreateInsightPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: form.title,
-          slug: form.slug,
           summary: form.summary,
           content: form.content,
           coverImage: coverImageUrl,
@@ -176,16 +185,13 @@ export default function CreateInsightPage() {
       });
 
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data?.error || "Failed to publish insight");
-      }
+      if (!res.ok) throw new Error(data?.error || "Failed to publish insight");
 
       setInsightId(data.id);
-      alert("Insight published successfully");
+      message.success("Insight published successfully");
     } catch (err) {
       console.error(err);
-      alert("Error publishing insight");
+      message.error("Error publishing insight");
     } finally {
       setAction("idle");
     }
@@ -194,22 +200,18 @@ export default function CreateInsightPage() {
   // ---------------- SEND ----------------
   const sendInsight = async () => {
     if (!insightId) {
-      alert("Save or publish first before sending");
+      message.warning("Save or publish first before sending");
       return;
     }
 
     try {
       setAction("sending");
-
       const res = await fetch(`/api/admin/insights/send/${insightId}`, {
         method: "POST",
       });
 
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data?.error || "Failed to send");
-      }
+      if (!res.ok) throw new Error(data?.error || "Failed to send");
 
       message.success("Insight sent successfully");
       resetForm();
@@ -255,7 +257,6 @@ export default function CreateInsightPage() {
 
         {/* FORM */}
         <div className="p-8 space-y-8">
-
           {/* DROPZONE */}
           <div
             onClick={() => fileRef.current?.click()}
@@ -280,10 +281,9 @@ export default function CreateInsightPage() {
             <p className="text-sm font-medium text-gray-700">
               Drag & drop your image here
             </p>
-
             <p className="text-xs text-gray-500">or click to browse files</p>
 
-            {/* ✅ IMAGE PREVIEW */}
+            {/* IMAGE PREVIEW */}
             {previewUrl && (
               <div className="mt-3">
                 <Image
@@ -293,7 +293,6 @@ export default function CreateInsightPage() {
                   height={120}
                   className="rounded-xl object-cover border"
                 />
-
                 <div className="mt-2 flex items-center gap-2 text-xs text-gray-600">
                   <ImageIcon className="w-4 h-4" />
                   <span className="truncate max-w-[200px]">
@@ -309,49 +308,45 @@ export default function CreateInsightPage() {
               onChange={handleFile}
               className="hidden"
               accept="image/*"
+              key={previewUrl ?? ""} 
             />
           </div>
-          
+
           <input
             name="title"
             value={form.title}
             onChange={handleChange}
             placeholder="Title"
-            className="w-full rounded-2xl border px-5 py-4"
+            className="w-full rounded-2xl border px-5 py-4 border-gray-200 focus:outline-[#5F021F]/40"
           />
 
-          <input
-            name="slug"
-            value={form.slug}
-            onChange={handleChange}
-            placeholder="Slug"
-            className="w-full rounded-2xl border px-5 py-4"
-          />
+        
 
           <textarea
             name="summary"
             value={form.summary}
             onChange={handleChange}
             placeholder="Summary"
-            className="w-full rounded-2xl border px-5 py-4"
+            className="w-full rounded-2xl border px-5 py-4 border-gray-200 min-h-[100px] focus:outline-[#5F021F]/40"
           />
 
-          <textarea
-            name="content"
-            value={form.content}
-            onChange={handleChange}
-            placeholder="Full Content"
-            className="w-full rounded-2xl border px-5 py-4"
-          />
-
-        
+          {/* SWAPPED OUT OLD TEXTAREA FOR TIPTAP EDITOR COMPONENT */}
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-[#5F021F]/70 block pl-1">
+              Full Content
+            </label>
+            <TiptapEditor 
+              value={form.content} 
+              onChange={handleContentChange} 
+            />
+          </div>
 
           {/* ACTIONS */}
           <div className="flex flex-wrap gap-4 pt-4">
             <button
               onClick={saveDraft}
               disabled={isLoading}
-              className="px-6 py-4 rounded-2xl bg-yellow-400 font-semibold"
+              className="px-6 py-4 rounded-2xl bg-yellow-400 font-semibold text-gray-900 transition hover:bg-yellow-500 disabled:opacity-50"
             >
               Save Draft
             </button>
@@ -359,7 +354,7 @@ export default function CreateInsightPage() {
             <button
               onClick={publishInsight}
               disabled={isLoading}
-              className="px-6 py-4 rounded-2xl bg-[#5F021F]/75 text-white"
+              className="px-6 py-4 rounded-2xl bg-[#5F021F]/75 text-white transition hover:bg-[#5F021F] disabled:opacity-50"
             >
               Publish
             </button>
@@ -367,7 +362,7 @@ export default function CreateInsightPage() {
             <button
               onClick={sendInsight}
               disabled={!insightId || isLoading}
-              className="px-6 py-4 rounded-2xl bg-green-600 text-white"
+              className="px-6 py-4 rounded-2xl bg-green-600 text-white transition hover:bg-green-700 disabled:opacity-50"
             >
               Send Insight
             </button>

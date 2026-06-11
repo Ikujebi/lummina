@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import slugify from "slugify";
 
 export async function GET() {
   try {
@@ -29,10 +30,8 @@ export async function GET() {
       updatedAt: item.updatedAt,
       authorId: item.authorId,
 
-      // REAL analytics
+      // analytics
       views: item._count.views,
-
-      // ✅ FIX: include sent status
       sent: item.sent,
     }));
 
@@ -53,7 +52,6 @@ export async function POST(req: Request) {
 
     const {
       title,
-      slug,
       summary,
       content,
       coverImage,
@@ -61,6 +59,28 @@ export async function POST(req: Request) {
       authorId,
     } = body;
 
+    // -------------------------------
+    // 1. Generate base slug
+    // -------------------------------
+    const baseSlug = slugify(title, {
+      lower: true,
+      strict: true,
+    });
+
+    // -------------------------------
+    // 2. Ensure uniqueness
+    // -------------------------------
+    let slug = baseSlug;
+    let counter = 1;
+
+    while (await prisma.newsletter.findUnique({ where: { slug } })) {
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+
+    // -------------------------------
+    // 3. Create insight
+    // -------------------------------
     const insight = await prisma.newsletter.create({
       data: {
         title,
@@ -84,4 +104,3 @@ export async function POST(req: Request) {
     );
   }
 }
-
