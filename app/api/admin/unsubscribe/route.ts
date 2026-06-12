@@ -14,9 +14,12 @@ export async function POST(req: NextRequest) {
 
     // 2. Remove or opt-out the user from your database
     // Option A: Hard Delete (Actually remove from DB)
-    await prisma.newsletterSubscriber.delete({
-      where: { id },
-    });
+  await prisma.newsletterSubscriber.update({
+  where: { id },
+  data: {
+    active: false,
+  },
+});
 
     /* // Option B: Soft Delete (Highly recommended for legal compliance & keeping logs)
     await prisma.newsletterSubscriber.update({
@@ -40,10 +43,17 @@ export async function GET(req: NextRequest) {
   if (!id) return new NextResponse("Missing ID", { status: 400 });
 
   try {
-    await prisma.newsletterSubscriber.delete({ where: { id } });
-    
+await prisma.newsletterSubscriber.updateMany({
+  where: {
+    id,
+    active: true,
+  },
+  data: {
+    active: false,
+  },
+});    
     // Redirect them to a nice confirmation page on your website
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/unsubscribed-success`);
+    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/unsubscribed-success`);
   } catch (error) {
     return new NextResponse("Failed to unsubscribe", { status: 500 });
   }

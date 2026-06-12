@@ -40,16 +40,43 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     }
 
     let sentCount = 0;
-    
+
     // Using the verified NEXT_PUBLIC_BASE_URL variable from your invitations file
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    const websiteUrl = 'https://www.lumminalaw.com'
 
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; padding: 40px;">
-        <h1>${insight.title}</h1>
+
+       ${insight.coverImage
+        ? `
+      <img
+        src="${insight.coverImage}"
+        alt="${insight.title}"
+        style="
+          width:100%;
+          max-width:700px;
+          height:auto;
+          border-radius:12px;
+          display:block;
+          margin-bottom:24px;
+        "
+      />
+      `
+        : ""
+      }
+
+        <h1 style="
+  font-size:28px;
+  line-height:1.3;
+  margin:0 0 16px 0;
+  color:#111827;
+">
+  ${insight.title}
+</h1>
         <p>${insight.summary}</p>
 
-        <a href="${baseUrl}/insights/${insight.slug}"
+        <a href="${websiteUrl}/insights/${insight.slug}"
            style="display:inline-block;background:#5F021F;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;">
           Read Full Insight
         </a>
@@ -62,7 +89,7 @@ ${insight.title}
 ${insight.summary}
 
 Read full insight:
-${baseUrl}/insights/${insight.slug}
+${websiteUrl}/insights/${insight.slug}
     `;
 
     for (const subscriber of subscribers) {
@@ -75,10 +102,10 @@ ${baseUrl}/insights/${insight.slug}
       const listUnsubscribeValue = `<${unsubscribeUrl}>, <mailto:unsubscribe@legal.lumminalaw.com?subject=Unsubscribe-${subscriber.id}>`;
 
       const response = await resend.emails.send({
-        from: "Lummina Law <news@legal.lumminalaw.com>",
+        from: "Lummina Law <noreply@legal.lumminalaw.com>",
         to: subscriber.email,
         subject: insight.title,
-        
+
         html: htmlContent + `
           <hr style="border:none;border-top:1px solid #eee;margin-top:40px;"/>
           <p style="font-size:12px;color:#666;text-align:center;">
@@ -96,8 +123,12 @@ ${baseUrl}/insights/${insight.slug}
 
       console.log("RESEND RESPONSE:", response);
 
+      let failedCount = 0;
+
       if (response.error) {
-        throw new Error(response.error.message);
+        console.error(response.error);
+        failedCount++;
+        continue;
       }
 
       sentCount++;
