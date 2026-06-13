@@ -37,25 +37,25 @@ export async function PUT(
   const headers = corsHeaders(req);
 
   try {
-    // 1. Resolve the dynamic route segment params securely
+    // 1. Resolve the dynamic route parameter safely
     const { id } = await params;
 
-    // 2. Parse the payload coming from your frontend admin form
-    const { title, excerpt, content, imageUrl, published } = await req.json();
+    // 2. Parse payload using clean names matching your Newsletter model schema
+    const { title, slug, summary, content, coverImage, published } = await req.json();
 
-    // 3. Execute the database modification with mapped schema properties
+    // 3. Directly update the model properties without variable aliases
     const updatedInsight = await prisma.newsletter.update({
       where: { 
         id: id 
       },
       data: {
         title,
-        summary: excerpt,     // ✅ Fixed: Redirects frontend 'excerpt' into database 'summary'
+        slug,
+        summary,     // ✅ Matches schema perfectly
         content,
-        coverImage: imageUrl, // ✅ Fixed: Redirects frontend 'imageUrl' into database 'coverImage'
+        coverImage,  // ✅ Matches schema perfectly
         published: published ?? false,
-        // If your administrative update edits the slug dynamically, uncomment below:
-        // slug: title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
+        publishedAt: published ? new Date() : null, // Sets publication date if live
       },
     });
 
@@ -64,10 +64,9 @@ export async function PUT(
   } catch (error: any) {
     console.error("[ADMIN API ERROR] Updating insight failed:", error);
     
-    // Fallback error messaging if prisma throws a target record-not-found error code (P2025)
     if (error.code === "P2025") {
       return Response.json(
-        { error: "Target legal insight record not found in system schema" },
+        { error: "Target legal insight record not found in database." },
         { status: 404, headers }
       );
     }
