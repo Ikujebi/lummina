@@ -14,14 +14,17 @@ function corsHeaders(req: NextRequest) {
 
   if (allowedOrigins.includes(origin)) {
     headers["Access-Control-Allow-Origin"] = origin;
-    headers["Access-Control-Allow-Methods"] = "PUT, OPTIONS, DELETE";
+    headers["Access-Control-Allow-Methods"] =
+      "GET, PUT, OPTIONS, DELETE";
     headers["Access-Control-Allow-Headers"] = "Content-Type";
   }
 
   return headers;
 }
 
-// Preflight CORS Handler
+/**
+ * Preflight CORS Handler
+ */
 export async function OPTIONS(req: NextRequest) {
   return new Response(null, {
     status: 204,
@@ -29,7 +32,48 @@ export async function OPTIONS(req: NextRequest) {
   });
 }
 
-// Admin Update (PUT) Handler
+/**
+ * GET /api/public/insights/[id]
+ * Fetch single insight for frontend page
+ */
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const headers = corsHeaders(req);
+
+  try {
+    const { id } = await params;
+
+    const insight = await prisma.newsletter.findUnique({
+      where: { id },
+    });
+
+    if (!insight) {
+      return Response.json(
+        { error: "Insight not found" },
+        { status: 404, headers }
+      );
+    }
+
+    return Response.json(insight, {
+      status: 200,
+      headers,
+    });
+  } catch (error) {
+    console.error("[PUBLIC INSIGHT GET ERROR]", error);
+
+    return Response.json(
+      { error: "Failed to fetch insight" },
+      { status: 500, headers }
+    );
+  }
+}
+
+/**
+ * PUT /api/public/insights/[id]
+ * Admin update
+ */
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -37,33 +81,34 @@ export async function PUT(
   const headers = corsHeaders(req);
 
   try {
-    // 1. Resolve the dynamic route parameter safely
     const { id } = await params;
 
-    // 2. Parse payload using clean names matching your Newsletter model schema
-    const { title, slug, summary, content, coverImage, published } = await req.json();
+    const {
+      title,
+      slug,
+      summary,
+      content,
+      coverImage,
+      published,
+    } = await req.json();
 
-    // 3. Directly update the model properties without variable aliases
     const updatedInsight = await prisma.newsletter.update({
-      where: { 
-        id: id 
-      },
+      where: { id },
       data: {
         title,
         slug,
-        summary,     // ✅ Matches schema perfectly
+        summary,
         content,
-        coverImage,  // ✅ Matches schema perfectly
+        coverImage,
         published: published ?? false,
-        publishedAt: published ? new Date() : null, // Sets publication date if live
+        publishedAt: published ? new Date() : null,
       },
     });
 
     return Response.json(updatedInsight, { headers });
-
   } catch (error: any) {
     console.error("[ADMIN API ERROR] Updating insight failed:", error);
-    
+
     if (error.code === "P2025") {
       return Response.json(
         { error: "Target legal insight record not found in database." },
