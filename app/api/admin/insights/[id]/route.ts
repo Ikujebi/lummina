@@ -69,12 +69,11 @@ export async function PATCH(
 
     const {
       title,
-      excerpt,
+      slug,
+      summary,
       content,
-      imageUrl,
-      category,
-      author,
-      status,
+      coverImage,
+      published,
     } = body;
 
     const existing = await prisma.newsletter.findUnique({
@@ -92,12 +91,12 @@ export async function PATCH(
       where: { id },
       data: {
         title,
-        excerpt,
+        slug,
+        summary,
         content,
-        imageUrl,
-        category,
-        author,
-        status,
+        coverImage,
+        published,
+        publishedAt: published ? new Date() : null,
       },
     });
 
